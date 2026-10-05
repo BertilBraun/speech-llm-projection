@@ -1,0 +1,11 @@
+{
+  "name": "v1_30000_mlp_10hz",
+  "stage": "V1",
+  "train_examples": 30000,
+  "epochs": 2,
+  "learning_rate": 0.001,
+  "projector": {
+    "architecture": "mlp",
+    "compression_factor": 5
+  }
+}

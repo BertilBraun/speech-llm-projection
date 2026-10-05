@@ -21,10 +21,11 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 46GiB RAM, 200GB disk.
 
 ## Experiment state
 
-Updated 2026-10-06 00:49 Europe/Berlin.
+Updated 2026-10-06 01:09 Europe/Berlin.
 Completed: V0, all four heldout baselines, training/untrained conditioning probes,
 first cache and ASR, model gradient/memory profile, 10k audio download.
-Running: V1 nested1k/3k/10k supervised queue; 30k audio expansion download-only.
+Completed V1:1k and3k runs, including full validation/test and conditioning diagnostics.
+Running: V1_10000 training; 30k audio expansion download-only.
 Queued: adaptiveV2 andV3; possible30k scaling run after assessing10k.
 Prepared: result packaging with exact subset manifest, 16 audio clips and model revisions;
 typed input API cleanup validated in isolated staging, pending post-suite merge.
@@ -38,6 +39,11 @@ Training32probe correct-vs-shuffled margin1.6228±SE0.0911,32/32 correctaudio wi
 Heldoutgrounding remains modest; controls justify proceeding to data scaling.
 Text/ASR validation CE2.566/2.576, semantic similarity0.512/0.521;
 V0 semantic similarity0.354. CE alone does not measure conversational grounding.
-V1_1000 step200 validation CE2.1385; final evaluation pending.
+V1_1000 final validation/test CE2.0871/2.0057; semantic0.3719/0.3714.
+V1_3000 final validation/test CE1.9554/1.8756; semantic0.3912/0.3763.
+3k paired shuffled-audio CE margins:validation+0.1323(SE0.0298),test+0.1458(SE0.0216).
+Decoded topic grounding remains weak despite measurable loss-based conditioning.
+10k+256heldout cache:5.687GB, latest7k extraction46.79GPU-synchronized seconds,
+98.94s pipeline wall time. V0/1k/3k checkpoints and baselines backed up locally.
 Planned: initial V0 256–1,000 examples at factor5 (10 tokens/s); matrix adapts to measured speed.
 No long run starts until V0 correctness gates pass.

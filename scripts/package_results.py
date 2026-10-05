@@ -142,6 +142,9 @@ def copy_dataset(configuration: PackageConfiguration) -> list[FileArtifact]:
         )
         for name in DATASET_ARTIFACTS
     ]
+    expansion = configuration.dataset_root / "download_expansion.json"
+    if expansion.exists():
+        artifacts.append(copy_artifact(expansion, Path("dataset") / expansion.name, configuration))
     source = configuration.dataset_root / "metadata.parquet"
     write_record(
         configuration.results_root / "dataset" / "source.json",
