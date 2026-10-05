@@ -187,7 +187,7 @@ def _save_plots(results: Sequence[RunResult], root: Path) -> None:
 def _qualitative(root: Path, results: Sequence[RunResult]) -> None:
     samples: list[tuple[str, SampleGeneration]] = []
     for path in sorted(root.glob("**/*generations.jsonl")):
-        if path.name.startswith("initial"):
+        if path.name.startswith("initial") or path.parent.name not in ("validation", "test"):
             continue
         for line in path.read_text(encoding="utf-8").splitlines():
             if line:
@@ -396,6 +396,12 @@ def aggregate_report(root: Path, data_report: Path | None = None) -> Path:
             "measure factual correctness or whether the reply is the uniquely appropriate "
             "continuation. Read the fixed generated comparisons alongside CE.",
             "",
+            "The transcript baseline is a perfect-input reference, not a mathematical CE upper "
+            "bound. The trained projector can also learn the dataset's response style while "
+            "the text and ASR baselines use the original frozen model. Lower projector CE "
+            "must be interpreted together with correct-versus-shuffled audio margins and "
+            "utterance-specific generated replies.",
+            "",
             "## Resource usage",
             "",
             f"Summed recorded training-run wall time: "
@@ -481,17 +487,17 @@ def aggregate_report(root: Path, data_report: Path | None = None) -> Path:
             "",
         ]
     )
-    failure_path = root / "failures.jsonl"
-    if failure_path.exists():
-        lines.extend(["Recorded failures:", ""])
-        for line in failure_path.read_text(encoding="utf-8").splitlines():
-            if line:
-                failure = ExperimentFailure.model_validate_json(line)
-                lines.append(
-                    f"- {failure.run_name}, attempt {failure.attempt}: "
-                    f"{failure.exception_type}: {failure.message}"
-                )
-        lines.append("")
+    for failure_path in (root / "validation_failures.jsonl", root / "failures.jsonl"):
+        if failure_path.exists():
+            lines.extend(["Recorded failures:", ""])
+            for line in failure_path.read_text(encoding="utf-8").splitlines():
+                if line:
+                    failure = ExperimentFailure.model_validate_json(line)
+                    lines.append(
+                        f"- {failure.run_name}, attempt {failure.attempt}: "
+                        f"{failure.exception_type}: {failure.message}"
+                    )
+            lines.append("")
     _save_csv(results, root / "summary.csv")
     _save_plots(results, root)
     _qualitative(root, results)

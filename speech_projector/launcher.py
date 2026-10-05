@@ -267,7 +267,7 @@ def run_suite(
         selected_run=selected.config.name,
         candidate_runs=tuple(result.config.name for result in scaling),
         rationale=(
-            "Choose the smallest nested subset within0.05 validation CE of the best V1 run "
+            "Choose the smallest nested subset within 0.05 validation CE of the best V1 run "
             "for the controlled V2/V3 comparisons. This is an exploratory one-seed choice."
         ),
     )

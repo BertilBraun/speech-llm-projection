@@ -26,7 +26,18 @@ class TrainingState(Record):
     initial_validation_loss: float
     initial_training_loss: float
     final_fixed_training_loss: float | None = None
+    final_validation_loss: float | None = None
     final_training_loss: float
+
+
+class ValidationCheckpointRecord(Record):
+    step: int
+    cross_entropy: float
+    checkpoint_path: Path
+
+
+class TrainingResourceRecord(Record):
+    peak_vram_gb: float
 
 
 @dataclass(frozen=True)
@@ -136,6 +147,39 @@ def _save_checkpoint(
     return directory / "projector.safetensors"
 
 
+def _save_best_validation(
+    directory: Path,
+    projector: Projector,
+    step: int,
+    cross_entropy: float,
+    previous: ValidationCheckpointRecord | None,
+) -> ValidationCheckpointRecord:
+    if previous is not None and cross_entropy >= previous.cross_entropy:
+        return previous
+    checkpoint_path = directory / "best_projector.safetensors"
+    pending_checkpoint = directory / "best_projector.pending.safetensors"
+    save_file(projector.state_dict(), str(pending_checkpoint))
+    pending_checkpoint.replace(checkpoint_path)
+    record = ValidationCheckpointRecord(
+        step=step, cross_entropy=cross_entropy, checkpoint_path=checkpoint_path
+    )
+    pending_record = directory / "best_validation.pending.json"
+    pending_record.write_text(record.model_dump_json(indent=2), encoding="utf-8")
+    pending_record.replace(directory / "best_validation.json")
+    return record
+
+
+def _save_training_resources(
+    directory: Path, device: torch.device, previous: TrainingResourceRecord
+) -> TrainingResourceRecord:
+    observed_peak = torch.cuda.max_memory_allocated(device) / 1e9 if device.type == "cuda" else 0.0
+    resources = TrainingResourceRecord(peak_vram_gb=max(previous.peak_vram_gb, observed_peak))
+    pending = directory / "training_resources.pending.json"
+    pending.write_text(resources.model_dump_json(indent=2), encoding="utf-8")
+    pending.replace(directory / "training_resources.json")
+    return resources
+
+
 def train_run(
     config: RunConfig,
     examples: list[Example],
@@ -164,7 +208,21 @@ def train_run(
         projector.parameters(), lr=config.learning_rate, weight_decay=0.01
     )
     checkpoint_dir = output_dir / "checkpoint"
+    resources_path = output_dir / "training_resources.json"
+    resources = (
+        TrainingResourceRecord.model_validate_json(resources_path.read_text(encoding="utf-8"))
+        if resources_path.exists()
+        else TrainingResourceRecord(peak_vram_gb=0.0)
+    )
+    best_record_path = output_dir / "best_validation.json"
+    best_validation = (
+        ValidationCheckpointRecord.model_validate_json(best_record_path.read_text(encoding="utf-8"))
+        if best_record_path.exists()
+        else None
+    )
     fixed_training_examples = examples[:128]
+    if wrapper.device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(wrapper.device)
     if (checkpoint_dir / "state.json").exists():
         state = TrainingState.model_validate_json(
             (checkpoint_dir / "state.json").read_text(encoding="utf-8")
@@ -190,8 +248,7 @@ def train_run(
             final_training_loss=0.0,
         )
         _save_checkpoint(checkpoint_dir, projector, optimizer, state)
-    if wrapper.device.type == "cuda":
-        torch.cuda.reset_peak_memory_stats(wrapper.device)
+        resources = _save_training_resources(output_dir, wrapper.device, resources)
     start = time.monotonic()
     prior_elapsed = state.elapsed_seconds
     recent_losses: list[float] = []
@@ -235,6 +292,10 @@ def train_run(
             measured_validation = None
             if step % config.evaluation_interval == 0:
                 measured_validation = validation_loss(wrapper, projector, validation)
+                best_validation = _save_best_validation(
+                    output_dir, projector, step, measured_validation, best_validation
+                )
+                resources = _save_training_resources(output_dir, wrapper.device, resources)
             log = TrainLog(
                 step=step,
                 epoch=epoch,
@@ -249,8 +310,14 @@ def train_run(
             print(log.model_dump_json(), flush=True)
             if step % config.checkpoint_interval == 0:
                 _save_checkpoint(checkpoint_dir, projector, optimizer, state)
+                resources = _save_training_resources(output_dir, wrapper.device, resources)
         state = state.model_copy(update={"epoch": epoch + 1, "offset": 0})
         _save_checkpoint(checkpoint_dir, projector, optimizer, state)
+        resources = _save_training_resources(output_dir, wrapper.device, resources)
+    if state.final_validation_loss is None:
+        final_validation = validation_loss(wrapper, projector, validation)
+        _save_best_validation(output_dir, projector, state.step, final_validation, best_validation)
+        state = state.model_copy(update={"final_validation_loss": final_validation})
     if state.final_fixed_training_loss is None:
         state = state.model_copy(
             update={
@@ -261,17 +328,14 @@ def train_run(
         )
     state = state.model_copy(update={"elapsed_seconds": prior_elapsed + time.monotonic() - start})
     path = _save_checkpoint(checkpoint_dir, projector, optimizer, state)
+    resources = _save_training_resources(output_dir, wrapper.device, resources)
     assert state.final_fixed_training_loss is not None
     return TrainingOutcome(
         steps=state.step,
         runtime_seconds=state.elapsed_seconds,
         examples_seen=state.examples_seen,
         target_tokens_seen=state.target_tokens_seen,
-        peak_vram_gb=(
-            torch.cuda.max_memory_allocated(wrapper.device) / 1e9
-            if wrapper.device.type == "cuda"
-            else 0.0
-        ),
+        peak_vram_gb=resources.peak_vram_gb,
         initial_validation_loss=state.initial_validation_loss,
         initial_training_loss=state.initial_training_loss,
         final_fixed_training_loss=state.final_fixed_training_loss,

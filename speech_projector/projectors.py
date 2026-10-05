@@ -46,7 +46,6 @@ class Projector(nn.Module):
                     config.encoder_dimension,
                     kernel_size=config.compression_factor,
                     stride=config.compression_factor,
-                    groups=config.encoder_dimension,
                 )
                 self.projection = nn.Sequential(
                     nn.Linear(config.encoder_dimension, config.hidden_dimension),

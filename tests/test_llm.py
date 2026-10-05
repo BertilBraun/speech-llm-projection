@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 import torch
+from safetensors.torch import load_file
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import Whitespace
@@ -13,7 +14,14 @@ from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import Architecture, Example, ProjectorConfig, RunConfig, Split
 from speech_projector.projectors import Projector
-from speech_projector.training import gradient_sanity, train_run, weights_digest
+from speech_projector.training import (
+    TrainingResourceRecord,
+    ValidationCheckpointRecord,
+    gradient_sanity,
+    train_run,
+    validation_loss,
+    weights_digest,
+)
 
 
 class CountingTokenizer(PreTrainedTokenizerFast):
@@ -163,16 +171,41 @@ def test_generation_stops_at_tokenizer_eos_when_model_config_disagrees(
     assert wrapper.generate(example, transcript=example.user_text) == "1"
 
 
-def test_finished_run_resume_does_not_repeat_updates(
+def test_finished_resume_preserves_final_and_best_checkpoint_weights(
     wrapper: FrozenQwen, example: Example, tmp_path: Path
 ) -> None:
     projector = Projector(wrapper.config.projector)
     examples = [example, example.model_copy(update={"example_id": "two"})]
     first = train_run(wrapper.config, examples, [example], tmp_path / "run", wrapper, projector)
     digest = weights_digest(projector)
+    record_path = tmp_path / "run" / "best_validation.json"
+    record = ValidationCheckpointRecord.model_validate_json(record_path.read_text(encoding="utf-8"))
+    best_weights = record.checkpoint_path.read_bytes()
+    best_projector = Projector(wrapper.config.projector)
+    best_projector.load_state_dict(load_file(str(record.checkpoint_path)))
+    assert record.step == first.steps
+    assert validation_loss(wrapper, best_projector, [example]) == pytest.approx(
+        record.cross_entropy
+    )
+    resources_path = tmp_path / "run" / "training_resources.json"
+    resources_path.write_text(
+        TrainingResourceRecord(peak_vram_gb=4.15).model_dump_json(), encoding="utf-8"
+    )
     second = train_run(wrapper.config, examples, [example], tmp_path / "run", wrapper, projector)
     assert first.steps == second.steps == 1
     assert weights_digest(projector) == digest
+    assert record.checkpoint_path.read_bytes() == best_weights
+    assert (
+        ValidationCheckpointRecord.model_validate_json(record_path.read_text(encoding="utf-8"))
+        == record
+    )
+    assert second.peak_vram_gb == 4.15
+    assert (
+        TrainingResourceRecord.model_validate_json(
+            resources_path.read_text(encoding="utf-8")
+        ).peak_vram_gb
+        == 4.15
+    )
 
 
 @pytest.mark.parametrize("padding", [1, 5])

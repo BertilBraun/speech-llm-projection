@@ -22,6 +22,8 @@ Transformers 5.13.0, Triton 3.2.0, flash-linear-attention 0.3.2 and
 causal-conv1d 1.5.2. The causal convolution extension required a source build
 with PyTorch's matching C++ ABI; the default downloaded wheel did not import.
 The complete package inventory is saved in `results/environment.txt`.
+Install the project itself with `uv pip install --no-deps -e .` so helper scripts
+can import the package.
 
 On this node use `/venv/main/bin/python` and `/venv/main/bin/ruff`. After
 downloading the three model checkpoints, batch jobs enable offline model loading.
@@ -42,5 +44,5 @@ completed result files. Dataset manifests have a deterministic nested order.
 
 Teacher-forced sequences are right padded to multiples of 64 to reduce kernel
 recompilation. Labels mask all padding/history/speech positions. Generation
-uses the actual unpadded prompt: a tested left-padding optimization changed
-greedy outputs and was rejected.
+uses the actual unpadded prompt. A left-padding optimization was deferred after
+an initial parity test diverged; that test preceded the chat stop-token repair.
