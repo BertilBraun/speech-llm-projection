@@ -176,3 +176,9 @@ class SuiteState(Record):
     failed: tuple[str, ...]
     started_at: float
     updated_at: float
+
+
+class ExperimentDecision(Record):
+    selected_run: str
+    candidate_runs: tuple[str, ...]
+    rationale: str

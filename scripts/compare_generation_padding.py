@@ -34,7 +34,7 @@ def main() -> None:
                     do_sample=False,
                     use_cache=True,
                     pad_token_id=wrapper.tokenizer.pad_token_id,
-                    eos_token_id=wrapper.model.config.eos_token_id,
+                    eos_token_id=wrapper.tokenizer.eos_token_id,
                 )
                 torch.cuda.synchronize()
                 print(

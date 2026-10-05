@@ -162,6 +162,6 @@ class FrozenQwen:
             do_sample=False,
             use_cache=True,
             pad_token_id=self.tokenizer.pad_token_id,
-            eos_token_id=self.model.config.eos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
         )
         return self.tokenizer.decode(generated[0], skip_special_tokens=True).strip()

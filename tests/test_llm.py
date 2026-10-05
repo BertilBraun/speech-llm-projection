@@ -16,6 +16,27 @@ from speech_projector.projectors import Projector
 from speech_projector.training import gradient_sanity, train_run, weights_digest
 
 
+class CountingTokenizer(PreTrainedTokenizerFast):
+    def decode(self, token_ids: Tensor, skip_special_tokens: bool = False) -> str:
+        return str(token_ids.numel())
+
+
+class EosCheckingQwen(Qwen3_5ForCausalLM):
+    def generate(
+        self,
+        *,
+        inputs_embeds: Tensor,
+        attention_mask: Tensor,
+        max_new_tokens: int,
+        do_sample: bool,
+        use_cache: bool,
+        pad_token_id: int | None,
+        eos_token_id: int | None,
+    ) -> Tensor:
+        assert eos_token_id == 0
+        return torch.tensor([[eos_token_id]], dtype=torch.long)
+
+
 @pytest.fixture
 def wrapper() -> FrozenQwen:
     tokenizer = Tokenizer(WordLevel({"[UNK]": 0, "yes": 1, "no": 2}, unk_token="[UNK]"))
@@ -127,6 +148,19 @@ def test_speech_input_does_not_expose_current_user_transcript(
     )
     torch.testing.assert_close(original.embeddings, changed.embeddings)
     torch.testing.assert_close(original.labels, changed.labels)
+
+
+def test_generation_stops_at_tokenizer_eos_when_model_config_disagrees(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    tokenizer = Tokenizer(WordLevel({"[UNK]": 0, "yes": 1, "no": 2}, unk_token="[UNK]"))
+    tokenizer.pre_tokenizer = Whitespace()
+    wrapper.tokenizer = CountingTokenizer(
+        tokenizer_object=tokenizer, unk_token="[UNK]", eos_token="[UNK]", pad_token="no"
+    )
+    wrapper.model = EosCheckingQwen(wrapper.model.config)
+    wrapper.model.config.eos_token_id = 7
+    assert wrapper.generate(example, transcript=example.user_text) == "1"
 
 
 def test_finished_run_resume_does_not_repeat_updates(

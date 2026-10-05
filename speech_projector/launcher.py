@@ -26,6 +26,7 @@ from speech_projector.evaluation import (
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
     Example,
+    ExperimentDecision,
     ExperimentFailure,
     RunConfig,
     RunResult,
@@ -254,8 +255,28 @@ def run_suite(
         raise ValueError("V0 did not reduce training loss; inspect before scaling")
     run_baselines(wrapper, validation, test, manifest, output_root, semantic_evaluator)
     scaling = [execute(config) for config in scaling_runs()]
-    selected_count = 3000
-    matched = [result for result in scaling if result.train_examples == selected_count]
+    best_scaling = min(scaling, key=lambda result: result.validation.cross_entropy)
+    near_best = [
+        result
+        for result in scaling
+        if result.validation.cross_entropy <= best_scaling.validation.cross_entropy + 0.05
+    ]
+    selected = min(near_best, key=lambda result: result.train_examples)
+    selected_count = selected.train_examples
+    decision = ExperimentDecision(
+        selected_run=selected.config.name,
+        candidate_runs=tuple(result.config.name for result in scaling),
+        rationale=(
+            "Choose the smallest nested subset within0.05 validation CE of the best V1 run "
+            "for the controlled V2/V3 comparisons. This is an exploratory one-seed choice."
+        ),
+    )
+    (output_root / "data_size_decision.json").write_text(
+        decision.model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+    print(decision.model_dump_json(), flush=True)
+    matched = [selected]
     compression = matched + [execute(config) for config in compression_runs(selected_count)]
     best = min(compression, key=lambda result: result.validation.cross_entropy)
     for config in architecture_runs(selected_count, best.config.projector.compression_factor):

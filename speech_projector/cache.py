@@ -36,8 +36,8 @@ class CacheStatistics(Record):
     extracted_audio_seconds: float
     feature_bytes: int
     extraction_seconds: float
-    cache_wall_seconds: float
-    cache_examples_per_second: float
+    cache_wall_seconds: float | None
+    cache_examples_per_second: float | None
     extraction_audio_seconds_per_second: float
     asr_seconds: float
     peak_vram_gb: float
