@@ -207,6 +207,23 @@ def package_audio(
     return files, audio
 
 
+def package_features(configuration: PackageConfiguration) -> list[FileArtifact]:
+    examples = load_examples(configuration.dataset_root / "examples.jsonl", Split.VALIDATION, 16)
+    artifacts = [
+        copy_artifact(
+            example.feature_path,
+            Path("features") / f"{example.example_id}.pt",
+            configuration,
+        )
+        for example in examples
+    ]
+    manifest = "".join(record.model_dump_json() + "\n" for record in artifacts)
+    write_bytes_if_changed(
+        configuration.results_root / "features" / "manifest.jsonl", manifest.encode()
+    )
+    return artifacts
+
+
 def model_revisions(hub: Path) -> list[ModelRevision]:
     revisions: list[ModelRevision] = []
     for repository in sorted(hub.glob("models--*")):
@@ -322,6 +339,7 @@ def package_results(configuration: PackageConfiguration) -> PackageManifest:
     files = copy_dataset(configuration)
     audio_files, audio = package_audio(configuration)
     files.extend(audio_files)
+    files.extend(package_features(configuration))
     files.extend(package_cache(configuration))
     revisions = package_environment(configuration)
     manifest = PackageManifest(
