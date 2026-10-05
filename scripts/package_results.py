@@ -130,6 +130,9 @@ def copy_artifact(
         partial = destination.with_suffix(destination.suffix + ".part")
         shutil.copyfile(source, partial)
         partial.replace(destination)
+        # Training may update a report while its snapshot is being copied.
+        size = destination.stat().st_size
+        digest = file_digest(destination)
     return FileArtifact(path=relative_destination, source_path=source, bytes=size, sha256=digest)
 
 
