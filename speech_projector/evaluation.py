@@ -15,6 +15,7 @@ import torch
 from pydantic import TypeAdapter
 from sentence_transformers import SentenceTransformer
 from torch import Tensor
+from torch.nn import functional
 
 from speech_projector.models import (
     AsrTranscript,
@@ -166,6 +167,21 @@ def _mismatched_example(examples: Sequence[Example], index: int) -> Example:
     raise ValueError("Shuffled-audio diagnostics require at least two different dialogues")
 
 
+def match_feature_length(shuffled_features: Tensor, target_length: int) -> Tensor:
+    """Hold pseudo-token count fixed while replacing current-utterance information."""
+    if target_length < 1:
+        raise ValueError("Matched speech feature length must be positive")
+    if shuffled_features.shape[0] == target_length:
+        return shuffled_features
+    interpolated = functional.interpolate(
+        shuffled_features.transpose(0, 1).unsqueeze(0).float(),
+        size=target_length,
+        mode="linear",
+        align_corners=False,
+    )
+    return interpolated[0].transpose(0, 1).to(shuffled_features.dtype)
+
+
 def _record_loss(
     wrapper: FrozenQwen,
     example: Example,
@@ -235,7 +251,8 @@ def evaluate(
                 transcript = _asr_text(example, asr_transcripts)
             case EvaluationCondition.SPEECH:
                 assert projector is not None
-                embeddings = projector(_features(example, wrapper.device))
+                current_features = _features(example, wrapper.device)
+                embeddings = projector(current_features)
         losses.append(_record_loss(wrapper, example, condition, embeddings, transcript))
         if (
             condition == EvaluationCondition.SPEECH
@@ -243,7 +260,12 @@ def evaluate(
             and index < min(32, len(examples))
         ):
             assert projector is not None and embeddings is not None
-            shuffled = projector(_features(_mismatched_example(examples, index), wrapper.device))
+            shuffled = projector(
+                match_feature_length(
+                    _features(_mismatched_example(examples, index), wrapper.device),
+                    current_features.shape[0],
+                )
+            )
             no_history = example.model_copy(update={"history": ()})
             controls = (
                 (EvaluationCondition.SHUFFLED_SPEECH, example, shuffled),

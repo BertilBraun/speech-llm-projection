@@ -117,6 +117,18 @@ def test_frozen_weights_and_projector_gradient(wrapper: FrozenQwen, example: Exa
     assert not check.llm_has_gradients
 
 
+def test_speech_input_does_not_expose_current_user_transcript(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    speech = torch.randn(3, 32)
+    original = wrapper.prepare(example, speech_embeddings=speech)
+    changed = wrapper.prepare(
+        example.model_copy(update={"user_text": "yes yes yes"}), speech_embeddings=speech
+    )
+    torch.testing.assert_close(original.embeddings, changed.embeddings)
+    torch.testing.assert_close(original.labels, changed.labels)
+
+
 def test_finished_run_resume_does_not_repeat_updates(
     wrapper: FrozenQwen, example: Example, tmp_path: Path
 ) -> None:

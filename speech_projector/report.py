@@ -191,7 +191,12 @@ def _qualitative(root: Path, results: Sequence[RunResult]) -> None:
             continue
         for line in path.read_text(encoding="utf-8").splitlines():
             if line:
-                samples.append((path.parent.name, SampleGeneration.model_validate_json(line)))
+                samples.append(
+                    (
+                        path.parent.relative_to(root).as_posix(),
+                        SampleGeneration.model_validate_json(line),
+                    )
+                )
     if not samples:
         return
     best_name = (
@@ -306,7 +311,9 @@ def aggregate_report(root: Path, data_report: Path | None = None) -> Path:
             "## Audio-conditioning checks",
             "",
             "Controls use a fixed subset of up to 32 held-out examples, with replacement audio "
-            "from a different dialogue. Compare paired CE files and conditioning confidence "
+            "from a different dialogue. Control encoder states are linearly resampled to the "
+            "correct input's state length before projection, holding pseudo-token counts fixed. "
+            "Compare paired CE files and conditioning confidence "
             "estimates; the full validation CE and subset-control CE have different denominators.",
             "",
             "| Run | Shuffled CE | Zero CE | No-history CE | No-history shuffled CE |",
@@ -348,8 +355,8 @@ def aggregate_report(root: Path, data_report: Path | None = None) -> Path:
             "",
             "A positive paired control-minus-correct CE suggests useful audio conditioning. "
             "The no-history control checks whether textual history alone explains performance. "
-            "Shuffling also changes durations and token counts, so this is a diagnostic, "
-            "not proof of semantic understanding.",
+            "Resampling changes the replacement utterance's temporal structure, so this "
+            "is a diagnostic, not proof of semantic understanding.",
             "",
             "## Baselines",
             "",

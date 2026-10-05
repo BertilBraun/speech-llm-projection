@@ -98,6 +98,22 @@ def main() -> None:
     )
     (root / "dataset_leakage.json").write_text(report.model_dump_json(indent=2), encoding="utf-8")
     print(report.model_dump_json(indent=2))
+    training_pairs = {normalized_pair(example) for example in groups[Split.TRAIN]}
+    training_10k_pairs = {normalized_pair(example) for example in groups[Split.TRAIN][:10000]}
+    for example in groups[Split.TEST]:
+        pair = normalized_pair(example)
+        if pair in training_pairs:
+            print(
+                "REPEATED_PAIR",
+                example.example_id,
+                example.dialogue_id,
+                "in10k",
+                pair in training_10k_pairs,
+                "USER",
+                example.user_text,
+                "TARGET",
+                example.target_text,
+            )
 
 
 if __name__ == "__main__":

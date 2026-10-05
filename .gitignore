@@ -8,3 +8,4 @@ results/
 artifacts/
 *.pt
 *.safetensors
+*.bundle

@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import math
 import random
+import re
 import time
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -92,6 +93,7 @@ class FilterCounts(Record):
     invalid_duration: int
     empty_text: int
     nonalternating: int
+    cross_split_duplicate_pair: int
 
 
 class DatasetReport(Record):
@@ -154,6 +156,14 @@ def turn_order(turn: SourceTurn) -> int:
 
 def example_order(example: Example, seed: int) -> str:
     return stable_digest(example.example_id, seed)
+
+
+def normalized_text(text: str) -> str:
+    return " ".join(re.sub(r"[^\w\s]", " ", text.lower()).split())
+
+
+def normalized_response_pair(example: Example) -> tuple[str, str]:
+    return normalized_text(example.user_text), normalized_text(example.target_text)
 
 
 def load_source(path: Path) -> tuple[list[SourceTurn], tuple[str, ...]]:
@@ -232,14 +242,26 @@ def build_examples(
                 )
             )
     examples.sort(key=partial(example_order, seed=configuration.seed))
-    selected: list[Example] = []
-    split_limits = (
-        (Split.TRAIN, configuration.max_train),
-        (Split.VALIDATION, configuration.validation_examples),
-        (Split.TEST, configuration.test_examples),
+    training = [example for example in examples if example.split == Split.TRAIN][
+        : configuration.max_train
+    ]
+    validation = [example for example in examples if example.split == Split.VALIDATION][
+        : configuration.validation_examples
+    ]
+    retained_pairs = {normalized_response_pair(example) for example in training + validation}
+    test_candidates = [example for example in examples if example.split == Split.TEST]
+    excluded_dialogues = {
+        example.dialogue_id
+        for example in test_candidates
+        if normalized_response_pair(example) in retained_pairs
+    }
+    test = [
+        example for example in test_candidates if example.dialogue_id not in excluded_dialogues
+    ][: configuration.test_examples]
+    selected = training + validation + test
+    failures["cross_split_duplicate_pair"] = sum(
+        example.dialogue_id in excluded_dialogues for example in test_candidates
     )
-    for split, limit in split_limits:
-        selected.extend([example for example in examples if example.split == split][:limit])
     generator = random.Random(configuration.seed)
     sample_ids = generator.sample(sorted(dialogues), min(5, len(dialogues)))
     report = DatasetReport(
@@ -253,6 +275,7 @@ def build_examples(
             invalid_duration=failures["invalid_duration"],
             empty_text=failures["empty_text"],
             nonalternating=failures["nonalternating"],
+            cross_split_duplicate_pair=failures["cross_split_duplicate_pair"],
         ),
         train_examples=sum(example.split == Split.TRAIN for example in selected),
         validation_examples=sum(example.split == Split.VALIDATION for example in selected),
@@ -270,7 +293,9 @@ def build_examples(
         source_columns=SOURCE_COLUMNS,
         split_method=(
             "SHA256(seed:model_dir/conversation_id) modulo10000: 90%train/5%validation/5%test; "
-            "nested examples ordered by seeded SHA256 example ID"
+            "nested examples ordered by seeded SHA256 example ID; remove complete test dialogues "
+            "containing a normalized user-target pair found in selected training/validation; "
+            "replenish test examples using the same hash order"
         ),
     )
     return selected, report
@@ -321,7 +346,16 @@ def download_audio(example: Example, root: Path) -> DownloadResult:
             soundfile.info(partial)
             partial.replace(destination)
             return DownloadResult(example.example_id, True, len(content), None)
-        except (HTTPError, URLError, TimeoutError, RuntimeError, OSError) as exception:
+        except HTTPError as exception:
+            error = f"HTTP {exception.code}: {relative}"
+            retry_after = exception.headers.get("Retry-After")
+            if exception.code == 429:
+                delay = min(120.0, float(retry_after)) if retry_after else 60.0
+                print(f"Rate limited {relative}; retry in {delay:.0f}s", flush=True)
+            else:
+                delay = min(16, 2**attempt)
+            time.sleep(delay)
+        except (URLError, TimeoutError, RuntimeError, OSError) as exception:
             error = str(exception)
             time.sleep(min(16, 2**attempt))
     return DownloadResult(example.example_id, False, 0, error)
@@ -358,6 +392,7 @@ def prepare(configuration: DataConfig, download_train: int) -> None:
             total_bytes += result.bytes_downloaded
             if not result.success:
                 failures.append(result)
+                print(f"Audio failed {result.example_id}: {result.error}", flush=True)
             if index % 50 == 0:
                 print(
                     f"Audio {index}/{len(selected)} bytes={total_bytes} "

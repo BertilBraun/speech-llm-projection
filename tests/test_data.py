@@ -5,7 +5,7 @@ import pytest
 import soundfile
 
 from speech_projector.data import DataConfig, SourceTurn, build_examples, dialogue_split, load_audio
-from speech_projector.models import Role
+from speech_projector.models import Role, Split
 
 
 def source_turn(index: int, duration: float | None = 1.0) -> SourceTurn:
@@ -55,3 +55,33 @@ def test_audio_loading_resamples_and_averages_channels(tmp_path: Path) -> None:
     loaded = load_audio(path)
     assert loaded.shape == (16000,)
     assert float(np.mean(loaded[100:-100])) == pytest.approx(0.1, abs=0.001)
+
+
+def test_duplicate_response_pair_excludes_whole_test_dialogue(tmp_path: Path) -> None:
+    train_id = next(
+        f"dialogue{index}"
+        for index in range(10000)
+        if dialogue_split(f"pair/dialogue{index}", 42) == Split.TRAIN
+    )
+    test_ids = [
+        f"dialogue{index}"
+        for index in range(10000)
+        if dialogue_split(f"pair/dialogue{index}", 42) == Split.TEST
+    ][:2]
+    training = [
+        source_turn(index).model_copy(update={"conversation_id": train_id}) for index in range(2)
+    ]
+    duplicate = [
+        source_turn(index).model_copy(update={"conversation_id": test_ids[0]}) for index in range(4)
+    ]
+    unique = [
+        source_turn(index).model_copy(
+            update={"conversation_id": test_ids[1], "text": f"Unique utterance {index}"}
+        )
+        for index in range(2)
+    ]
+    examples, report = build_examples(training + duplicate + unique, DataConfig(root=tmp_path))
+    selected_test = [example for example in examples if example.split == Split.TEST]
+    assert len(selected_test) == 1
+    assert selected_test[0].dialogue_id == f"pair/{test_ids[1]}"
+    assert report.filters.cross_split_duplicate_pair == 2

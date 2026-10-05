@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import torch
 
 from speech_projector.evaluation import (
     EvaluationCondition,
@@ -8,6 +9,7 @@ from speech_projector.evaluation import (
     LossObservation,
     conditioning_diagnostic,
     load_asr_transcripts,
+    match_feature_length,
     summarize_losses,
 )
 
@@ -79,3 +81,16 @@ def test_load_asr_jsonl_requires_schema(tmp_path: Path) -> None:
     path.write_text('{"example_id":"a","text":"hello","extra":true}', encoding="utf-8")
     with pytest.raises(ValueError):
         load_asr_transcripts(path)
+
+
+@pytest.mark.parametrize("source_length,target_length", [(4, 8), (8, 4), (4, 4)])
+def test_shuffled_control_preserves_length_dtype_and_constant_states(
+    source_length: int, target_length: int
+) -> None:
+    features = torch.full((source_length, 768), 2.0, dtype=torch.bfloat16)
+    matched = match_feature_length(features, target_length)
+    assert matched.shape == (target_length, 768)
+    assert matched.dtype == features.dtype
+    assert torch.all(matched == 2)
+    if source_length == target_length:
+        assert matched is features
