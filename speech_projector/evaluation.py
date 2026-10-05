@@ -9,13 +9,13 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from statistics import mean, stdev
+from typing import TYPE_CHECKING
 
 import torch
 from pydantic import TypeAdapter
 from sentence_transformers import SentenceTransformer
 from torch import Tensor
 
-from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
     AsrTranscript,
     EvaluationMetrics,
@@ -24,7 +24,10 @@ from speech_projector.models import (
     RunConfig,
     SampleGeneration,
 )
-from speech_projector.projectors import Projector
+
+if TYPE_CHECKING:
+    from speech_projector.llm import FrozenQwen
+    from speech_projector.projectors import Projector
 
 
 class EvaluationCondition(str, Enum):

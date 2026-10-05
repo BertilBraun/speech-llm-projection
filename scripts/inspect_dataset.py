@@ -1,3 +1,5 @@
+"""One-time inspection of the actual parquet schema and source distributions."""
+
 from collections import Counter
 from pathlib import Path
 

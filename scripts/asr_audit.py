@@ -54,7 +54,10 @@ def main() -> None:
         examples=len(examples),
         normalized_word_error_rate=jiwer.wer(original, recognized),
         normalized_character_error_rate=jiwer.cer(original, recognized),
-        normalization="Lowercase; non-word punctuation removed; whitespace collapsed; original dataset text retains lexical synthesis substitutions so WER is approximate",
+        normalization=(
+            "Lowercase; non-word punctuation removed; whitespace collapsed; original dataset "
+            "text retains lexical synthesis substitutions so WER is approximate"
+        ),
         comparisons=comparisons,
     )
     (root / "asr_quality.json").write_text(report.model_dump_json(indent=2), encoding="utf-8")

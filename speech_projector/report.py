@@ -293,7 +293,10 @@ def aggregate_report(root: Path, data_report: Path | None = None) -> Path:
                         f"{result.config.name}: initial validation CE "
                         f"{result.initial_validation_loss:.4f}, final held-out CE "
                         f"{result.validation.cross_entropy:.4f}; final training CE "
-                        f"{result.final_training_loss:.4f}. Gradient checks and saved outputs "
+                        f"{result.final_training_loss:.4f}. Fixed training-probe CE changed "
+                        f"from {result.initial_training_loss:.4f} "
+                        f"to {result.final_fixed_training_loss:.4f}. "
+                        "Gradient checks and saved outputs "
                         "must be inspected together with loss reduction.",
                         "",
                     ]

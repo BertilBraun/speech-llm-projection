@@ -88,7 +88,12 @@ def test_target_only_logits_match_full_masked_cross_entropy(
     speech = torch.randn(4, 32, requires_grad=True)
     prepared = wrapper.prepare(example, speech_embeddings=speech)
     assert torch.all(prepared.labels[:, : prepared.target_start] == -100)
-    assert torch.all(prepared.labels[:, prepared.target_start :] >= 0)
+    assert torch.all(
+        prepared.labels[:, prepared.target_start : prepared.target_start + prepared.target_tokens]
+        >= 0
+    )
+    assert torch.all(prepared.labels[:, prepared.target_start + prepared.target_tokens :] == -100)
+    assert prepared.embeddings.shape[1] % wrapper.config.sequence_length_multiple == 0
     full = wrapper.model(
         inputs_embeds=prepared.embeddings, attention_mask=prepared.attention_mask, use_cache=False
     )

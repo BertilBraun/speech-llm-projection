@@ -70,6 +70,7 @@ class RunConfig(Record):
     max_history_tokens: int = 256
     max_target_tokens: int = 128
     max_new_tokens: int = 96
+    sequence_length_multiple: int = Field(default=64, ge=1)
     gradient_checkpointing: bool = True
     evaluation_interval: int = 100
     checkpoint_interval: int = 100

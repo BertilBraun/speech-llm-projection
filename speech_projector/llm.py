@@ -107,9 +107,15 @@ class FrozenQwen:
         embeddings = torch.cat((prompt, self._embed(target_ids)), dim=0).unsqueeze(0)
         labels = torch.full(embeddings.shape[:2], -100, device=self.device, dtype=torch.long)
         labels[0, prompt.shape[0] :] = torch.tensor(target_ids, device=self.device)
+        attention_mask = torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long)
+        padding = (-embeddings.shape[1]) % self.config.sequence_length_multiple
+        # Bucketing avoids recompiling Triton kernels for every distinct utterance length.
+        embeddings = functional.pad(embeddings, (0, 0, 0, padding))
+        attention_mask = functional.pad(attention_mask, (0, padding))
+        labels = functional.pad(labels, (0, padding), value=-100)
         return EmbeddedSequence(
             embeddings=embeddings,
-            attention_mask=torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long),
+            attention_mask=attention_mask,
             labels=labels,
             target_start=prompt.shape[0],
             target_tokens=len(target_ids),
@@ -134,7 +140,10 @@ class FrozenQwen:
             logits_to_keep=predictor_positions,
         )
         return functional.cross_entropy(
-            output.logits[0].float(), sequence.labels[0, sequence.target_start :]
+            output.logits[0].float(),
+            sequence.labels[
+                0, sequence.target_start : sequence.target_start + sequence.target_tokens
+            ],
         )
 
     @torch.no_grad()

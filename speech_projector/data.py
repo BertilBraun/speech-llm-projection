@@ -8,6 +8,7 @@ import time
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -16,6 +17,7 @@ from urllib.request import urlopen
 import numpy as np
 import pyarrow.parquet as parquet
 import soundfile as soundfile
+from numpy.typing import NDArray
 from pydantic import Field
 from scipy.signal import resample_poly
 
@@ -38,11 +40,16 @@ SOURCE_COLUMNS = (
 )
 
 
+class SourceSpeaker(str, Enum):
+    FIRST = "LLM1"
+    SECOND = "LLM2"
+
+
 class SourceTurn(Record):
     conversation_id: str
     model_dir: str
     turn_index: int
-    speaker: str
+    speaker: SourceSpeaker
     text: str
     domain: str
     emotion: str
@@ -85,7 +92,6 @@ class FilterCounts(Record):
     invalid_duration: int
     empty_text: int
     nonalternating: int
-    invalid_history: int
 
 
 class DatasetReport(Record):
@@ -142,6 +148,14 @@ def distribution(values: list[float]) -> Distribution:
     )
 
 
+def turn_order(turn: SourceTurn) -> int:
+    return turn.turn_index
+
+
+def example_order(example: Example, seed: int) -> str:
+    return stable_digest(example.example_id, seed)
+
+
 def load_source(path: Path) -> tuple[list[SourceTurn], tuple[str, ...]]:
     table = parquet.read_table(path)
     columns = tuple(table.column_names)
@@ -158,13 +172,16 @@ def build_examples(
     examples: list[Example] = []
     failures: Counter[str] = Counter()
     for dialogue_id, conversation in dialogues.items():
-        conversation.sort(key=lambda turn: turn.turn_index)
+        conversation.sort(key=turn_order)
         for position, (user, assistant) in enumerate(
             zip(conversation, conversation[1:], strict=False)
         ):
-            if user.speaker != "LLM1":
+            if user.speaker != SourceSpeaker.FIRST:
                 continue
-            if assistant.speaker != "LLM2" or assistant.turn_index != user.turn_index + 1:
+            if (
+                assistant.speaker != SourceSpeaker.SECOND
+                or assistant.turn_index != user.turn_index + 1
+            ):
                 failures["nonalternating"] += 1
                 continue
             if user.segment_audio_path is None or user.audio_duration is None:
@@ -185,9 +202,6 @@ def build_examples(
                 continue
             history_start = max(0, position - configuration.history_turns)
             history = conversation[history_start:position]
-            if any(turn.speaker not in ("LLM1", "LLM2") for turn in history):
-                failures["invalid_history"] += 1
-                continue
             example_id = hashlib.sha256(f"{dialogue_id}:{user.turn_index}".encode()).hexdigest()[
                 :20
             ]
@@ -198,7 +212,9 @@ def build_examples(
                     split=dialogue_split(dialogue_id, configuration.seed),
                     history=tuple(
                         Turn(
-                            role=Role.USER if turn.speaker == "LLM1" else Role.ASSISTANT,
+                            role=Role.USER
+                            if turn.speaker == SourceSpeaker.FIRST
+                            else Role.ASSISTANT,
                             text=turn.text,
                         )
                         for turn in history
@@ -215,7 +231,7 @@ def build_examples(
                     / f"{example_id}.pt",
                 )
             )
-    examples.sort(key=lambda example: stable_digest(example.example_id, configuration.seed))
+    examples.sort(key=partial(example_order, seed=configuration.seed))
     selected: list[Example] = []
     split_limits = (
         (Split.TRAIN, configuration.max_train),
@@ -237,7 +253,6 @@ def build_examples(
             invalid_duration=failures["invalid_duration"],
             empty_text=failures["empty_text"],
             nonalternating=failures["nonalternating"],
-            invalid_history=failures["invalid_history"],
         ),
         train_examples=sum(example.split == Split.TRAIN for example in selected),
         validation_examples=sum(example.split == Split.VALIDATION for example in selected),
@@ -263,9 +278,11 @@ def build_examples(
 
 def save_examples(path: Path, examples: list[Example]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as stream:
+    partial = path.with_suffix(".part")
+    with partial.open("w", encoding="utf-8") as stream:
         for example in examples:
             stream.write(example.model_dump_json() + "\n")
+    partial.replace(path)
 
 
 def load_examples(path: Path, split: Split, limit: int | None = None) -> list[Example]:
@@ -275,7 +292,7 @@ def load_examples(path: Path, split: Split, limit: int | None = None) -> list[Ex
     return selected if limit is None else selected[:limit]
 
 
-def load_audio(path: Path, sample_rate: int = 16000) -> np.ndarray:
+def load_audio(path: Path, sample_rate: int = 16000) -> NDArray[np.float32]:
     waveform, source_rate = soundfile.read(path, dtype="float32", always_2d=True)
     mono = waveform.mean(axis=1)
     if source_rate != sample_rate:
