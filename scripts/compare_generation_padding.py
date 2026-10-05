@@ -8,6 +8,7 @@ from torch.nn import functional as functional
 
 from speech_projector.configuration import feasibility_run
 from speech_projector.data import load_examples
+from speech_projector.inputs import TranscriptInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import Split
 
@@ -18,7 +19,7 @@ def main() -> None:
     examples = load_examples(Path("data/examples.jsonl"), Split.VALIDATION)[:2]
     with torch.no_grad():
         for example in examples:
-            prompt = wrapper._prompt(example, None, example.user_text).unsqueeze(0)
+            prompt = wrapper._prompt(example, TranscriptInput(example.user_text)).unsqueeze(0)
             mask = torch.ones(prompt.shape[:2], device=wrapper.device, dtype=torch.long)
             padding = (-prompt.shape[1]) % config.sequence_length_multiple
             padded = functional.pad(prompt, (0, 0, padding, 0))

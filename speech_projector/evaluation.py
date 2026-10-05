@@ -17,6 +17,7 @@ from sentence_transformers import SentenceTransformer
 from torch import Tensor
 from torch.nn import functional
 
+from speech_projector.inputs import SpeechInput, TranscriptInput, UtteranceInput
 from speech_projector.models import (
     AsrTranscript,
     EvaluationMetrics,
@@ -186,16 +187,13 @@ def _record_loss(
     wrapper: FrozenQwen,
     example: Example,
     condition: EvaluationCondition,
-    embeddings: Tensor | None,
-    transcript: str | None,
+    utterance: UtteranceInput,
 ) -> ExampleLoss:
     return ExampleLoss(
         example_id=example.example_id,
         dialogue_id=example.dialogue_id,
         condition=condition,
-        cross_entropy=float(
-            wrapper.loss(example, speech_embeddings=embeddings, transcript=transcript)
-        ),
+        cross_entropy=float(wrapper.loss(example, utterance)),
         target_tokens=wrapper.target_token_count(example),
     )
 
@@ -242,73 +240,79 @@ def evaluate(
     generation_seconds = 0.0
     generated_tokens = 0
     for index, example in enumerate(examples):
-        embeddings: Tensor | None = None
-        transcript: str | None = None
+        utterance: UtteranceInput
         match condition:
             case EvaluationCondition.TEXT:
-                transcript = example.user_text
+                utterance = TranscriptInput(example.user_text)
             case EvaluationCondition.ASR:
-                transcript = _asr_text(example, asr_transcripts)
+                utterance = TranscriptInput(_asr_text(example, asr_transcripts))
             case EvaluationCondition.SPEECH:
                 assert projector is not None
                 current_features = _features(example, wrapper.device)
-                embeddings = projector(current_features)
-        losses.append(_record_loss(wrapper, example, condition, embeddings, transcript))
-        if (
-            condition == EvaluationCondition.SPEECH
-            and diagnostics
-            and index < min(32, len(examples))
-        ):
-            assert projector is not None and embeddings is not None
-            shuffled = projector(
-                match_feature_length(
-                    _features(_mismatched_example(examples, index), wrapper.device),
-                    current_features.shape[0],
-                )
-            )
-            no_history = example.model_copy(update={"history": ()})
-            controls = (
-                (EvaluationCondition.SHUFFLED_SPEECH, example, shuffled),
-                (EvaluationCondition.ZERO_SPEECH, example, torch.zeros_like(embeddings)),
-                (EvaluationCondition.SPEECH_NO_HISTORY, no_history, embeddings),
-                (EvaluationCondition.SHUFFLED_SPEECH_NO_HISTORY, no_history, shuffled),
-            )
-            for control_condition, control_example, control_embeddings in controls:
-                losses.append(
-                    _record_loss(
-                        wrapper, control_example, control_condition, control_embeddings, None
+                utterance = SpeechInput(projector(current_features))
+        losses.append(_record_loss(wrapper, example, condition, utterance))
+        match utterance:
+            case SpeechInput(embeddings=embeddings) if diagnostics and index < min(
+                32, len(examples)
+            ):
+                assert projector is not None
+                shuffled = projector(
+                    match_feature_length(
+                        _features(_mismatched_example(examples, index), wrapper.device),
+                        current_features.shape[0],
                     )
                 )
-                if index < min(8, config.qualitative_examples) and control_condition in (
-                    EvaluationCondition.SHUFFLED_SPEECH,
-                    EvaluationCondition.SPEECH_NO_HISTORY,
-                    EvaluationCondition.SHUFFLED_SPEECH_NO_HISTORY,
-                ):
-                    control_response = wrapper.generate(
-                        control_example, speech_embeddings=control_embeddings
-                    )
-                    control_samples.append(
-                        SampleGeneration(
-                            example_id=example.example_id,
-                            dialogue_id=example.dialogue_id,
-                            condition=control_condition.value,
-                            history=control_example.history,
-                            user_transcript=example.user_text,
-                            gold_response=example.target_text,
-                            generated_response=control_response,
-                            duration=example.duration,
-                            pseudo_tokens=control_embeddings.shape[0],
+                no_history = example.model_copy(update={"history": ()})
+                controls = (
+                    (EvaluationCondition.SHUFFLED_SPEECH, example, shuffled),
+                    (EvaluationCondition.ZERO_SPEECH, example, torch.zeros_like(embeddings)),
+                    (EvaluationCondition.SPEECH_NO_HISTORY, no_history, embeddings),
+                    (EvaluationCondition.SHUFFLED_SPEECH_NO_HISTORY, no_history, shuffled),
+                )
+                for control_condition, control_example, control_embeddings in controls:
+                    losses.append(
+                        _record_loss(
+                            wrapper,
+                            control_example,
+                            control_condition,
+                            SpeechInput(control_embeddings),
                         )
                     )
+                    if index < min(8, config.qualitative_examples) and control_condition in (
+                        EvaluationCondition.SHUFFLED_SPEECH,
+                        EvaluationCondition.SPEECH_NO_HISTORY,
+                        EvaluationCondition.SHUFFLED_SPEECH_NO_HISTORY,
+                    ):
+                        control_response = wrapper.generate(
+                            control_example, SpeechInput(control_embeddings)
+                        )
+                        control_samples.append(
+                            SampleGeneration(
+                                example_id=example.example_id,
+                                dialogue_id=example.dialogue_id,
+                                condition=control_condition.value,
+                                history=control_example.history,
+                                user_transcript=example.user_text,
+                                gold_response=example.target_text,
+                                generated_response=control_response,
+                                duration=example.duration,
+                                pseudo_tokens=control_embeddings.shape[0],
+                            )
+                        )
         if index < max(config.qualitative_examples, config.semantic_examples):
             generation_started = time.perf_counter()
-            response = wrapper.generate(
-                example, speech_embeddings=embeddings, transcript=transcript
-            )
+            response = wrapper.generate(example, utterance)
             elapsed = time.perf_counter() - generation_started
             tokens = len(wrapper.tokenizer.encode(response, add_special_tokens=False))
             generation_seconds += elapsed
             generated_tokens += tokens
+            match utterance:
+                case SpeechInput(embeddings=embeddings):
+                    pseudo_tokens = embeddings.shape[0]
+                    recognized_transcript = None
+                case TranscriptInput(text=text):
+                    pseudo_tokens = None
+                    recognized_transcript = text if condition == EvaluationCondition.ASR else None
             samples.append(
                 SampleGeneration(
                     example_id=example.example_id,
@@ -316,11 +320,11 @@ def evaluate(
                     condition=condition.value,
                     history=example.history,
                     user_transcript=example.user_text,
-                    asr_transcript=transcript if condition == EvaluationCondition.ASR else None,
+                    asr_transcript=recognized_transcript,
                     gold_response=example.target_text,
                     generated_response=response,
                     duration=example.duration,
-                    pseudo_tokens=embeddings.shape[0] if embeddings is not None else None,
+                    pseudo_tokens=pseudo_tokens,
                 )
             )
     similarity: float | None = None

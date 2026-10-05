@@ -23,6 +23,7 @@ from speech_projector.evaluation import (
     load_asr_transcripts,
     save_evaluation,
 )
+from speech_projector.inputs import SpeechInput, TranscriptInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
     Example,
@@ -61,8 +62,8 @@ def smoke(
             examples[0].feature_path, weights_only=True, map_location=wrapper.device
         )
         speech = projector(features)
-        generated = wrapper.generate(examples[0], speech_embeddings=speech)
-        text_generated = wrapper.generate(examples[0], transcript=examples[0].user_text)
+        generated = wrapper.generate(examples[0], SpeechInput(speech))
+        text_generated = wrapper.generate(examples[0], TranscriptInput(examples[0].user_text))
     lines = [
         f"User: {examples[0].user_text}",
         f"Gold: {examples[0].target_text}",

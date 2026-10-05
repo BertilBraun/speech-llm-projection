@@ -11,6 +11,7 @@ import torch
 from safetensors.torch import load_file, save_file
 from torch import Tensor
 
+from speech_projector.inputs import SpeechInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import Example, GradientCheck, Record, RunConfig, TrainLog
 from speech_projector.projectors import Projector
@@ -76,7 +77,7 @@ def validation_loss(wrapper: FrozenQwen, projector: Projector, examples: list[Ex
     for example in examples:
         speech = projector(load_features(example, wrapper.device))
         count = wrapper.target_token_count(example)
-        total_loss += wrapper.loss(example, speech_embeddings=speech).item() * count
+        total_loss += wrapper.loss(example, SpeechInput(speech)).item() * count
         total_tokens += count
     return total_loss / total_tokens
 
@@ -92,9 +93,7 @@ def gradient_sanity(wrapper: FrozenQwen, projector: Projector, example: Example)
         torch.cuda.reset_peak_memory_stats(wrapper.device)
         torch.cuda.synchronize(wrapper.device)
     start = time.monotonic()
-    loss = wrapper.loss(
-        example, speech_embeddings=projector(load_features(example, wrapper.device))
-    )
+    loss = wrapper.loss(example, SpeechInput(projector(load_features(example, wrapper.device))))
     loss.backward()
     gradient_norm = math.sqrt(
         sum(
@@ -266,7 +265,7 @@ def train_run(
             for index in selected:
                 example = examples[index]
                 loss = wrapper.loss(
-                    example, speech_embeddings=projector(load_features(example, wrapper.device))
+                    example, SpeechInput(projector(load_features(example, wrapper.device)))
                 )
                 if not torch.isfinite(loss):
                     raise FloatingPointError(f"Non-finite loss at example {example.example_id}")

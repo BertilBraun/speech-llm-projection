@@ -11,6 +11,7 @@ from torch.nn import functional as functional
 from transformers import PreTrainedTokenizerFast, Qwen3_5ForCausalLM
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
+from speech_projector.inputs import SpeechInput, TranscriptInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import Architecture, Example, ProjectorConfig, RunConfig, Split
 from speech_projector.projectors import Projector
@@ -115,7 +116,7 @@ def test_target_only_logits_match_full_masked_cross_entropy(
     wrapper: FrozenQwen, example: Example
 ) -> None:
     speech = torch.randn(4, 32, requires_grad=True)
-    prepared = wrapper.prepare(example, speech_embeddings=speech)
+    prepared = wrapper.prepare(example, SpeechInput(speech))
     assert torch.all(prepared.labels[:, : prepared.target_start] == -100)
     assert torch.all(
         prepared.labels[:, prepared.target_start : prepared.target_start + prepared.target_tokens]
@@ -131,7 +132,7 @@ def test_target_only_logits_match_full_masked_cross_entropy(
         prepared.labels[:, 1:].reshape(-1),
         ignore_index=-100,
     )
-    actual = wrapper.loss(example, speech_embeddings=speech)
+    actual = wrapper.loss(example, SpeechInput(speech))
     torch.testing.assert_close(actual, expected)
     actual.backward()
     assert speech.grad is not None
@@ -150,9 +151,9 @@ def test_speech_input_does_not_expose_current_user_transcript(
     wrapper: FrozenQwen, example: Example
 ) -> None:
     speech = torch.randn(3, 32)
-    original = wrapper.prepare(example, speech_embeddings=speech)
+    original = wrapper.prepare(example, SpeechInput(speech))
     changed = wrapper.prepare(
-        example.model_copy(update={"user_text": "yes yes yes"}), speech_embeddings=speech
+        example.model_copy(update={"user_text": "yes yes yes"}), SpeechInput(speech)
     )
     torch.testing.assert_close(original.embeddings, changed.embeddings)
     torch.testing.assert_close(original.labels, changed.labels)
@@ -168,7 +169,7 @@ def test_generation_stops_at_tokenizer_eos_when_model_config_disagrees(
     )
     wrapper.model = EosCheckingQwen(wrapper.model.config)
     wrapper.model.config.eos_token_id = 7
-    assert wrapper.generate(example, transcript=example.user_text) == "1"
+    assert wrapper.generate(example, TranscriptInput(example.user_text)) == "1"
 
 
 def test_finished_resume_preserves_final_and_best_checkpoint_weights(
@@ -212,7 +213,7 @@ def test_finished_resume_preserves_final_and_best_checkpoint_weights(
 def test_right_padding_does_not_change_real_logits(
     wrapper: FrozenQwen, example: Example, padding: int
 ) -> None:
-    prepared = wrapper.prepare(example, speech_embeddings=torch.randn(3, 32))
+    prepared = wrapper.prepare(example, SpeechInput(torch.randn(3, 32)))
     original = wrapper.model(
         inputs_embeds=prepared.embeddings, attention_mask=prepared.attention_mask, use_cache=False
     )

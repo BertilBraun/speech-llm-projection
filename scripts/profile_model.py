@@ -9,6 +9,7 @@ from transformers.models.qwen3_5 import modeling_qwen3_5
 
 from speech_projector.configuration import feasibility_run
 from speech_projector.data import load_examples
+from speech_projector.inputs import SpeechInput, TranscriptInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import Record, Split
 from speech_projector.projectors import Projector
@@ -49,7 +50,7 @@ def main() -> None:
         torch.cuda.synchronize()
         start = time.monotonic()
         speech = projector(load_features(example, wrapper.device))
-        loss = wrapper.loss(example, speech_embeddings=speech)
+        loss = wrapper.loss(example, SpeechInput(speech))
         loss.backward()
         optimizer.step()
         torch.cuda.synchronize()
@@ -69,8 +70,8 @@ def main() -> None:
     )
     with torch.no_grad():
         speech = projector(load_features(examples[0], wrapper.device))
-        generated = wrapper.generate(examples[0], speech_embeddings=speech)
-        textual = wrapper.generate(examples[0], transcript=examples[0].user_text)
+        generated = wrapper.generate(examples[0], SpeechInput(speech))
+        textual = wrapper.generate(examples[0], TranscriptInput(examples[0].user_text))
     content = (
         f"User: {examples[0].user_text}\nGold: {examples[0].target_text}"
         f"\nSpeech: {generated}\nText: {textual}"

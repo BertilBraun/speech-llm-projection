@@ -8,6 +8,7 @@ from torch.nn import functional as functional
 from transformers import AutoTokenizer, PreTrainedTokenizerBase, Qwen3_5ForCausalLM
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
+from speech_projector.inputs import SpeechInput, TranscriptInput, UtteranceInput
 from speech_projector.models import Example, RunConfig
 
 
@@ -62,11 +63,7 @@ class FrozenQwen:
             remaining -= len(encoded)
         return [token for turn in reversed(encoded_turns) for token in turn]
 
-    def _prompt(
-        self, example: Example, speech_embeddings: Tensor | None, transcript: str | None
-    ) -> Tensor:
-        if (speech_embeddings is None) == (transcript is None):
-            raise ValueError("Provide exactly one of speech embeddings or transcript")
+    def _prompt(self, example: Example, utterance: UtteranceInput) -> Tensor:
         start = self._encode(
             "<|im_start|>system\nYou are a helpful conversational assistant. "
             "Reply naturally to the user's utterance.<|im_end|>\n"
@@ -74,16 +71,15 @@ class FrozenQwen:
         prefix = self._embed(
             start + self._history_ids(example) + self._encode("<|im_start|>user\n")
         )
-        match speech_embeddings:
-            case None:
-                assert transcript is not None
-                current = self._embed(self._encode(transcript))
-            case _:
-                if speech_embeddings.ndim != 2:
+        match utterance:
+            case TranscriptInput(text=text):
+                current = self._embed(self._encode(text))
+            case SpeechInput(embeddings=embeddings):
+                if embeddings.ndim != 2:
                     raise ValueError("Speech embeddings must have shape (tokens, dimension)")
-                if speech_embeddings.shape[1] != self.model.config.hidden_size:
+                if embeddings.shape[1] != self.model.config.hidden_size:
                     raise ValueError("Speech embedding dimension differs from Qwen")
-                current = speech_embeddings.to(device=self.device, dtype=prefix.dtype)
+                current = embeddings.to(device=self.device, dtype=prefix.dtype)
         suffix = self._embed(
             self._encode("<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n")
         )
@@ -96,13 +92,8 @@ class FrozenQwen:
     def target_token_count(self, example: Example) -> int:
         return len(self._target_ids(example))
 
-    def prepare(
-        self,
-        example: Example,
-        speech_embeddings: Tensor | None = None,
-        transcript: str | None = None,
-    ) -> EmbeddedSequence:
-        prompt = self._prompt(example, speech_embeddings, transcript)
+    def prepare(self, example: Example, utterance: UtteranceInput) -> EmbeddedSequence:
+        prompt = self._prompt(example, utterance)
         target_ids = self._target_ids(example)
         embeddings = torch.cat((prompt, self._embed(target_ids)), dim=0).unsqueeze(0)
         labels = torch.full(embeddings.shape[:2], -100, device=self.device, dtype=torch.long)
@@ -121,13 +112,8 @@ class FrozenQwen:
             target_tokens=len(target_ids),
         )
 
-    def loss(
-        self,
-        example: Example,
-        speech_embeddings: Tensor | None = None,
-        transcript: str | None = None,
-    ) -> Tensor:
-        sequence = self.prepare(example, speech_embeddings, transcript)
+    def loss(self, example: Example, utterance: UtteranceInput) -> Tensor:
+        sequence = self.prepare(example, utterance)
         predictor_positions = torch.arange(
             sequence.target_start - 1,
             sequence.target_start + sequence.target_tokens - 1,
@@ -147,14 +133,9 @@ class FrozenQwen:
         )
 
     @torch.no_grad()
-    def generate(
-        self,
-        example: Example,
-        speech_embeddings: Tensor | None = None,
-        transcript: str | None = None,
-    ) -> str:
+    def generate(self, example: Example, utterance: UtteranceInput) -> str:
         self.model.eval()
-        prompt = self._prompt(example, speech_embeddings, transcript).unsqueeze(0)
+        prompt = self._prompt(example, utterance).unsqueeze(0)
         generated = self.model.generate(
             inputs_embeds=prompt,
             attention_mask=torch.ones(prompt.shape[:2], device=self.device, dtype=torch.long),
