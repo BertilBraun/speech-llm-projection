@@ -20,6 +20,7 @@ from speech_projector.models import (
     ExperimentStage,
     RunResult,
     SampleGeneration,
+    Split,
     SuiteState,
 )
 
@@ -373,14 +374,22 @@ def aggregate_report(root: Path, data_report: Path | None = None) -> Path:
             "|---|---:|---:|---:|---:|",
         ]
     )
-    for path in sorted(root.glob("baseline/**/*.json")):
-        if path.stem in ("text", "asr"):
-            metrics = EvaluationMetrics.model_validate_json(path.read_text(encoding="utf-8"))
-            lines.append(
-                f"| {path.parent.name}/{path.stem} | {metrics.examples} | "
-                f"{_number(metrics.cross_entropy)} | {_number(metrics.perplexity, 2)} | "
-                f"{_number(metrics.semantic_similarity)} |"
-            )
+    for split in (Split.VALIDATION, Split.TEST):
+        for path, label in (
+            (root / "baseline" / split.value / "text.json", f"{split.value}/text"),
+            (root / "baseline" / split.value / "asr.json", f"{split.value}/asr"),
+            (
+                root / "baseline" / "synthesis_text" / split.value / "evaluation.json",
+                f"{split.value}/documented synthesis text",
+            ),
+        ):
+            if path.exists():
+                metrics = EvaluationMetrics.model_validate_json(path.read_text(encoding="utf-8"))
+                lines.append(
+                    f"| {label} | {metrics.examples} | "
+                    f"{_number(metrics.cross_entropy)} | {_number(metrics.perplexity, 2)} | "
+                    f"{_number(metrics.semantic_similarity)} |"
+                )
     lines.extend(
         [
             "",
