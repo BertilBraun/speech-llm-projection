@@ -11,6 +11,7 @@ from speech_projector.models import (
     LinearProjectorConfig,
     MlpProjectorConfig,
     ProjectorConfig,
+    StackedMlpProjectorConfig,
 )
 
 
@@ -29,6 +30,15 @@ def mean_pool(features: Tensor, factor: int) -> Tensor:
     return pooled / counts.unsqueeze(-1)
 
 
+def stack_frames(features: Tensor, factor: int) -> Tensor:
+    """Preserve consecutive normalized frames, zero-filling the final partial group."""
+    if factor < 1 or features.shape[-2] == 0:
+        raise ValueError("Stacking requires a positive factor and nonempty speech features")
+    padding = (-features.shape[-2]) % factor
+    padded = functional.pad(features, (0, 0, 0, padding))
+    return padded.reshape(*features.shape[:-2], -1, factor * features.shape[-1])
+
+
 class Projector(nn.Module):
     def __init__(self, config: ProjectorConfig) -> None:
         super().__init__()
@@ -41,6 +51,16 @@ class Projector(nn.Module):
             case MlpProjectorConfig():
                 self.projection = nn.Sequential(
                     nn.Linear(config.encoder_dimension, config.hidden_dimension),
+                    nn.GELU(),
+                    nn.Linear(config.hidden_dimension, config.embedding_dimension),
+                )
+                self.temporal = None
+            case StackedMlpProjectorConfig():
+                self.projection = nn.Sequential(
+                    nn.Linear(
+                        config.encoder_dimension * config.compression_factor,
+                        config.hidden_dimension,
+                    ),
                     nn.GELU(),
                     nn.Linear(config.hidden_dimension, config.embedding_dimension),
                 )
@@ -67,12 +87,18 @@ class Projector(nn.Module):
 
     def forward(self, features: Tensor) -> Tensor:
         normalized = self.normalization(features.to(self.normalization.weight.dtype))
-        if self.temporal is None:
-            compressed = mean_pool(normalized, self.config.compression_factor)
-        else:
-            padding = (-normalized.shape[-2]) % self.config.compression_factor
-            padded = functional.pad(normalized.transpose(-1, -2), (0, padding), mode="replicate")
-            compressed = self.temporal(padded).transpose(-1, -2)
+        match self.config:
+            case StackedMlpProjectorConfig():
+                compressed = stack_frames(normalized, self.config.compression_factor)
+            case ConvProjectorConfig():
+                assert self.temporal is not None
+                padding = (-normalized.shape[-2]) % self.config.compression_factor
+                padded = functional.pad(
+                    normalized.transpose(-1, -2), (0, padding), mode="replicate"
+                )
+                compressed = self.temporal(padded).transpose(-1, -2)
+            case LinearProjectorConfig() | MlpProjectorConfig():
+                compressed = mean_pool(normalized, self.config.compression_factor)
         return self.projection(compressed)
 
     @property

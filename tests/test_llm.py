@@ -19,7 +19,7 @@ from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 from speech_projector.evaluation import evaluate, original_dialogue_text
 from speech_projector.generation import CompletedGeneration, TokenLimitedGeneration
 from speech_projector.inputs import SpeechInput, TranscriptInput
-from speech_projector.llm import FrozenQwen, generation_seed
+from speech_projector.llm import FrozenQwen, example_prompt, generation_seed
 from speech_projector.models import (
     ChatPromptConfig,
     EvaluationCondition,
@@ -28,6 +28,7 @@ from speech_projector.models import (
     GenerationKind,
     LinearProjectorConfig,
     RunConfig,
+    RunPromptConfig,
     SamplingDecodingConfig,
     Split,
     SystemPromptConfig,
@@ -567,3 +568,25 @@ def test_generation_seed_depends_on_seed_ordered_identifiers_and_token_cap(
     )
     changed_text = example.model_copy(update={"user_text": "different", "target_text": "different"})
     assert baseline == generation_seed(wrapper.config, (changed_text, other), 100)
+
+
+@pytest.mark.parametrize("prompt", (ChatPromptConfig(), SystemPromptConfig(system_text="no yes")))
+def test_explicit_example_prompt_overrides_run_prompt_for_both_inputs(
+    wrapper: FrozenQwen, example: Example, prompt: ChatPromptConfig | SystemPromptConfig
+) -> None:
+    copied = example.model_copy(update={"prompt": prompt})
+    assert example_prompt(copied, wrapper.config) == prompt
+    assert example_prompt(example, wrapper.config) == wrapper.config.prompt
+    assert isinstance(example.prompt, RunPromptConfig)
+    reference = FrozenQwen.__new__(FrozenQwen)
+    reference.config = wrapper.config.model_copy(update={"prompt": prompt})
+    reference.device = wrapper.device
+    reference.tokenizer = wrapper.tokenizer
+    reference.model = wrapper.model
+    for utterance in (TranscriptInput(example.user_text), SpeechInput(torch.randn(3, 32))):
+        assert torch.equal(
+            wrapper._prompt(copied, utterance), reference._prompt(example, utterance)
+        )
+    changed_label = copied.model_copy(update={"emotion": "unspoken privileged delivery"})
+    speech = SpeechInput(torch.randn(3, 32))
+    assert torch.equal(wrapper._prompt(copied, speech), wrapper._prompt(changed_label, speech))

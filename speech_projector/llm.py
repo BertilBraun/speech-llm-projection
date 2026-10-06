@@ -17,7 +17,14 @@ from speech_projector.generation import (
     TokenLimitedGeneration,
 )
 from speech_projector.inputs import SpeechInput, TranscriptInput, UtteranceInput
-from speech_projector.models import Example, RunConfig
+from speech_projector.models import (
+    ChatPromptConfig,
+    Example,
+    PromptConfig,
+    RunConfig,
+    RunPromptConfig,
+    SystemPromptConfig,
+)
 from speech_projector.prompts import ASSISTANT_SUFFIX, USER_PREFIX, system_prefix
 
 
@@ -49,6 +56,14 @@ def generation_seed(config: RunConfig, examples: Sequence[Example], max_new_toke
         digest.update(len(identifier).to_bytes(8, "little"))
         digest.update(identifier)
     return int.from_bytes(digest.digest()[:8], "little") % (2**63 - 1)
+
+
+def example_prompt(example: Example, config: RunConfig) -> PromptConfig:
+    match example.prompt:
+        case RunPromptConfig():
+            return config.prompt
+        case ChatPromptConfig() | SystemPromptConfig():
+            return example.prompt
 
 
 class FrozenQwen:
@@ -94,7 +109,7 @@ class FrozenQwen:
         return [token for turn in reversed(encoded_turns) for token in turn]
 
     def _prompt(self, example: Example, utterance: UtteranceInput) -> Tensor:
-        start = self._encode(system_prefix(self.config.prompt))
+        start = self._encode(system_prefix(example_prompt(example, self.config)))
         prefix = self._embed(start + self._history_ids(example) + self._encode(USER_PREFIX))
         match utterance:
             case TranscriptInput(text=text):

@@ -54,6 +54,34 @@ class Turn(Record):
     text: str
 
 
+class SystemPromptConfig(Record):
+    kind: Literal["system"] = "system"
+    system_text: str = Field(
+        default=(
+            "You are a helpful conversational assistant. Reply naturally to the user's utterance."
+        ),
+        min_length=1,
+    )
+
+
+class ChatPromptConfig(Record):
+    kind: Literal["chat"] = "chat"
+
+
+PromptConfig: TypeAlias = Annotated[
+    SystemPromptConfig | ChatPromptConfig, Field(discriminator="kind")
+]
+
+
+class RunPromptConfig(Record):
+    kind: Literal["run"] = "run"
+
+
+ExamplePromptConfig: TypeAlias = Annotated[
+    SystemPromptConfig | ChatPromptConfig | RunPromptConfig, Field(discriminator="kind")
+]
+
+
 class Example(Record):
     example_id: str
     dialogue_id: str
@@ -66,12 +94,14 @@ class Example(Record):
     domain: str
     emotion: str
     feature_path: Path
+    prompt: ExamplePromptConfig = RunPromptConfig()
 
 
 class Architecture(str, Enum):
     LINEAR = "linear"
     MLP = "mlp"
     CONV = "conv"
+    STACKED_MLP = "stacked_mlp"
 
 
 class ProjectorDimensions(Record):
@@ -90,33 +120,19 @@ class MlpProjectorConfig(ProjectorDimensions):
     hidden_dimension: int = 1024
 
 
+class StackedMlpProjectorConfig(ProjectorDimensions):
+    architecture: Literal[Architecture.STACKED_MLP] = Architecture.STACKED_MLP
+    hidden_dimension: int = 1024
+
+
 class ConvProjectorConfig(ProjectorDimensions):
     architecture: Literal[Architecture.CONV] = Architecture.CONV
     hidden_dimension: int = 1024
 
 
 ProjectorConfig: TypeAlias = Annotated[
-    LinearProjectorConfig | MlpProjectorConfig | ConvProjectorConfig,
+    LinearProjectorConfig | MlpProjectorConfig | ConvProjectorConfig | StackedMlpProjectorConfig,
     Field(discriminator="architecture"),
-]
-
-
-class SystemPromptConfig(Record):
-    kind: Literal["system"] = "system"
-    system_text: str = Field(
-        default=(
-            "You are a helpful conversational assistant. Reply naturally to the user's utterance."
-        ),
-        min_length=1,
-    )
-
-
-class ChatPromptConfig(Record):
-    kind: Literal["chat"] = "chat"
-
-
-PromptConfig: TypeAlias = Annotated[
-    SystemPromptConfig | ChatPromptConfig, Field(discriminator="kind")
 ]
 
 
