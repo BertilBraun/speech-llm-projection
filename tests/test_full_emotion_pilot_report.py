@@ -9,7 +9,9 @@ import soundfile
 from scripts.neutts_pilot_state import NeuTtsPilotConfig, PilotDevice, digest, write_record
 from scripts.prepare_neutts_models import NeuTtsPreparation, PinnedRepository
 from scripts.report_full_emotion_pilot import (
+    ClipAmplitudeAudit,
     FullEmotionReportConfig,
+    audit_amplitude,
     benchmark_table,
     load_run,
     render_report,
@@ -152,13 +154,44 @@ def test_faster_setting_gallery_uses_actual_batch_outputs_and_shared_latency(
         benchmark_directories=(tmp_path,),
         output=tmp_path / "report",
     )
-    report = render_report(report_configuration, (), (result,))
+    amplitudes = tuple(audit_amplitude(item.clip, tmp_path) for item in measurement.clips)
+    report = render_report(report_configuration, (), (result,), amplitudes)
     assert "Actual batch-7 samples, first measured pass" in report
     assert "shared completion 2.000s; 8.000s total audio; throughput RTF 0.250" in report
     for evidence in measurement.clips:
         assert (tmp_path / evidence.clip.audio_path).resolve().as_posix() in report
     assert "not each clip's individual generation time" in report
     assert "generation /" not in report
+
+
+def test_raw_float_overshoot_is_measured_and_preserved(
+    tmp_path: Path, benchmark: tuple[NeuTtsBenchmarkResult, TtsPilotManifest]
+) -> None:
+    result, _ = benchmark
+    clip = result.measurements[0].clips[0].clip
+    path = tmp_path / clip.audio_path
+    waveform = np.full(24000, 0.1, dtype=np.float32)
+    waveform[:2] = (1.25, -1.125)
+    soundfile.write(path, waveform, clip.sample_rate, subtype="FLOAT")
+    original_digest = digest(path)
+    clip = clip.model_copy(update={"sha256": original_digest})
+    audit = audit_amplitude(clip, tmp_path)
+    assert audit.peak_absolute == 1.25
+    assert audit.samples_above_full_scale == 2
+    assert audit.sample_count == 24000
+    assert audit.fraction_above_full_scale == pytest.approx(2 / 24000)
+    assert audit.waveform_subtype == "FLOAT"
+    assert digest(path) == original_digest
+    assert ClipAmplitudeAudit.model_validate_json(audit.model_dump_json()) == audit
+
+
+def test_sample_rate_mismatch_is_rejected_independently_of_amplitude(
+    tmp_path: Path, benchmark: tuple[NeuTtsBenchmarkResult, TtsPilotManifest]
+) -> None:
+    result, _ = benchmark
+    clip = result.measurements[0].clips[0].clip.model_copy(update={"sample_rate": 16000})
+    with pytest.raises(ValueError, match="sample rate differs"):
+        audit_amplitude(clip, tmp_path)
 
 
 def test_benchmark_validates_replica_pool_and_complete_pass(

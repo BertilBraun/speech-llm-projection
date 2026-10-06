@@ -8,8 +8,9 @@ from pathlib import Path
 
 import numpy as np
 import soundfile
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from scripts.neutts_pilot_state import digest
 from scripts.prepare_full_emotion_pilot import INDEX_EMOTIONS, NEU_EMOTIONS
 from scripts.report_tts_pilot import ModelAudit, ModelResults, verify_results
 from speech_projector.neutts_batch_benchmark import (
@@ -21,6 +22,7 @@ from speech_projector.neutts_batch_benchmark import (
 from speech_projector.tts_pilot import (
     PilotEmotion,
     PilotTermination,
+    TtsPilotClip,
     TtsPilotManifest,
     TtsPilotResult,
 )
@@ -37,6 +39,62 @@ class FullEmotionReportConfig(BaseModel):
     actual_index_source_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     benchmark_directories: tuple[Path, ...] = ()
     output: Path
+
+
+class ClipAmplitudeAudit(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+
+    clip: TtsPilotClip
+    verified_path: Path
+    waveform_subtype: str
+    sample_count: int = Field(gt=0)
+    peak_absolute: float = Field(gt=0)
+    samples_above_full_scale: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_sample_count(self) -> "ClipAmplitudeAudit":
+        if self.samples_above_full_scale > self.sample_count:
+            raise ValueError("Above-full-scale count exceeds total waveform samples")
+        return self
+
+    @property
+    def fraction_above_full_scale(self) -> float:
+        return self.samples_above_full_scale / self.sample_count
+
+
+def audit_amplitude(clip: TtsPilotClip, directory: Path) -> ClipAmplitudeAudit:
+    path = (directory / clip.audio_path).resolve()
+    if not path.is_relative_to(directory.resolve()):
+        raise ValueError("Waveform path escapes its result directory")
+    if digest(path) != clip.sha256:
+        raise ValueError("Saved waveform hash differs from record")
+    waveform, sample_rate = soundfile.read(path, dtype="float32", always_2d=True)
+    if waveform.shape[1] != 1 or not np.isfinite(waveform).all() or not np.any(waveform):
+        raise ValueError("Waveform is not finite non-silent mono audio")
+    if sample_rate != clip.sample_rate:
+        raise ValueError("Waveform sample rate differs from recorded evidence")
+    if not math.isclose(len(waveform) / sample_rate, clip.audio_seconds):
+        raise ValueError("Waveform duration differs from recorded evidence")
+    information = soundfile.info(path)
+    peak = float(np.max(np.abs(waveform)))
+    if peak > 1 and information.subtype not in ("FLOAT", "DOUBLE"):
+        raise ValueError("Non-floating waveform has an invalid full-scale amplitude")
+    return ClipAmplitudeAudit(
+        clip=clip,
+        verified_path=path,
+        waveform_subtype=information.subtype,
+        sample_count=len(waveform),
+        peak_absolute=peak,
+        samples_above_full_scale=int(np.count_nonzero(np.abs(waveform) > 1)),
+    )
+
+
+def amplitude_note(audit: ClipAmplitudeAudit) -> str:
+    return (
+        f"Raw {audit.waveform_subtype} peak {audit.peak_absolute:.6f}; "
+        f"samples above full scale {audit.samples_above_full_scale}/{audit.sample_count} "
+        f"({audit.fraction_above_full_scale:.8%})."
+    )
 
 
 @dataclass(frozen=True)
@@ -57,7 +115,7 @@ def load_run(label: str, manifest: TtsPilotManifest, directory: Path) -> Emotion
 
 def verify_benchmark(
     result: NeuTtsBenchmarkResult, directory: Path, manifest: TtsPilotManifest
-) -> None:
+) -> tuple[ClipAmplitudeAudit, ...]:
     for measurement in result.measurements:
         for evidence in measurement.clips:
             if (
@@ -82,6 +140,7 @@ def verify_benchmark(
         raise ValueError("Benchmark pool is not complete replicas of the serial Neu comparison")
     expected_cases = {case.case_id: case for case in saved_manifest.cases}
     groups: defaultdict[tuple[int, int], list[BatchMeasurement]] = defaultdict(list)
+    amplitudes: list[ClipAmplitudeAudit] = []
     for measurement in result.measurements:
         groups[(measurement.requested_batch_size, measurement.repetition)].append(measurement)
         if not measurement.clips or len(measurement.clips) > measurement.requested_batch_size:
@@ -92,15 +151,7 @@ def verify_benchmark(
                 raise ValueError("Benchmark clip differs from the canonical case manifest")
             if clip.termination != PilotTermination.STOP:
                 raise ValueError("Benchmark contains an unresolved token-limit completion")
-            waveform, sample_rate = soundfile.read(
-                directory / clip.audio_path, dtype="float32", always_2d=True
-            )
-            if waveform.shape[1] != 1 or not np.isfinite(waveform).all() or not np.any(waveform):
-                raise ValueError("Benchmark waveform is not finite non-silent mono audio")
-            if np.max(np.abs(waveform)) > 1 or sample_rate != clip.sample_rate:
-                raise ValueError("Benchmark waveform amplitude or sample rate differs")
-            if not math.isclose(len(waveform) / sample_rate, clip.audio_seconds):
-                raise ValueError("Benchmark waveform duration differs from recorded evidence")
+            amplitudes.append(audit_amplitude(clip, directory))
     expected_groups = {
         (batch_size, repetition)
         for batch_size in result.configuration.batch_sizes
@@ -116,6 +167,7 @@ def verify_benchmark(
             raise ValueError("Benchmark pass has missing or duplicated cases")
         if sorted(item.batch_index for item in measurements) != list(range(len(measurements))):
             raise ValueError("Benchmark pass has missing or duplicated batch indices")
+    return tuple(amplitudes)
 
 
 def benchmark_table(result: NeuTtsBenchmarkResult) -> list[str]:
@@ -147,7 +199,9 @@ def render_report(
     configuration: FullEmotionReportConfig,
     runs: tuple[EmotionRun, ...],
     benchmarks: tuple[NeuTtsBenchmarkResult, ...],
+    amplitudes: tuple[ClipAmplitudeAudit, ...],
 ) -> str:
+    amplitude_by_path = {item.verified_path: item for item in amplitudes}
     lines = [
         "# Full emotion listening pilot and throughput measurements",
         "",
@@ -195,6 +249,33 @@ def render_report(
             "",
         ]
     )
+    overshoots = tuple(item for item in amplitudes if item.samples_above_full_scale)
+    lines.extend(
+        [
+            "## Raw waveform amplitude audit",
+            "",
+            f"Verified {len(amplitudes)} WAVs; {len(overshoots)} have samples outside [-1, 1]. "
+            "FLOAT WAV preserves these raw samples; no originals were normalized or regenerated. "
+            "Above-full-scale samples are a playback/conversion clipping risk, not evidence that "
+            "the stored floating waveform is already clipped. Timings are unchanged. "
+            "Full per-clip peaks/counts are in amplitude_audit.jsonl, including every repeat.",
+            "",
+        ]
+    )
+    if overshoots:
+        lines.extend(
+            [
+                "| Raw clip path | Peak absolute | Above full scale / samples | Fraction |",
+                "| --- | ---: | ---: | ---: |",
+                *(
+                    f"| {item.verified_path.as_posix()} | {item.peak_absolute:.9f} | "
+                    f"{item.samples_above_full_scale}/{item.sample_count} | "
+                    f"{item.fraction_above_full_scale:.8%} |"
+                    for item in overshoots
+                ),
+                "",
+            ]
+        )
     for run in runs:
         result = run.model.result
         lines.extend(
@@ -280,7 +361,8 @@ def render_report(
                     if clip.case.emotion in shown_emotions:
                         continue
                     shown_emotions.add(clip.case.emotion)
-                    audio = (directory / clip.audio_path).resolve().as_posix()
+                    audio_path = (directory / clip.audio_path).resolve()
+                    audio = audio_path.as_posix()
                     lines.extend(
                         [
                             f"**{clip.case.emotion.value}** — {clip.case.case_id}",
@@ -293,6 +375,7 @@ def render_report(
                             f"Audio {clip.audio_seconds:.3f}s; termination "
                             f"{clip.termination.value}; batch seed "
                             f"{measurement.shared_batch_seed}.",
+                            amplitude_note(amplitude_by_path[audio_path]),
                             "",
                         ]
                     )
@@ -308,7 +391,8 @@ def render_report(
     for run in runs:
         lines.extend([f"### {run.label}", ""])
         for clip in run.model.result.clips:
-            audio = (run.model.directory / clip.audio_path).resolve().as_posix()
+            audio_path = (run.model.directory / clip.audio_path).resolve()
+            audio = audio_path.as_posix()
             lines.extend(
                 [
                     f"**{clip.case.emotion.value}** — {clip.case.case_id}",
@@ -319,6 +403,7 @@ def render_report(
                     "",
                     f"{clip.generation_seconds:.3f}s generation / {clip.audio_seconds:.3f}s audio "
                     f"= RTF {clip.real_time_factor:.3f}; termination {clip.termination.value}.",
+                    amplitude_note(amplitude_by_path[audio_path]),
                     "",
                 ]
             )
@@ -347,6 +432,11 @@ def report_full_emotions(configuration: FullEmotionReportConfig) -> Path:
         NeuTtsBenchmarkResult.model_validate_json((directory / "result.json").read_bytes())
         for directory in configuration.benchmark_directories
     )
+    amplitudes = tuple(
+        audit_amplitude(clip, run.model.directory)
+        for run in runs
+        for clip in run.model.result.clips
+    )
     for directory, benchmark in zip(configuration.benchmark_directories, benchmarks, strict=True):
         saved_manifest = TtsPilotManifest.model_validate_json(
             (directory / "cases.json").read_bytes()
@@ -354,13 +444,16 @@ def report_full_emotions(configuration: FullEmotionReportConfig) -> Path:
         validate_benchmark_manifest(
             saved_manifest, tuple(case.emotion.value for case in neu_manifest.cases)
         )
-        verify_benchmark(benchmark, directory, neu_manifest)
-    text = render_report(configuration, runs, benchmarks)
+        amplitudes += verify_benchmark(benchmark, directory, neu_manifest)
+    text = render_report(configuration, runs, benchmarks, amplitudes)
     configuration.output.mkdir(parents=True, exist_ok=True)
     path = configuration.output / "full_emotion_comparison.md"
     path.write_text(text, encoding="utf-8")
     (configuration.output / "report_config.json").write_text(
         configuration.model_dump_json(indent=2), encoding="utf-8"
+    )
+    (configuration.output / "amplitude_audit.jsonl").write_text(
+        "".join(item.model_dump_json() + "\n" for item in amplitudes), encoding="utf-8"
     )
     return path
 
