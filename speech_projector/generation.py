@@ -1,19 +1,14 @@
 """Canonical completed and token-limited LLM responses."""
 
-from enum import Enum
 from typing import Annotated, Literal, TypeAlias
 
 from pydantic import Field
 
+from speech_projector.models import GenerationKind as GenerationKind
 from speech_projector.models import Record
 
 INITIAL_TEACHER_TOKEN_CAP = 2048
 RETRY_TEACHER_TOKEN_CAP = 4096
-
-
-class GenerationKind(str, Enum):
-    COMPLETED = "completed"
-    TOKEN_LIMIT = "token_limit"
 
 
 class CompletedGeneration(Record):

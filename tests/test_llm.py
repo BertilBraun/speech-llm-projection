@@ -20,6 +20,7 @@ from speech_projector.models import (
     EvaluationCondition,
     Example,
     ExperimentStage,
+    GenerationKind,
     LinearProjectorConfig,
     RunConfig,
     Split,
@@ -268,6 +269,40 @@ def test_batch_generation_distinguishes_completed_eos_and_cap_hit(
     )
     assert results[0] == CompletedGeneration(text="yes", token_ids=(1, 0))
     assert results[1] == TokenLimitedGeneration(partial_text="no no no", token_ids=(2, 2, 2))
+
+
+def test_batched_speech_evaluation_saves_completion_and_original_order(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    wrapper.tokenizer.eos_token = "[UNK]"
+    wrapper.tokenizer.pad_token = "no"
+    wrapper.model = BatchEosQwen(wrapper.model.config)
+    wrapper.config = wrapper.config.model_copy(
+        update={
+            "generation_batch_size": 2,
+            "max_new_tokens": 3,
+            "semantic_examples": 2,
+            "qualitative_examples": 2,
+        }
+    )
+    second = example.model_copy(update={"example_id": "two", "user_text": "unused transcript"})
+    outcome = evaluate(
+        wrapper,
+        Projector(wrapper.config.projector),
+        (example, second),
+        wrapper.config,
+        EvaluationCondition.SPEECH,
+        diagnostics=False,
+    )
+    assert tuple(sample.example_id for sample in outcome.samples) == ("one", "two")
+    assert tuple(sample.generated_response for sample in outcome.samples) == ("yes", "no no no")
+    assert outcome.metrics.completed_generations == 1
+    assert outcome.metrics.token_limited_generations == 1
+    assert outcome.metrics.generated_tokens == 5
+    assert outcome.samples[0].generation is not None
+    assert outcome.samples[0].generation.kind == GenerationKind.COMPLETED
+    assert outcome.samples[1].generation is not None
+    assert outcome.samples[1].generation.kind == GenerationKind.TOKEN_LIMIT
 
 
 class TextRecordingQwen(FrozenQwen):

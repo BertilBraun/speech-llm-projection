@@ -16,12 +16,20 @@ from sentence_transformers import SentenceTransformer
 from torch import Tensor
 from torch.nn import functional
 
+from speech_projector.evaluation_generation import EvaluationGenerationRequest, generate_requests
+from speech_projector.generation import (
+    CompletedGeneration,
+    GenerationResult,
+    TokenLimitedGeneration,
+)
 from speech_projector.inputs import SpeechInput, TranscriptInput, UtteranceInput
 from speech_projector.models import (
     AsrTranscript,
     EvaluationCondition,
     EvaluationMetrics,
     Example,
+    GenerationDetails,
+    GenerationKind,
     Record,
     RunConfig,
     SampleGeneration,
@@ -203,6 +211,41 @@ def original_dialogue_text(example: Example) -> TranscriptInput:
     return TranscriptInput(example.user_text)
 
 
+def generation_sample(
+    example: Example,
+    utterance: UtteranceInput,
+    condition: EvaluationCondition,
+    generation: GenerationResult,
+) -> SampleGeneration:
+    match generation:
+        case CompletedGeneration(text=text):
+            response = text
+        case TokenLimitedGeneration(partial_text=text):
+            response = text
+    match utterance:
+        case SpeechInput(embeddings=embeddings):
+            pseudo_tokens = embeddings.shape[0]
+            recognized_transcript = None
+            user_transcript = example.user_text
+        case TranscriptInput(text=text):
+            pseudo_tokens = None
+            recognized_transcript = text if condition == EvaluationCondition.ASR else None
+            user_transcript = text if condition == EvaluationCondition.TEXT else example.user_text
+    return SampleGeneration(
+        example_id=example.example_id,
+        dialogue_id=example.dialogue_id,
+        condition=condition,
+        history=example.history,
+        user_transcript=user_transcript,
+        asr_transcript=recognized_transcript,
+        gold_response=example.target_text,
+        generated_response=response,
+        generation=GenerationDetails(kind=generation.kind, token_ids=generation.token_ids),
+        duration=example.duration,
+        pseudo_tokens=pseudo_tokens,
+    )
+
+
 @torch.no_grad()
 def evaluate(
     wrapper: FrozenQwen,
@@ -233,6 +276,9 @@ def evaluate(
     losses: list[ExampleLoss] = []
     samples: list[SampleGeneration] = []
     control_samples: list[SampleGeneration] = []
+    generation_requests: list[EvaluationGenerationRequest] = []
+    control_requests: list[EvaluationGenerationRequest] = []
+    control_conditions: list[EvaluationCondition] = []
     generation_seconds = 0.0
     generated_tokens = 0
     for index, example in enumerate(examples):
@@ -279,6 +325,14 @@ def evaluate(
                         EvaluationCondition.SPEECH_NO_HISTORY,
                         EvaluationCondition.SHUFFLED_SPEECH_NO_HISTORY,
                     ):
+                        if config.generation_batch_size > 1:
+                            control_requests.append(
+                                EvaluationGenerationRequest(
+                                    control_example, SpeechInput(control_embeddings)
+                                )
+                            )
+                            control_conditions.append(control_condition)
+                            continue
                         control_response = wrapper.generate(
                             control_example, SpeechInput(control_embeddings)
                         )
@@ -296,6 +350,9 @@ def evaluate(
                             )
                         )
         if index < max(config.qualitative_examples, config.semantic_examples):
+            if config.generation_batch_size > 1:
+                generation_requests.append(EvaluationGenerationRequest(example, utterance))
+                continue
             generation_started = time.perf_counter()
             response = wrapper.generate(example, utterance)
             elapsed = time.perf_counter() - generation_started
@@ -327,6 +384,22 @@ def evaluate(
                     pseudo_tokens=pseudo_tokens,
                 )
             )
+    if generation_requests:
+        outcome = generate_requests(wrapper, generation_requests, config.generation_batch_size)
+        generation_seconds = outcome.generation_seconds
+        generated_tokens = outcome.generated_tokens_with_eos
+        samples = [
+            generation_sample(request.example, request.utterance, condition, result)
+            for request, result in zip(generation_requests, outcome.responses, strict=True)
+        ]
+    if control_requests:
+        outcome = generate_requests(wrapper, control_requests, config.generation_batch_size)
+        control_samples = [
+            generation_sample(request.example, request.utterance, control_condition, result)
+            for request, control_condition, result in zip(
+                control_requests, control_conditions, outcome.responses, strict=True
+            )
+        ]
     similarity: float | None = None
     if semantic_evaluator is not None and samples:
         scores = semantic_evaluator.similarities(
@@ -355,6 +428,18 @@ def evaluate(
         generated_examples=len(samples),
         generation_seconds=generation_seconds,
         generated_tokens=generated_tokens,
+        completed_generations=sum(
+            sample.generation is not None and sample.generation.kind == GenerationKind.COMPLETED
+            for sample in samples
+        )
+        if generation_requests
+        else None,
+        token_limited_generations=sum(
+            sample.generation is not None and sample.generation.kind == GenerationKind.TOKEN_LIMIT
+            for sample in samples
+        )
+        if generation_requests
+        else None,
         shuffled_audio_cross_entropy=_mean_ce(losses, EvaluationCondition.SHUFFLED_SPEECH)
         if controls_enabled
         else None,

@@ -36,6 +36,7 @@ def teacher_run(
         max_new_tokens=RETRY_TEACHER_TOKEN_CAP,
         qualitative_examples=16,
         semantic_examples=512,
+        generation_batch_size=32,
         conditioning_examples=128,
         prompt=TEACHER_PROMPT,
         projector=projector,

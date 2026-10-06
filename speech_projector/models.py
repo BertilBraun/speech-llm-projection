@@ -39,6 +39,16 @@ class EvaluationCondition(str, Enum):
     SHUFFLED_SPEECH_NO_HISTORY = "shuffled_speech_no_history"
 
 
+class GenerationKind(str, Enum):
+    COMPLETED = "completed"
+    TOKEN_LIMIT = "token_limit"
+
+
+class GenerationDetails(Record):
+    kind: GenerationKind
+    token_ids: tuple[int, ...]
+
+
 class Turn(Record):
     role: Role
     text: str
@@ -132,6 +142,7 @@ class RunConfig(Record):
     checkpoint_interval: int = 100
     qualitative_examples: int = 16
     semantic_examples: int = 48
+    generation_batch_size: int = Field(default=1, ge=1)
     conditioning_examples: int = Field(default=32, ge=1)
     model_name: str = "Qwen/Qwen3.5-2B"
     speech_model_name: str = "openai/whisper-small"
@@ -148,6 +159,8 @@ class EvaluationMetrics(Record):
     generated_examples: int = 0
     generation_seconds: float = 0.0
     generated_tokens: int = 0
+    completed_generations: int | None = None
+    token_limited_generations: int | None = None
     shuffled_audio_cross_entropy: float | None = None
     zero_audio_cross_entropy: float | None = None
     no_history_cross_entropy: float | None = None
@@ -169,6 +182,7 @@ class SampleGeneration(Record):
     asr_transcript: str | None = None
     gold_response: str
     generated_response: str
+    generation: GenerationDetails | None = None
     duration: float
     pseudo_tokens: int | None = None
     semantic_similarity: float | None = None
