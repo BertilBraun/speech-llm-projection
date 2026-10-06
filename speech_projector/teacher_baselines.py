@@ -137,9 +137,16 @@ def run_teacher_baselines(
     if (
         teacher_run.model_name,
         teacher_run.prompt,
+        teacher_run.decoding,
         teacher_run.history_turns,
         teacher_run.max_history_tokens,
-    ) != (current.model_name, current.prompt, current.history_turns, current.max_history_tokens):
+    ) != (
+        current.model_name,
+        current.prompt,
+        current.decoding,
+        current.history_turns,
+        current.max_history_tokens,
+    ):
         raise ValueError("Cached teacher uses different model, prompt or history settings")
     if weights_digest(wrapper.model) != teacher.frozen_parameter_sha256:
         raise ValueError("Evaluation Qwen weights differ from the cached teacher checkpoint")

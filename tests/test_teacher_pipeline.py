@@ -248,15 +248,17 @@ def test_completed_phase_missing_output_is_not_silently_rerun(
         pipeline.run_pipeline(feasibility_artifacts.root, 8, False)
 
 
+@pytest.mark.parametrize("phase", (pipeline.Phase.CACHE, pipeline.Phase.TEACHER))
 def test_failed_gate_blocks_gpu_process_and_records_failed_phase(
     feasibility_artifacts: FeasibilityArtifacts,
+    phase: pipeline.Phase,
 ) -> None:
     root = feasibility_artifacts.root
     invalid = feasibility_artifacts.gradient.model_copy(update={"llm_weights_unchanged": False})
     feasibility_artifacts.gradient_path.write_text(invalid.model_dump_json(), encoding="utf-8")
-    cache = pipeline.Job(pipeline.Phase.CACHE, ("must-not-run",), (root / "cache.json",))
+    job = pipeline.Job(phase, ("must-not-run",), (root / "cache.json",))
     with (
-        patch.object(pipeline, "jobs", return_value=(cache,)),
+        patch.object(pipeline, "jobs", return_value=(job,)),
         patch.object(
             pipeline.subprocess, "run", side_effect=AssertionError("Unexpected GPU process")
         ),
@@ -266,7 +268,7 @@ def test_failed_gate_blocks_gpu_process_and_records_failed_phase(
     state = SuiteState.model_validate_json(
         (root / "results_teacher/pipeline_state.json").read_bytes()
     )
-    assert state.failed == (pipeline.Phase.CACHE.value,)
+    assert state.failed == (phase.value,)
     assert state.completed == ()
     assert state.running is None
 

@@ -17,14 +17,19 @@ from speech_projector.models import EvaluationCondition, GradientCheck, RunResul
 
 
 class Phase(str, Enum):
+    JUDGE_CALIBRATION = "judge_calibration"
     BOOTSTRAP = "teacher_bootstrap"
     SMOKE = "gradient_smoke"
     FEASIBILITY = "teacher_feasibility"
     CONDITIONING = "feasibility_audio_conditioning"
     CACHE = "missing_features_and_asr"
+    ASR_AUDIT = "heldout_asr_quality"
     TEACHER = "full_teacher_targets"
     AUDIT = "teacher_split_audit"
+    TARGET_AUDIT = "teacher_target_statistics"
     SUITE = "teacher_research_suite"
+    JUDGE = "response_quality_judging"
+    REPORT = "research_report"
 
 
 @dataclass(frozen=True)
@@ -76,6 +81,23 @@ def jobs(root: Path, teacher_batch_size: int, include_scaling: bool) -> tuple[Jo
     ) + (("--include-scaling",) if include_scaling else ())
     return (
         Job(
+            Phase.JUDGE_CALIBRATION,
+            (
+                "-m",
+                "scripts.judge_teacher_suite",
+                "--results-root",
+                str(results),
+                "--output",
+                str(results / "response_quality"),
+                "--calibration-root",
+                str(results / "judge_calibration/post_suite"),
+                "--batch-size",
+                "16",
+                "--calibrate-only",
+            ),
+            (results / "response_quality/judge_selection.json",),
+        ),
+        Job(
             Phase.BOOTSTRAP,
             generation + ("--bootstrap", "--output-manifest", str(bootstrap)),
             (bootstrap,),
@@ -112,6 +134,20 @@ def jobs(root: Path, teacher_batch_size: int, include_scaling: bool) -> tuple[Jo
         ),
         Job(Phase.TEACHER, generation + ("--output-manifest", str(full)), (full,)),
         Job(
+            Phase.ASR_AUDIT,
+            (
+                "-m",
+                "scripts.teacher_asr_quality",
+                "--manifest",
+                str(full),
+                "--transcripts",
+                str(data / "asr_transcripts.jsonl"),
+                "--output",
+                str(results / "dataset"),
+            ),
+            (results / "dataset/asr_quality.json",),
+        ),
+        Job(
             Phase.AUDIT,
             (
                 "-m",
@@ -123,7 +159,51 @@ def jobs(root: Path, teacher_batch_size: int, include_scaling: bool) -> tuple[Jo
             ),
             (results / "dataset/dataset_leakage.json",),
         ),
+        Job(
+            Phase.TARGET_AUDIT,
+            (
+                "-m",
+                "scripts.summarize_teacher_targets",
+                "--journal-directory",
+                str(results / "teacher_targets"),
+                "--source-manifest",
+                str(data / "examples_source.jsonl"),
+                "--output",
+                str(results / "teacher_targets"),
+            ),
+            (results / "teacher_targets/target_audit.json",),
+        ),
         Job(Phase.SUITE, suite, (results / "completed_results.json",)),
+        Job(
+            Phase.JUDGE,
+            (
+                "-m",
+                "scripts.judge_teacher_suite",
+                "--results-root",
+                str(results),
+                "--output",
+                str(results / "response_quality"),
+                "--calibration-root",
+                str(results / "judge_calibration/post_suite"),
+                "--batch-size",
+                "16",
+            ),
+            (results / "response_quality/quality_report.json",),
+        ),
+        Job(
+            Phase.REPORT,
+            (
+                "-m",
+                "speech_projector.teacher_report",
+                "--results-root",
+                str(results),
+                "--data-root",
+                str(data),
+                "--output",
+                str(results / "analysis"),
+            ),
+            (results / "analysis/teacher_research_report.md",),
+        ),
     )
 
 
@@ -201,7 +281,7 @@ def run_pipeline(root: Path, teacher_batch_size: int, include_scaling: bool) -> 
         save_state(job.phase.value)
         print(f"Starting phase {job.phase.value}", flush=True)
         try:
-            if job.phase == Phase.CACHE:
+            if job.phase in (Phase.CACHE, Phase.TEACHER):
                 validate_feasibility(root)
             subprocess.run([sys.executable, "-B", *job.arguments], cwd=root, check=True)
             if not all(path.is_file() and path.stat().st_size > 0 for path in job.outputs):
