@@ -25,6 +25,7 @@ from speech_projector.models import (
     RunConfig,
     RunPromptConfig,
     SystemPromptConfig,
+    Turn,
 )
 from speech_projector.prompts import ASSISTANT_SUFFIX, USER_PREFIX, system_prefix
 
@@ -57,12 +58,25 @@ class TrainingBatch:
     sequences: tuple[EmbeddedSequence, ...]
 
 
-def generation_seed(config: RunConfig, examples: Sequence[Example], max_new_tokens: int) -> int:
+@dataclass(frozen=True)
+class SpeechHistoryTurn:
+    utterance: SpeechInput
+
+
+@dataclass(frozen=True)
+class ConversationRequest:
+    identifier: str
+    prompt: PromptConfig
+    history: tuple[Turn | SpeechHistoryTurn, ...]
+    current: UtteranceInput
+
+
+def generation_seed(config: RunConfig, identifiers: Sequence[str], max_new_tokens: int) -> int:
     digest = hashlib.sha256(f"{config.seed}:{max_new_tokens}:".encode("ascii"))
-    for example in examples:
-        identifier = example.example_id.encode("utf-8")
-        digest.update(len(identifier).to_bytes(8, "little"))
-        digest.update(identifier)
+    for identifier in identifiers:
+        encoded = identifier.encode("utf-8")
+        digest.update(len(encoded).to_bytes(8, "little"))
+        digest.update(encoded)
     return int.from_bytes(digest.digest()[:8], "little") % (2**63 - 1)
 
 
@@ -119,17 +133,59 @@ class FrozenQwen:
     def _prompt(self, example: Example, utterance: UtteranceInput) -> Tensor:
         start = self._encode(system_prefix(example_prompt(example, self.config)))
         prefix = self._embed(start + self._history_ids(example) + self._encode(USER_PREFIX))
+        return self._assemble_prompt(prefix, utterance)
+
+    def _speech_embeddings(self, embeddings: Tensor) -> Tensor:
+        if embeddings.ndim != 2:
+            raise ValueError("Speech embeddings must have shape (tokens, dimension)")
+        if embeddings.shape[1] != self.model.config.hidden_size:
+            raise ValueError("Speech embedding dimension differs from Qwen")
+        return embeddings.to(
+            device=self.device, dtype=self.model.get_input_embeddings().weight.dtype
+        )
+
+    def _assemble_prompt(self, prefix: Tensor, utterance: UtteranceInput) -> Tensor:
         match utterance:
             case TranscriptInput(text=text):
                 current = self._embed(self._encode(text))
             case SpeechInput(embeddings=embeddings):
-                if embeddings.ndim != 2:
-                    raise ValueError("Speech embeddings must have shape (tokens, dimension)")
-                if embeddings.shape[1] != self.model.config.hidden_size:
-                    raise ValueError("Speech embedding dimension differs from Qwen")
-                current = embeddings.to(device=self.device, dtype=prefix.dtype)
+                current = self._speech_embeddings(embeddings)
         suffix = self._embed(self._encode(ASSISTANT_SUFFIX))
         return torch.cat((prefix, current, suffix), dim=0)
+
+    def _conversation_history(self, history: Sequence[Turn | SpeechHistoryTurn]) -> Tensor:
+        remaining = self.config.max_history_tokens
+        encoded_turns: list[Tensor] = []
+        turns = history[-self.config.history_turns :] if self.config.history_turns else ()
+        for turn in reversed(turns):
+            match turn:
+                case Turn(role=role, text=text):
+                    start = self._embed(self._encode(f"<|im_start|>{role.value}\n"))
+                    body = self._embed(self._encode(text))
+                case SpeechHistoryTurn(utterance=SpeechInput(embeddings=embeddings)):
+                    start = self._embed(self._encode(USER_PREFIX))
+                    body = self._speech_embeddings(embeddings)
+            end = self._embed(self._encode("<|im_end|>\n"))
+            available = remaining - start.shape[0] - end.shape[0]
+            if available <= 0:
+                break
+            encoded = torch.cat((start, body[-available:], end), dim=0)
+            encoded_turns.append(encoded)
+            remaining -= encoded.shape[0]
+        return (
+            torch.cat(tuple(reversed(encoded_turns)), dim=0) if encoded_turns else self._embed([])
+        )
+
+    def prepare_conversation(self, request: ConversationRequest) -> Tensor:
+        prefix = torch.cat(
+            (
+                self._embed(self._encode(system_prefix(request.prompt))),
+                self._conversation_history(request.history),
+                self._embed(self._encode(USER_PREFIX)),
+            ),
+            dim=0,
+        )
+        return self._assemble_prompt(prefix, request.current)
 
     def _target_ids(self, example: Example) -> list[int]:
         response = self._encode(example.target_text)[: self.config.max_target_tokens - 1]
@@ -278,7 +334,7 @@ class FrozenQwen:
     @torch.no_grad()
     def _generate(
         self,
-        examples: Sequence[Example],
+        identifiers: Sequence[str],
         embeddings: Tensor,
         attention_mask: Tensor,
         max_new_tokens: int,
@@ -289,7 +345,7 @@ class FrozenQwen:
             else []
         )
         with torch.random.fork_rng(devices=devices):
-            torch.manual_seed(generation_seed(self.config, examples, max_new_tokens))
+            torch.manual_seed(generation_seed(self.config, identifiers, max_new_tokens))
             generated: Tensor = self.model.generate(
                 inputs_embeds=embeddings,
                 attention_mask=attention_mask,
@@ -311,36 +367,50 @@ class FrozenQwen:
             raise ValueError("Generation token cap must be positive")
         self.model.eval()
         batch = self.prepare_generation_batch(examples, utterances)
-        generated = self._generate(examples, batch.embeddings, batch.attention_mask, max_new_tokens)
-        results: list[GenerationResult] = []
-        for row in generated:
-            token_ids = tuple(int(token) for token in row.tolist())
-            if self.tokenizer.eos_token_id in token_ids:
-                end = token_ids.index(self.tokenizer.eos_token_id) + 1
-                completed = token_ids[:end]
-                results.append(
-                    CompletedGeneration(
-                        text=self.tokenizer.decode(completed, skip_special_tokens=True).strip(),
-                        token_ids=completed,
-                    )
-                )
-            else:
-                results.append(
-                    TokenLimitedGeneration(
-                        partial_text=self.tokenizer.decode(
-                            token_ids, skip_special_tokens=True
-                        ).strip(),
-                        token_ids=token_ids,
-                    )
-                )
-        return tuple(results)
+        generated = self._generate(
+            tuple(example.example_id for example in examples),
+            batch.embeddings,
+            batch.attention_mask,
+            max_new_tokens,
+        )
+        return tuple(self._generation_result(row) for row in generated)
+
+    def _generation_result(self, row: Tensor) -> GenerationResult:
+        token_ids = tuple(int(token) for token in row.tolist())
+        if self.tokenizer.eos_token_id in token_ids:
+            end = token_ids.index(self.tokenizer.eos_token_id) + 1
+            completed = token_ids[:end]
+            return CompletedGeneration(
+                text=self.tokenizer.decode(completed, skip_special_tokens=True).strip(),
+                token_ids=completed,
+            )
+        return TokenLimitedGeneration(
+            partial_text=self.tokenizer.decode(token_ids, skip_special_tokens=True).strip(),
+            token_ids=token_ids,
+        )
+
+    @torch.no_grad()
+    def generate_conversation(
+        self, request: ConversationRequest, max_new_tokens: int
+    ) -> GenerationResult:
+        if max_new_tokens <= 0:
+            raise ValueError("Generation token cap must be positive")
+        self.model.eval()
+        prompt = self.prepare_conversation(request).unsqueeze(0)
+        generated = self._generate(
+            (request.identifier,),
+            prompt,
+            torch.ones(prompt.shape[:2], device=self.device, dtype=torch.long),
+            max_new_tokens,
+        )
+        return self._generation_result(generated[0])
 
     @torch.no_grad()
     def generate(self, example: Example, utterance: UtteranceInput) -> str:
         self.model.eval()
         prompt = self._prompt(example, utterance).unsqueeze(0)
         generated = self._generate(
-            (example,),
+            (example.example_id,),
             prompt,
             torch.ones(prompt.shape[:2], device=self.device, dtype=torch.long),
             self.config.max_new_tokens,

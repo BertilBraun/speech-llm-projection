@@ -19,7 +19,13 @@ from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 from speech_projector.evaluation import evaluate, original_dialogue_text
 from speech_projector.generation import CompletedGeneration, TokenLimitedGeneration
 from speech_projector.inputs import SpeechInput, TranscriptInput
-from speech_projector.llm import FrozenQwen, example_prompt, generation_seed
+from speech_projector.llm import (
+    ConversationRequest,
+    FrozenQwen,
+    SpeechHistoryTurn,
+    example_prompt,
+    generation_seed,
+)
 from speech_projector.models import (
     ChatPromptConfig,
     EvaluationCondition,
@@ -27,11 +33,13 @@ from speech_projector.models import (
     ExperimentStage,
     GenerationKind,
     LinearProjectorConfig,
+    Role,
     RunConfig,
     RunPromptConfig,
     SamplingDecodingConfig,
     Split,
     SystemPromptConfig,
+    Turn,
 )
 from speech_projector.overnight_continuation import prepare_continuation
 from speech_projector.projectors import Projector
@@ -563,15 +571,84 @@ def test_generation_seed_depends_on_seed_ordered_identifiers_and_token_cap(
     wrapper: FrozenQwen, example: Example
 ) -> None:
     other = example.model_copy(update={"example_id": "two"})
-    baseline = generation_seed(wrapper.config, (example, other), 100)
-    assert baseline == generation_seed(wrapper.config, (example, other), 100)
-    assert baseline != generation_seed(wrapper.config, (other, example), 100)
-    assert baseline != generation_seed(wrapper.config, (example, other), 101)
+    identifiers = (example.example_id, other.example_id)
+    baseline = generation_seed(wrapper.config, identifiers, 100)
+    assert baseline == generation_seed(wrapper.config, identifiers, 100)
+    assert baseline != generation_seed(wrapper.config, tuple(reversed(identifiers)), 100)
+    assert baseline != generation_seed(wrapper.config, identifiers, 101)
     assert baseline != generation_seed(
-        wrapper.config.model_copy(update={"seed": wrapper.config.seed + 1}), (example, other), 100
+        wrapper.config.model_copy(update={"seed": wrapper.config.seed + 1}), identifiers, 100
     )
     changed_text = example.model_copy(update={"user_text": "different", "target_text": "different"})
-    assert baseline == generation_seed(wrapper.config, (changed_text, other), 100)
+    assert baseline == generation_seed(
+        wrapper.config, (changed_text.example_id, other.example_id), 100
+    )
+
+
+@pytest.mark.parametrize("budget", (12, 256))
+def test_conversation_text_history_matches_training_prompt_exactly(
+    wrapper: FrozenQwen, example: Example, budget: int
+) -> None:
+    history = (
+        Turn(role=Role.USER, text="no yes no yes"),
+        Turn(role=Role.ASSISTANT, text="yes no yes"),
+    )
+    wrapper.config = wrapper.config.model_copy(update={"max_history_tokens": budget})
+    speech = SpeechInput(torch.randn(3, 32))
+    request = ConversationRequest("followup", wrapper.config.prompt, history, speech)
+    expected = wrapper._prompt(example.model_copy(update={"history": history}), speech)
+    torch.testing.assert_close(wrapper.prepare_conversation(request), expected, rtol=0, atol=0)
+
+
+def test_retained_audio_history_requires_explicit_budget_and_keeps_original_states(
+    wrapper: FrozenQwen,
+) -> None:
+    first = SpeechInput(torch.full((4, 32), 11.0))
+    second = SpeechInput(torch.full((3, 32), 22.0))
+    third = SpeechInput(torch.full((2, 32), 33.0))
+    assistant = Turn(role=Role.ASSISTANT, text="yes no")
+    history = (
+        SpeechHistoryTurn(first),
+        assistant,
+        SpeechHistoryTurn(second),
+        assistant,
+        SpeechHistoryTurn(third),
+        assistant,
+    )
+    current = SpeechInput(torch.full((2, 32), 44.0))
+    request = ConversationRequest("fourth-turn", ChatPromptConfig(), history, current)
+    default = wrapper.prepare_conversation(request)
+    assert not torch.any(torch.all(default == 11.0, dim=1))
+    wrapper.config = wrapper.config.model_copy(
+        update={"history_turns": 6, "max_history_tokens": 256}
+    )
+    retained = wrapper.prepare_conversation(request)
+    for speech in (first, second, third, current):
+        assert (
+            int(torch.all(retained == speech.embeddings[0, 0], dim=1).sum())
+            == speech.embeddings.shape[0]
+        )
+    assert torch.equal(first.embeddings, torch.full((4, 32), 11.0))
+    assert retained.shape[0] > default.shape[0]
+
+
+def test_conversation_generation_records_observed_eos_without_dataset_example(
+    wrapper: FrozenQwen,
+) -> None:
+    wrapper.tokenizer.eos_token = "[UNK]"
+    wrapper.tokenizer.pad_token = "no"
+    wrapper.model = EosCheckingQwen(wrapper.model.config)
+    request = ConversationRequest(
+        "actual-followup-id",
+        ChatPromptConfig(),
+        (SpeechHistoryTurn(SpeechInput(torch.randn(2, 32))), Turn(role=Role.ASSISTANT, text="yes")),
+        SpeechInput(torch.randn(3, 32)),
+    )
+    generated = wrapper.generate_conversation(request, 20)
+    assert isinstance(generated, CompletedGeneration)
+    assert generated.token_ids == (0,)
+    with pytest.raises(ValueError, match="positive"):
+        wrapper.generate_conversation(request, 0)
 
 
 @pytest.mark.parametrize("prompt", (ChatPromptConfig(), SystemPromptConfig(system_text="no yes")))
