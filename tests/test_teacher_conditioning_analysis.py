@@ -9,6 +9,7 @@ from scripts.analyze_teacher_conditioning import (
     InsufficientDialogues,
     SerializedExample,
     analyze_split,
+    analyze_suite,
     fidelity_margin,
     interval,
     loss_margin,
@@ -25,6 +26,7 @@ from speech_projector.models import (
     Role,
     RunConfig,
     Split,
+    SuiteState,
     Turn,
 )
 from speech_projector.teacher_evaluation import FidelityProvenance, TeacherFidelity
@@ -178,9 +180,32 @@ def test_provenance_and_full_control_coverage_checked_before_analysis(tmp_path: 
     )
     with pytest.raises(ValueError, match="control journal is incomplete"):
         analyze_split(tmp_path, Split.VALIDATION, serialized)
+    complete_fidelity = fidelity() + tuple(
+        item.model_copy(update={"condition": EvaluationCondition.ZERO_SPEECH})
+        for item in fidelity()[4:]
+    )
+    (tmp_path / "teacher_fidelity.jsonl").write_text(
+        "".join(item.model_dump_json() + "\n" for item in complete_fidelity), encoding="utf-8"
+    )
+    result = analyze_split(tmp_path, Split.VALIDATION, serialized)
+    assert result.overall.examples == 4
+    assert len(result.history) == 2
+    assert all(item.diagnostics.examples == 2 for item in result.history)
     provenance_path.write_text(
         provenance.model_copy(update={"examples_sha256": "wrong"}).model_dump_json(),
         encoding="utf-8",
     )
     with pytest.raises(ValueError, match="SHA differs"):
         analyze_split(tmp_path, Split.VALIDATION, serialized)
+
+
+def test_suite_analysis_requires_completed_successful_writer_state(tmp_path: Path) -> None:
+    state = SuiteState(completed=(), running="training", failed=(), started_at=1, updated_at=2)
+    path = tmp_path / "suite_state.json"
+    path.write_text(state.model_dump_json(), encoding="utf-8")
+    with pytest.raises(ValueError, match="writers exit successfully"):
+        analyze_suite(tmp_path, tmp_path / "manifest", tmp_path / "analysis")
+    path.write_text(state.model_copy(update={"running": None}).model_dump_json(), encoding="utf-8")
+    (tmp_path / "completed_results.json").write_text("[]", encoding="utf-8")
+    with pytest.raises(ValueError, match="nonempty"):
+        analyze_suite(tmp_path, tmp_path / "manifest", tmp_path / "analysis")

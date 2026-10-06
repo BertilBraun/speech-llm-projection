@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Literal, TypeVar
 
-from pydantic import Field
+from pydantic import Field, TypeAdapter
 
 from scripts.package_results import FileArtifact
 from scripts.summarize_teacher_targets import HistoryGroup
@@ -31,6 +31,7 @@ from speech_projector.models import (
     Record,
     RunResult,
     Split,
+    SuiteState,
 )
 from speech_projector.teacher_evaluation import (
     FidelityProvenance,
@@ -466,13 +467,60 @@ def analyze_run(run_directory: Path, manifest: Path, output: Path) -> TeacherCon
     return report
 
 
+def analyze_suite(
+    results_root: Path, manifest: Path, output: Path
+) -> tuple[TeacherConditioningReport, ...]:
+    state = SuiteState.model_validate_json((results_root / "suite_state.json").read_bytes())
+    if state.running is not None or state.failed:
+        raise ValueError("Analyze the suite after all evaluation writers exit successfully")
+    results_path = results_root / "completed_results.json"
+    results = TypeAdapter(tuple[RunResult, ...]).validate_json(results_path.read_bytes())
+    if not results or len({item.config.name for item in results}) != len(results):
+        raise ValueError("Suite analysis requires nonempty uniquely named completed results")
+    reports: list[TeacherConditioningReport] = []
+    for result in results:
+        report = analyze_run(
+            results_root / result.config.name, manifest, output / result.config.name
+        )
+        if report.run != result:
+            raise ValueError("Completed-results index differs from its per-run result")
+        reports.append(report)
+    lines = [
+        "# Teacher fidelity and audio conditioning by natural history",
+        "",
+        "CPU reaggregation from complete saved records; no new inference. Reports include "
+        "natural history strata, separate history-removal controls, early-token fidelity, "
+        "and paired dialogue-bootstrap intervals. Primary CE is token-weighted; paired "
+        "CE reports distinguish example and token weighting.",
+        "",
+        f"Completed-results SHA256: `{artifact(results_path).sha256}`. "
+        f"Teacher manifest SHA256: `{artifact(manifest).sha256}`.",
+        "",
+        "| Run | Validation / test examples | Diagnostics |",
+        "|---|---:|---|",
+    ]
+    for report in reports:
+        lines.append(
+            f"| {report.run.config.name} | {report.run.validation_examples} / "
+            f"{report.run.test_examples} | "
+            f"[History and conditioning]({report.run.config.name}/conditioning_strata.md) |"
+        )
+    (output / "index.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return tuple(reports)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--run", type=Path, required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--run", type=Path)
+    source.add_argument("--results-root", type=Path)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
-    analyze_run(arguments.run, arguments.manifest, arguments.output)
+    if arguments.results_root is not None:
+        analyze_suite(arguments.results_root, arguments.manifest, arguments.output)
+    else:
+        analyze_run(arguments.run, arguments.manifest, arguments.output)
 
 
 if __name__ == "__main__":
