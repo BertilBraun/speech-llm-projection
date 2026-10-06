@@ -94,6 +94,12 @@ def calibrate(judge: LocalJudge, directory: Path) -> ToneCalibrationResult:
     cases = calibration_cases()
     case_bytes = ("\n".join(item.model_dump_json() for item in cases) + "\n").encode()
     directory.mkdir(parents=True, exist_ok=True)
+    result_path = directory / "result.json"
+    saved_result = (
+        ToneCalibrationResult.model_validate_json(result_path.read_bytes())
+        if result_path.exists()
+        else None
+    )
     path = directory / "cases.jsonl"
     if path.exists() and path.read_bytes() != case_bytes:
         raise ValueError("Calibration directory contains different cases")
@@ -142,9 +148,21 @@ def calibrate(judge: LocalJudge, directory: Path) -> ToneCalibrationResult:
         if judge.device.type == "cuda"
         else 0,
     )
-    (directory / "result.json").write_text(
-        result.model_dump_json(indent=2) + "\n", encoding="utf-8"
-    )
+    if saved_result is not None:
+        restored_clocks = result.model_copy(
+            update={
+                "runtime_seconds": saved_result.runtime_seconds,
+                "peak_pytorch_allocated_decimal_gb": saved_result.peak_pytorch_allocated_decimal_gb,
+            }
+        )
+        if restored_clocks != saved_result:
+            raise ValueError(
+                "Saved calibration summary differs from recomputed judgments or inputs"
+            )
+        return saved_result
+    pending_path = result_path.with_suffix(".json.part")
+    pending_path.write_text(result.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    pending_path.replace(result_path)
     return result
 
 

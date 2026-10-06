@@ -286,7 +286,8 @@ def test_calibration_uses_twelve_candidates_four_intended_tones_and_both_accepta
 
 
 def test_calibration_rejects_unselective_judge_and_preserves_actual_outputs(tmp_path: Path) -> None:
-    result = calibrate(ScriptedJudge(), tmp_path)
+    judge = ScriptedJudge()
+    result = calibrate(judge, tmp_path)
     assert not result.passed
     assert result.valid == 12 and result.correct_acceptability == 6
     assert result.preference_requests == 6
@@ -294,6 +295,17 @@ def test_calibration_rejects_unselective_judge_and_preserves_actual_outputs(tmp_
         ToneCalibrationResult.model_validate_json((tmp_path / "result.json").read_bytes()) == result
     )
     assert len((tmp_path / "single" / "judgments.jsonl").read_text().splitlines()) == 12
+    calls = len(judge.calls)
+    saved_bytes = (tmp_path / "result.json").read_bytes()
+    assert calibrate(judge, tmp_path) == result
+    assert len(judge.calls) == calls
+    assert (tmp_path / "result.json").read_bytes() == saved_bytes
+    (tmp_path / "result.json").write_text(
+        result.model_copy(update={"correct_acceptability": 12, "passed": True}).model_dump_json(),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="recomputed judgments"):
+        calibrate(judge, tmp_path)
 
 
 def test_identical_replies_are_ties_even_if_judge_selects_slot(tmp_path: Path) -> None:
