@@ -405,8 +405,10 @@ def aggregate_report(root: Path, data_report: Path | None = None) -> Path:
             "measure factual correctness or whether the reply is the uniquely appropriate "
             "continuation. Read the fixed generated comparisons alongside CE.",
             "",
-            "The transcript baseline is a perfect-input reference, not a mathematical CE upper "
-            "bound. The trained projector can also learn the dataset's response style while "
+            "The text baseline is an original-dialogue-text reference; synthesis metadata "
+            "contains turn/audio alignment errors, so it is not guaranteed waveform transcript "
+            "input. See the synthesis-alignment audit and aligned-heldout sensitivity analysis. "
+            "It also is not a strict CE bound: the projector learns response style while "
             "the text and ASR baselines use the original frozen model. Lower projector CE "
             "must be interpreted together with correct-versus-shuffled audio margins and "
             "utterance-specific generated replies.",
