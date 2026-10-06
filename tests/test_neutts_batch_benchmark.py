@@ -12,8 +12,15 @@ from speech_projector.neutts_batch_benchmark import (
     NeuTtsBenchmarkConfig,
     completed_tokens,
     prompt_emotions,
+    validate_benchmark_manifest,
 )
-from speech_projector.tts_pilot import PilotEmotion, PilotTermination, TtsPilotCase, TtsPilotClip
+from speech_projector.tts_pilot import (
+    PilotEmotion,
+    PilotTermination,
+    TtsPilotCase,
+    TtsPilotClip,
+    TtsPilotManifest,
+)
 
 
 @pytest.mark.parametrize(
@@ -98,7 +105,7 @@ def test_batch_aggregate_uses_wall_time_once() -> None:
     assert measurement.end_to_end_seconds != sum(item.clip.generation_seconds for item in clips)
 
 
-@pytest.mark.parametrize("batch_sizes", ((), (0,), (8,), (1, 1)))
+@pytest.mark.parametrize("batch_sizes", ((), (0,), (29,), (1, 1)))
 def test_invalid_batch_sizes_rejected(tmp_path: Path, batch_sizes: tuple[int, ...]) -> None:
     manifest = tmp_path / "manifest.json"
     manifest.write_bytes(b"test")
@@ -125,3 +132,57 @@ def test_invalid_batch_sizes_rejected(tmp_path: Path, batch_sizes: tuple[int, ..
     )
     with pytest.raises(ValueError, match="Batch sizes|batch sizes"):
         NeuTtsBenchmarkConfig(pilot=pilot, source_commit="test", batch_sizes=batch_sizes)
+
+
+def replicated_manifest(replicas: int) -> TtsPilotManifest:
+    emotions = (
+        PilotEmotion.ANGRY,
+        PilotEmotion.DISGUSTED,
+        PilotEmotion.FEARFUL,
+        PilotEmotion.HAPPY,
+        PilotEmotion.NEUTRAL,
+        PilotEmotion.SAD,
+        PilotEmotion.SURPRISED,
+    )
+    cases = tuple(
+        TtsPilotCase(
+            case_id=f"replica{replica}_{emotion.value}",
+            utterance_id=f"replica{replica}",
+            text="The same literal sentence.",
+            emotion=emotion,
+            seed=42,
+        )
+        for replica in range(replicas)
+        for emotion in emotions
+    )
+    return TtsPilotManifest(cases=cases, warmup_text="Warm up.", warmup_seed=41)
+
+
+@pytest.mark.parametrize("replicas", (1, 2, 3, 4))
+def test_balanced_replicated_manifest_accepted(replicas: int) -> None:
+    manifest = replicated_manifest(replicas)
+    emotions = tuple(case.emotion.value for case in manifest.cases[:7])
+    validate_benchmark_manifest(manifest, emotions)
+
+
+def test_unbalanced_replica_rejected() -> None:
+    manifest = replicated_manifest(2)
+    changed = manifest.cases[0].model_copy(update={"utterance_id": "replica1"})
+    manifest = manifest.model_copy(update={"cases": (changed, *manifest.cases[1:])})
+    emotions = tuple(case.emotion.value for case in manifest.cases[:7])
+    with pytest.raises(ValueError, match="Each replica"):
+        validate_benchmark_manifest(manifest, emotions)
+
+
+@pytest.mark.parametrize("field", ("seed", "text"))
+def test_replica_requires_identical_text_and_seed(field: str) -> None:
+    manifest = replicated_manifest(4)
+    changed = (
+        manifest.cases[0].model_copy(update={"seed": 43})
+        if field == "seed"
+        else manifest.cases[0].model_copy(update={"text": "Different literal sentence."})
+    )
+    manifest = manifest.model_copy(update={"cases": (changed, *manifest.cases[1:])})
+    emotions = tuple(case.emotion.value for case in manifest.cases[:7])
+    with pytest.raises(ValueError, match="seed42|same literal"):
+        validate_benchmark_manifest(manifest, emotions)

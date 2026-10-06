@@ -25,6 +25,7 @@ from speech_projector.neutts_batch_benchmark import (
     NeuTtsBenchmarkResult,
     completed_tokens,
     prompt_emotions,
+    validate_benchmark_manifest,
     verify_recorded_audio,
 )
 from speech_projector.tts_pilot import (
@@ -206,12 +207,7 @@ def benchmark(configuration: NeuTtsBenchmarkConfig) -> NeuTtsBenchmarkResult:
     if digest(pilot.manifest) != pilot.manifest_sha256:
         raise ValueError("Benchmark manifest hash differs from configuration")
     manifest = load_pilot_manifest(pilot.manifest)
-    if len(manifest.cases) != 7 or {case.emotion.value for case in manifest.cases} != set(
-        NeuTTS2E.EMOTIONS
-    ):
-        raise ValueError("Benchmark requires the exact seven NeuTTS emotions")
-    if len({case.text for case in manifest.cases}) != 1:
-        raise ValueError("All benchmark emotions must share the same literal sentence")
+    validate_benchmark_manifest(manifest, NeuTTS2E.EMOTIONS)
     directory = pilot.output_directory
     directory.mkdir(parents=True, exist_ok=True)
     if (directory / "config.json").exists():
@@ -331,6 +327,7 @@ def main() -> None:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source-commit", required=True)
+    parser.add_argument("--batch-sizes", type=int, nargs="+", default=(1, 7))
     arguments = parser.parse_args()
     pilot = NeuTtsPilotConfig(
         manifest=arguments.manifest,
@@ -340,7 +337,13 @@ def main() -> None:
         preparation=NeuTtsPreparation.model_validate_json(arguments.preparation.read_bytes()),
         device=PilotDevice.CUDA,
     )
-    result = benchmark(NeuTtsBenchmarkConfig(pilot=pilot, source_commit=arguments.source_commit))
+    result = benchmark(
+        NeuTtsBenchmarkConfig(
+            pilot=pilot,
+            source_commit=arguments.source_commit,
+            batch_sizes=tuple(arguments.batch_sizes),
+        )
+    )
     print(result.model_dump_json(indent=2), flush=True)
 
 

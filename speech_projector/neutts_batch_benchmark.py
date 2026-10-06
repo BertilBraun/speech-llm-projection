@@ -6,7 +6,12 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from scripts.neutts_pilot_state import NeuTtsPilotConfig, digest
-from speech_projector.tts_pilot import PilotTermination, TtsPilotCase, TtsPilotClip
+from speech_projector.tts_pilot import (
+    PilotTermination,
+    TtsPilotCase,
+    TtsPilotClip,
+    TtsPilotManifest,
+)
 
 
 class NeuTtsBenchmarkConfig(BaseModel):
@@ -19,8 +24,8 @@ class NeuTtsBenchmarkConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_batch_sizes(self) -> "NeuTtsBenchmarkConfig":
-        if not self.batch_sizes or any(not 1 <= size <= 7 for size in self.batch_sizes):
-            raise ValueError("Batch sizes must be in [1, 7]")
+        if not self.batch_sizes or any(not 1 <= size <= 28 for size in self.batch_sizes):
+            raise ValueError("Batch sizes must be in [1, 28]")
         if len(set(self.batch_sizes)) != len(self.batch_sizes):
             raise ValueError("Benchmark batch sizes must be unique")
         return self
@@ -90,6 +95,29 @@ def prompt_emotions(
     cases: tuple[TtsPilotCase, ...], checker: Callable[[str], str | None]
 ) -> tuple[str | None, ...]:
     return tuple(checker(case.emotion.value) for case in cases)
+
+
+def validate_benchmark_manifest(
+    manifest: TtsPilotManifest, supported_emotions: tuple[str, ...]
+) -> None:
+    count = len(manifest.cases)
+    if not 7 <= count <= 28 or count % 7:
+        raise ValueError("Benchmark requires 7, 14, 21 or 28 cases")
+    if len({case.text for case in manifest.cases}) != 1:
+        raise ValueError("All benchmark emotions must share the same literal sentence")
+    if {case.seed for case in manifest.cases} != {42}:
+        raise ValueError("Benchmark cases must all use seed42")
+    expected = set(supported_emotions)
+    observed = {case.emotion.value for case in manifest.cases}
+    if observed != expected:
+        raise ValueError("Benchmark requires the exact seven NeuTTS emotions")
+    families = {case.utterance_id for case in manifest.cases}
+    if len(families) != count // 7:
+        raise ValueError("Each seven-emotion replica requires a unique utterance ID")
+    for family in families:
+        cases = tuple(case for case in manifest.cases if case.utterance_id == family)
+        if len(cases) != 7 or {case.emotion.value for case in cases} != expected:
+            raise ValueError("Each replica must contain each NeuTTS emotion exactly once")
 
 
 def verify_recorded_audio(result: NeuTtsBenchmarkResult, directory: Path) -> None:
