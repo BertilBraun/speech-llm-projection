@@ -165,7 +165,8 @@ def example(identifier: str, text: str) -> Example:
     )
 
 
-def test_fixed_selection_keeps_complete_pairs_and_balanced_generation_prefix() -> None:
+@pytest.mark.parametrize("split", (Split.VALIDATION, Split.TEST))
+def test_fixed_selection_keeps_complete_pairs_and_balanced_generation_prefix(split: Split) -> None:
     examples: list[Example] = []
     sources: list[SourceSidecar] = []
     for index in range(4):
@@ -211,7 +212,9 @@ def test_fixed_selection_keeps_complete_pairs_and_balanced_generation_prefix() -
         ordinary_generations=2,
         generated_pairs_per_cohort=1,
     )
-    selected = select_fixed_validation(examples, sources, configuration)
+    examples = [item.model_copy(update={"split": split}) for item in examples]
+    selected = select_fixed_validation(examples, sources, configuration, split=split)
+    assert all(item.split == split for item in selected.examples)
     assert len(selected.examples) == 12
     assert len(selected.generation_example_ids) == 6
     assert (
@@ -226,13 +229,15 @@ def test_fixed_selection_keeps_complete_pairs_and_balanced_generation_prefix() -
         Cohort.NEU_EMOTIONAL,
     )
     for cohort in (Cohort.QWEN_EMOTIONAL, Cohort.NEU_EMOTIONAL):
-        pairs = build_emotion_pairs(selected.examples, selected.sources, cohort, Split.VALIDATION)
+        pairs = build_emotion_pairs(selected.examples, selected.sources, cohort, split)
         assert len(pairs) == 2
         assert len({pair.family_id for pair in pairs}) == 2
-    assert selected == select_fixed_validation(examples, sources, configuration)
+    assert selected == select_fixed_validation(examples, sources, configuration, split=split)
     missing = sources[:-1]
     with pytest.raises(ValueError, match="coverage"):
-        select_fixed_validation(examples, missing, configuration)
+        select_fixed_validation(examples, missing, configuration, split=split)
+    with pytest.raises(ValueError, match="held-out split"):
+        select_fixed_validation(examples, sources, configuration, split=Split.TRAIN)
 
 
 def test_cohort_ce_weights_tokens_within_cohort_then_macros_cohorts_equally() -> None:

@@ -304,7 +304,11 @@ def select_fixed_validation(
     examples: Sequence[Example],
     sources: Sequence[SourceSidecar],
     configuration: FixedValidationConfig,
+    *,
+    split: Split = Split.VALIDATION,
 ) -> FixedValidationSelection:
+    if split == Split.TRAIN:
+        raise ValueError("Fixed evaluation selection requires a held-out split")
     examples_by_id = {item.example_id: item for item in examples}
     sources_by_id = {item.example_id: item for item in sources}
     if (
@@ -317,8 +321,7 @@ def select_fixed_validation(
         tuple(
             item
             for item in examples
-            if item.split == Split.VALIDATION
-            and sources_by_id[item.example_id].cohort == Cohort.ORDINARY
+            if item.split == split and sources_by_id[item.example_id].cohort == Cohort.ORDINARY
         ),
         configuration.ordinary_examples,
         configuration.seed,
@@ -328,7 +331,7 @@ def select_fixed_validation(
     )
     emotional = tuple(
         _balanced_pairs(
-            build_emotion_pairs(examples, sources, cohort, Split.VALIDATION),
+            build_emotion_pairs(examples, sources, cohort, split),
             sources_by_id,
             configuration.pairs_per_emotional_cohort,
             configuration.seed,
