@@ -12,10 +12,11 @@ from pydantic import Field
 from safetensors.torch import load_file
 
 from speech_projector.data import load_examples
-from speech_projector.evaluation import EvaluationCondition, ExampleLoss
+from speech_projector.evaluation import ExampleLoss
 from speech_projector.inputs import SpeechInput, TranscriptInput, UtteranceInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
+    EvaluationCondition,
     Example,
     GradientCheck,
     Record,
@@ -82,7 +83,7 @@ def find_generation(
     records: Sequence[SampleGeneration], example: Example, condition: EvaluationCondition
 ) -> SampleGeneration:
     for record in records:
-        if record.example_id == example.example_id and record.condition == condition.value:
+        if record.example_id == example.example_id and record.condition == condition:
             if record.history != example.history or record.user_transcript != example.user_text:
                 raise ValueError(f"Reference prompt differs for {example.example_id}")
             return record
