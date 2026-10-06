@@ -353,7 +353,13 @@ def execute_sweep(
             wrapper, initialize_projector(configurations[0], wrapper.device), [ordinary, emotional]
         )
         write_record(parity_path, parity)
-    assert parity.llm_weights_unchanged and not parity.llm_has_gradients
+    assert (
+        parity.llm_weights_unchanged
+        and parity.projector_weights_unchanged
+        and not parity.llm_has_gradients
+        and parity.reference_gradient_norm > 0
+        and parity.batched_gradient_norm > 0
+    )
     try:
         validate_batched_parity(parity, config.batched_parity)
     except ValueError as error:
