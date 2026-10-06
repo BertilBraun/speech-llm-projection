@@ -49,13 +49,14 @@ class EmotionalDatasetConfig(Record):
     batch_size: int = Field(default=10, gt=0, le=50)
     seed: int = Field(default=42, ge=0)
     min_words: int = Field(default=7, ge=7)
-    preferred_max_words: int = Field(default=45, ge=7)
+    preferred_min_words: int = Field(default=12, ge=7)
+    preferred_max_words: int = Field(default=30, ge=7)
     max_acceptance_attempts: int = Field(default=3, ge=1)
 
     @model_validator(mode="after")
     def validate_length_guidance(self) -> EmotionalDatasetConfig:
-        if self.preferred_max_words < self.min_words:
-            raise ValueError("Preferred length must be at least the required minimum")
+        if not self.min_words <= self.preferred_min_words <= self.preferred_max_words:
+            raise ValueError("Preferred word range must be ordered above the required minimum")
         return self
 
 
@@ -445,8 +446,9 @@ def build_draft_requests(configuration: EmotionalDatasetConfig) -> tuple[DraftRe
 def draft_prompt(request: DraftRequest) -> str:
     instructions = (
         "Write one distinct, natural everyday USER utterance for each assigned ID. "
-        f"Use 1–3 sentences and at least {request.configuration.min_words} words; "
-        f"prefer no more than {request.configuration.preferred_max_words} words. "
+        f"Use 1–3 sentences. Aim for {request.configuration.preferred_min_words}–"
+        f"{request.configuration.preferred_max_words} words in every utterance; "
+        f"the required minimum is {request.configuration.min_words} words. "
         "Each literal utterance must be plausible with BOTH assigned deliveries. "
         "Keep necessary context or facts inside the spoken words: there is no hidden dialogue "
         "history. Use varied phrasing, concrete details and pragmatic intentions. "
@@ -506,14 +508,27 @@ def accept_draft_batch(
     ):
         raise ValueError("Generated IDs must match the exact ordered assignments")
     unique_texts = {normalized_utterance(item.text) for item in existing}
-    accepted: list[EmotionalUtterance] = []
-    for assignment, draft in zip(request.assignments, batch.utterances, strict=True):
-        text_key = validate_literal_text(draft.text, request.configuration)
+    errors: list[str] = []
+    for draft in batch.utterances:
+        text_key = normalized_utterance(draft.text)
+        word_count = len(text_key.split())
+        sentences = sentence_count(draft.text)
+        if word_count < request.configuration.min_words:
+            errors.append(
+                f"{draft.base_id}: word_count={word_count}; "
+                f"required minimum={request.configuration.min_words}"
+            )
+        if not 1 <= sentences <= 3:
+            errors.append(f"{draft.base_id}: sentence_count={sentences}; required range=1–3")
         if text_key in unique_texts:
-            raise ValueError(f"Exact normalized text duplicate: {draft.base_id}")
+            errors.append(f"Exact normalized text duplicate: {draft.base_id}")
         unique_texts.add(text_key)
-        accepted.append(assemble_utterance(assignment, draft.text))
-    return tuple(accepted)
+    if errors:
+        raise ValueError("Required corrections: " + "; ".join(errors))
+    return tuple(
+        assemble_utterance(assignment, draft.text)
+        for assignment, draft in zip(request.assignments, batch.utterances, strict=True)
+    )
 
 
 def load_utterances(path: Path) -> tuple[EmotionalUtterance, ...]:

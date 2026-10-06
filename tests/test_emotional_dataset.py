@@ -66,6 +66,7 @@ def test_prompt_schema_contains_literal_outputs_without_explanations() -> None:
     assert "there is no hidden dialogue history" in prompt
     assert "Do not write delivery explanations" in prompt
     assert "BOTH assigned deliveries" in prompt
+    assert "Aim for 12–30 words" in prompt
     assert set(GeneratedDraftText.model_fields) == {"base_id", "text"}
     assert "fact_target" in prompt and "JSON schema" in prompt
 
@@ -297,3 +298,20 @@ def test_structural_retries_are_bounded_without_quality_judging(tmp_path: Path) 
     assert load_utterances(tmp_path / "utterances.jsonl") == ()
     assert "Say exactly" not in descriptive_delivery(Delivery.HAPPY)
     assert "Speak" not in descriptive_delivery(Delivery.HAPPY)
+
+
+def test_all_structurally_invalid_rows_report_exact_ids_and_counts() -> None:
+    request = build_draft_requests(EmotionalDatasetConfig(utterance_count=2))[0]
+    first, second = request.assignments
+    batch = GeneratedDraftBatch(
+        utterances=(
+            GeneratedDraftText(
+                base_id=first.base_id, text="Where exactly are those books located?"
+            ),
+            GeneratedDraftText(base_id=second.base_id, text="Could you check this tomorrow?"),
+        )
+    )
+    with pytest.raises(ValueError) as failure:
+        accept_draft_batch(request, batch, ())
+    assert f"{first.base_id}: word_count=6; required minimum=7" in str(failure.value)
+    assert f"{second.base_id}: word_count=5; required minimum=7" in str(failure.value)
