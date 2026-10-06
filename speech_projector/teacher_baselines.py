@@ -25,7 +25,6 @@ from speech_projector.models import (
     EvaluationMetrics,
     Example,
     GenerationDetails,
-    GenerationKind,
     Record,
     RunConfig,
     SampleGeneration,
@@ -89,10 +88,6 @@ def evaluate_cached_teacher(
                     user_transcript=example.user_text,
                     gold_response=example.target_text,
                     generated_response=teacher.response.text,
-                    generation=GenerationDetails(
-                        kind=GenerationKind.COMPLETED,
-                        token_ids=teacher.response.token_ids,
-                    ),
                     generation=GenerationDetails(
                         kind=teacher.response.kind, token_ids=teacher.response.token_ids
                     ),

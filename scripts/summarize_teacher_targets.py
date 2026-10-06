@@ -365,7 +365,12 @@ def main() -> None:
     (configuration.output_directory / "target_audit.md").write_text(
         render_audit(audit), encoding="utf-8"
     )
-    print(audit.model_dump_json(indent=2), flush=True)
+    print(
+        f"Audited {audit.completed_examples}/{audit.source_examples} completed targets; "
+        f"EOS={audit.eos_completed_examples}, retries={audit.completed_after_retry}, "
+        f"issues={len(audit.issues)}",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":
