@@ -17,7 +17,7 @@ from transformers import (
 )
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
-from speech_projector.emotion_preview import default_preview_plan
+from speech_projector.emotion_preview import PreviewPlan, default_preview_plan
 from speech_projector.generation import CompletedGeneration, TokenLimitedGeneration
 from speech_projector.models import SamplingDecodingConfig
 from speech_projector.preview_responses import (
@@ -113,7 +113,7 @@ def test_literal_user_text_and_system_metadata_do_not_leak_tts_instructions(
     assert f"USER delivered this utterance with a {case.delivery.value} tone" in aware[0].content
     assert "not an instruction to imitate their tone" in aware[0].content
     assert all(case.instruct not in message.content for message in aware + control)
-    assert "do not assume sarcasm means sadness" in aware[0].content
+    assert "Do not assume sarcasm means sadness" in aware[0].content
     assert plan == default_preview_plan()
 
 
@@ -236,6 +236,44 @@ def test_journal_rejects_wrong_request_even_with_original_provenance(tmp_path: P
     )
     with pytest.raises(ValueError, match="input requests"):
         run_preview_requests(provenance, fixture_response)
+
+
+def test_delivery_only_runs_exactly_six_planned_cases_with_native_chat(tmp_path: Path) -> None:
+    plan = PreviewPlan(cases=default_preview_plan().cases[:6])
+    config = configuration(tmp_path).model_copy(update={"include_transcript_controls": False})
+    provenance = PreviewResponseProvenance(
+        configuration=config, plan=plan, plan_sha256="six-case-plan"
+    )
+    requests = preview_requests(plan, include_transcript_controls=False)
+    assert requests == tuple(DeliveryPreviewRequest(case=case) for case in plan.cases)
+    assert len(preview_requests(plan)) == len(plan.cases) + 2
+    tokenizer = PreTrainedTokenizerFast(
+        tokenizer_object=Tokenizer(WordLevel({"[UNK]": 0}, unk_token="[UNK]")), unk_token="[UNK]"
+    )
+    tokenizer.chat_template = pinned_chat_template()
+    calls: list[PreviewRequest] = []
+
+    def respond(request: PreviewRequest) -> PreviewResponse:
+        calls.append(request)
+        messages = preview_messages(request, config.system_text)
+        rendered = tokenizer.apply_chat_template(
+            [message.model_dump() for message in messages],
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
+        assert isinstance(rendered, str)
+        assert rendered.count("<|im_start|>system\n") == 1
+        assert messages[-1].content in rendered
+        return fixture_response(request)
+
+    records = run_preview_requests(provenance, respond)
+    assert tuple(calls) == requests
+    assert tuple(record.request for record in records) == requests
+    assert len(records) == 6
+    assert run_preview_requests(provenance, respond) == records
+    assert len(calls) == 6
+    assert config.decoding == configuration(tmp_path).decoding
 
 
 def test_invalid_budget_fails_before_generation(tmp_path: Path) -> None:

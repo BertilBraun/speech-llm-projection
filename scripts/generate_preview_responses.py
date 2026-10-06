@@ -1,4 +1,4 @@
-"""Generate ten metadata-aware Qwen replies and two transcript-only preview controls."""
+"""Generate metadata-aware Qwen preview replies, with optional transcript-only controls."""
 
 import argparse
 from pathlib import Path
@@ -12,6 +12,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--revision", required=True)
     parser.add_argument("--source-git-commit", required=True)
+    parser.add_argument("--delivery-only", action="store_true")
     arguments = parser.parse_args()
     summary = run_preview_responses(
         PreviewResponseConfig(
@@ -19,6 +20,7 @@ def main() -> None:
             output_directory=arguments.output,
             revision=arguments.revision,
             source_git_commit=arguments.source_git_commit,
+            include_transcript_controls=not arguments.delivery_only,
         )
     )
     print(summary.model_dump_json(indent=2), flush=True)

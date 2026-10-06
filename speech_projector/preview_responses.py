@@ -23,12 +23,13 @@ from speech_projector.journal import append_record, read_journal
 from speech_projector.models import Record, SamplingDecodingConfig
 
 PREVIEW_SYSTEM = (
-    "Respond to the user's message as a conversational assistant in one or two concise sentences. "
-    "Stay grounded in what the user actually said; do not invent events, personal "
-    "experiences, or reasons for their feelings. Do not discuss your own voice, "
-    "tone-production abilities, or roleplay. Delivery metadata describes the user's "
-    "tone and may be ambiguous. Adapt gently, acknowledge "
-    "uncertainty when useful, and do not assume sarcasm means sadness."
+    "Respond conversationally to the user in one or two short sentences. "
+    "Use the annotated USER tone, when provided, to interpret their words and adapt your reply. "
+    "The tone annotation describes the user, not a request to perform that tone. "
+    "Stay grounded in the current message; do not invent events, personal experiences, "
+    "reasons for feelings, or physical presence. Do not give stage directions, discuss "
+    "your own voice or tone-production abilities, or roleplay. Respect a user who is "
+    "ending the conversation. Do not assume sarcasm means sadness."
 )
 
 
@@ -61,6 +62,7 @@ class PreviewResponseConfig(Record):
     model_name: str = "Qwen/Qwen3.5-2B"
     system_text: str = PREVIEW_SYSTEM
     decoding: SamplingDecodingConfig = SamplingDecodingConfig()
+    include_transcript_controls: bool = True
     seed: int = 42
     initial_token_cap: int = Field(default=256, gt=0)
     retry_token_cap: int = Field(default=512, gt=0)
@@ -113,9 +115,14 @@ def request_id(request: PreviewRequest) -> str:
             return identifier
 
 
-def preview_requests(plan: PreviewPlan) -> tuple[PreviewRequest, ...]:
+def preview_requests(
+    plan: PreviewPlan, include_transcript_controls: bool = True
+) -> tuple[PreviewRequest, ...]:
+    requests = tuple(DeliveryPreviewRequest(case=case) for case in plan.cases)
+    if not include_transcript_controls:
+        return requests
     texts = tuple(dict.fromkeys(case.text for case in plan.cases))
-    return tuple(DeliveryPreviewRequest(case=case) for case in plan.cases) + tuple(
+    return requests + tuple(
         TranscriptPreviewRequest(text_id=f"transcript_{index + 1}", text=text)
         for index, text in enumerate(texts)
     )
@@ -252,7 +259,9 @@ def run_preview_requests(
             raise ValueError("Preview provenance differs; use a fresh output directory")
     else:
         provenance_path.write_text(provenance.model_dump_json(indent=2), encoding="utf-8")
-    requests = preview_requests(provenance.plan)
+    requests = preview_requests(
+        provenance.plan, provenance.configuration.include_transcript_controls
+    )
     path = directory / "responses.jsonl"
     previous_records = read_journal(path, PreviewResponse)
     if len(previous_records) > len(requests):
@@ -321,7 +330,7 @@ def run_preview_responses(config: PreviewResponseConfig) -> PreviewResponseSumma
         plan=PreviewPlan.model_validate_json(content),
         plan_sha256=hashlib.sha256(content).hexdigest(),
     )
-    preview_requests(provenance.plan)
+    preview_requests(provenance.plan, config.include_transcript_controls)
     device = torch.device("cuda")
     torch.cuda.reset_peak_memory_stats()
     teacher = PreviewTeacher(config, device)
