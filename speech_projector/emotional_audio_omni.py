@@ -43,7 +43,7 @@ from speech_projector.emotional_audio import (
     archive_uncommitted_audio,
     completed_audio,
 )
-from speech_projector.journal import append_record
+from speech_projector.journal import append_record, read_journal
 from speech_projector.models import Record
 
 
@@ -407,6 +407,9 @@ def initialize_records(configuration: OmniAudioConfig) -> tuple[PreviewClip, ...
         "before resume.\n",
         encoding="utf-8",
     )
+    read_journal(audio.output / "attempts.jsonl", OmniAttempt)
+    read_journal(audio.output / "batches.jsonl", OmniBatchTiming)
+    read_journal(audio.output / "sessions.jsonl", OmniSession)
     archive_uncommitted_audio(audio)
     return verify_completed(audio)
 

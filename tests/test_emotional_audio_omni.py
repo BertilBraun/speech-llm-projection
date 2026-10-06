@@ -30,4 +30,4 @@ def test_isolated_omni_synthesis_and_resume_contracts() -> None:
         text=True,
         timeout=120,
     )
-    assert "8 passed" in process.stdout
+    assert "9 passed" in process.stdout

@@ -214,3 +214,17 @@ def test_stop_at_cap_minus_one_is_valid(configuration: OmniAudioConfig) -> None:
     clip = implementation.record_generated(configuration, case, outcome, "test-session")
     assert clip is not None and clip.codec_tokens == 15
     assert len(read_journal(configuration.audio.output / "attempts.jsonl", OmniAttempt)) == 1
+
+
+def test_resume_archives_incomplete_attempt_suffix(
+    monkeypatch: MonkeyPatch, configuration: OmniAudioConfig
+) -> None:
+    engine = FakeEngine(((generated(0), generated(1)),))
+    install_fake(monkeypatch, configuration, engine)
+    implementation.generate_audio(configuration)
+    path = configuration.audio.output / "attempts.jsonl"
+    original = path.read_bytes()
+    path.write_bytes(original + b'{"session_id":')
+    resumed = implementation.generate_audio(configuration)
+    assert resumed.session_completed == 0 and path.read_bytes() == original
+    assert len(tuple(configuration.audio.output.glob("attempts.jsonl.incomplete-*.bin"))) == 1
