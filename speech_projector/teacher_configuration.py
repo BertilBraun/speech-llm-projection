@@ -56,6 +56,7 @@ def teacher_feasibility_run() -> RunConfig:
             "test_examples": 32,
             "training_validation_examples": 32,
             "semantic_examples": 16,
+            "generation_batch_size": 1,
             "conditioning_examples": 32,
             "evaluation_interval": 80,
         }

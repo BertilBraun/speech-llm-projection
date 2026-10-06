@@ -31,6 +31,7 @@ from speech_projector.models import (
     Split,
 )
 from speech_projector.teacher import TeacherProvenance, TeacherTarget, target_example
+from speech_projector.training import weights_digest
 
 
 class TeacherBaselineConfig(Record):
@@ -140,6 +141,8 @@ def run_teacher_baselines(
         teacher_run.max_history_tokens,
     ) != (current.model_name, current.prompt, current.history_turns, current.max_history_tokens):
         raise ValueError("Cached teacher uses different model, prompt or history settings")
+    if weights_digest(wrapper.model) != teacher.frozen_parameter_sha256:
+        raise ValueError("Evaluation Qwen weights differ from the cached teacher checkpoint")
     journal_path = config.teacher_directory / "targets.jsonl"
     targets = read_journal(journal_path, TeacherTarget)
     target_artifact = FileArtifact(
