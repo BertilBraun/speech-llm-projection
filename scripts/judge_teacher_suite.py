@@ -13,7 +13,7 @@ from pydantic import Field, TypeAdapter
 from scripts.challenge_judge import JudgeChallengeReport, run_challenge
 from scripts.compare_judgments import JudgmentComparison, compare_journals
 from scripts.package_results import FileArtifact, file_digest
-from scripts.run_judge import requests_from_generations
+from scripts.run_judge import PRIMARY_CONDITIONS, requests_from_generations
 from speech_projector.judge import (
     JudgeConfig,
     JudgeJournalProvenance,
@@ -59,6 +59,7 @@ class GenerationJob:
     split: Split
     generations: Path
     expected_examples: int
+    conditions: tuple[EvaluationCondition, ...] = PRIMARY_CONDITIONS
 
 
 class JudgmentInputs(Record):
@@ -96,6 +97,20 @@ class TeacherJudgingReport(Record):
     comparisons: tuple[NamedJudgmentComparison, ...]
     seconds: float
     peak_vram_gb: float
+
+
+class ControlQualityReport(Record):
+    selection: JudgeSelection
+    sets: tuple[JudgedGenerationSet, ...]
+    comparisons: tuple[NamedJudgmentComparison, ...]
+    seconds: float
+
+
+CONTROL_CONDITIONS = (
+    EvaluationCondition.SHUFFLED_SPEECH,
+    EvaluationCondition.SPEECH_NO_HISTORY,
+    EvaluationCondition.SHUFFLED_SPEECH_NO_HISTORY,
+)
 
 
 def artifact(path: Path) -> FileArtifact:
@@ -171,7 +186,7 @@ def generation_jobs(root: Path) -> tuple[GenerationJob, ...]:
 def cache_requests(
     job: GenerationJob, config: TeacherJudgingConfig, judge: LocalJudge
 ) -> tuple[tuple[JudgeRequest, ...], JudgmentInputs, Path]:
-    requests = requests_from_generations(job.generations)
+    requests = requests_from_generations(job.generations, conditions=job.conditions)
     if len(requests) != job.expected_examples:
         raise ValueError(f"{job.name}/{job.split.value} has incomplete generation coverage")
     directory = config.output_directory / job.name / job.split.value
@@ -198,15 +213,13 @@ def cache_requests(
     return requests, inputs, directory
 
 
-def generation_caps(path: Path) -> GenerationCapSummary:
+def generation_caps(
+    path: Path, *, conditions: tuple[EvaluationCondition, ...] = PRIMARY_CONDITIONS
+) -> GenerationCapSummary:
     completed, capped, unknown = 0, 0, 0
     for line in path.read_bytes().splitlines():
         sample = SampleGeneration.model_validate_json(line)
-        if sample.condition not in (
-            EvaluationCondition.SPEECH,
-            EvaluationCondition.TEXT,
-            EvaluationCondition.ASR,
-        ):
+        if sample.condition not in conditions:
             continue
         if sample.generation is None:
             unknown += 1
@@ -238,7 +251,7 @@ def judge_generation_set(
         inputs=inputs,
         journal=artifact(path),
         summary=summarize_judge(outcomes),
-        generation_caps=generation_caps(job.generations),
+        generation_caps=generation_caps(job.generations, conditions=job.conditions),
         seconds=time.perf_counter() - started,
     )
     summary_path.write_text(summary.model_dump_json(indent=2) + "\n", encoding="utf-8")
@@ -323,6 +336,140 @@ def render_report(report: TeacherJudgingReport) -> str:
     return "\n".join(lines) + "\n"
 
 
+def control_generation_jobs(jobs: Sequence[GenerationJob]) -> tuple[GenerationJob, ...]:
+    controls: list[GenerationJob] = []
+    for job in jobs:
+        if job.name in ("text", "asr"):
+            continue
+        samples = tuple(
+            SampleGeneration.model_validate_json(line)
+            for line in job.generations.read_bytes().splitlines()
+        )
+        for condition in CONTROL_CONDITIONS:
+            selected = tuple(item for item in samples if item.condition == condition)
+            if len(selected) != 8:
+                raise ValueError(f"{job.name}/{job.split.value}/{condition.value} requires 8 cases")
+            if condition in (
+                EvaluationCondition.SPEECH_NO_HISTORY,
+                EvaluationCondition.SHUFFLED_SPEECH_NO_HISTORY,
+            ) and any(item.history for item in selected):
+                raise ValueError("No-history generations retain nonempty candidate history")
+            controls.append(
+                GenerationJob(
+                    name=f"{job.name}/{condition.value}",
+                    split=job.split,
+                    generations=job.generations,
+                    expected_examples=8,
+                    conditions=(condition,),
+                )
+            )
+    return tuple(controls)
+
+
+def control_comparisons(
+    jobs: Sequence[GenerationJob],
+    primary: Sequence[JudgedGenerationSet],
+    controls: Sequence[JudgedGenerationSet],
+) -> tuple[NamedJudgmentComparison, ...]:
+    comparisons: list[NamedJudgmentComparison] = []
+    for job in jobs:
+        if job.name in ("text", "asr"):
+            continue
+        normal = next(item for item in primary if (item.name, item.split) == (job.name, job.split))
+        shuffled, no_history, shuffled_no_history = (
+            next(
+                item
+                for item in controls
+                if (item.name, item.split) == (f"{job.name}/{condition.value}", job.split)
+            )
+            for condition in CONTROL_CONDITIONS
+        )
+        for correct, wrong in ((normal, shuffled), (no_history, shuffled_no_history)):
+            comparison = compare_journals(correct.journal.path, wrong.journal.path)
+            if comparison.shared_requested != 8:
+                raise ValueError("Control judgments require exactly 8 paired source examples")
+            comparisons.append(
+                NamedJudgmentComparison(
+                    left=correct.name,
+                    right=wrong.name,
+                    split=job.split,
+                    comparison=comparison,
+                )
+            )
+    return tuple(comparisons)
+
+
+def render_control_report(report: ControlQualityReport) -> str:
+    lines = [
+        "# Small paired audio-control quality audit",
+        "",
+        "Eight preselected examples per run/split are exploratory diagnostics. The same "
+        "candidate-only judge, rubric and actual cleaned transcript are used. Judge history "
+        "is exactly the recorded history supplied to the candidate: deliberately empty for "
+        "both no-history conditions. Thus removed referents can remain ambiguous. Normal "
+        "and no-history candidates are never directly compared as paired quality estimates. "
+        "No additional candidate generations were produced.",
+        "",
+        "Wrong-audio encoder states were interpolated to the correct state length before "
+        "projection. This removes duration cues but changes feature statistics. Confidence "
+        "intervals reflect dialogue sampling only; small n and judge errors limit inference.",
+        "",
+        "| Condition | Split | Valid/requested | Acceptable requested |",
+        "|---|---|---:|---:|",
+    ]
+    for item in report.sets:
+        lines.append(
+            f"| {item.name} | {item.split.value} | {item.summary.valid_examples}/"
+            f"{item.summary.requested_examples} | {item.summary.acceptable_rate_requested:.3f} |"
+        )
+    lines.extend(
+        [
+            "",
+            "| Correct condition | Wrong condition | Split | Metric | Paired valid | "
+            "Correct minus wrong [95% dialogue bootstrap CI] |",
+            "|---|---|---|---|---:|---:|",
+        ]
+    )
+    for comparison in report.comparisons:
+        for metric in comparison.comparison.metrics:
+            interval = metric.left_minus_right
+            lines.append(
+                f"| {comparison.left} | {comparison.right} | {comparison.split.value} | "
+                f"{metric.metric.value} | {interval.examples} | {interval.estimate:+.3f} "
+                f"[{interval.lower:+.3f}, {interval.upper:+.3f}] |"
+            )
+    return "\n".join(lines) + "\n"
+
+
+def run_control_judging(
+    config: TeacherJudgingConfig,
+    calibrated: CalibratedJudge,
+    jobs: Sequence[GenerationJob],
+    primary: Sequence[JudgedGenerationSet],
+) -> ControlQualityReport:
+    started = time.perf_counter()
+    control_config = config.model_copy(
+        update={"output_directory": config.output_directory / "control_sets"}
+    )
+    controls = tuple(
+        judge_generation_set(job, control_config, calibrated.judge)
+        for job in control_generation_jobs(jobs)
+    )
+    report = ControlQualityReport(
+        selection=calibrated.selection,
+        sets=controls,
+        comparisons=control_comparisons(jobs, primary, controls),
+        seconds=time.perf_counter() - started,
+    )
+    (config.output_directory / "control_quality.json").write_text(
+        report.model_dump_json(indent=2) + "\n", encoding="utf-8"
+    )
+    (config.output_directory / "control_quality.md").write_text(
+        render_control_report(report), encoding="utf-8"
+    )
+    return report
+
+
 def run_judging(config: TeacherJudgingConfig, calibrated: CalibratedJudge) -> TeacherJudgingReport:
     started = time.perf_counter()
     jobs = generation_jobs(config.results_root)
@@ -348,6 +495,7 @@ def run_judging(config: TeacherJudgingConfig, calibrated: CalibratedJudge) -> Te
     (config.output_directory / "quality_report.md").write_text(
         render_report(report), encoding="utf-8"
     )
+    run_control_judging(config, calibrated, jobs, sets)
     return report
 
 

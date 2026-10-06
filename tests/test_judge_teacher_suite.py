@@ -5,12 +5,16 @@ import pytest
 
 from scripts.challenge_judge import JudgeChallengeReport
 from scripts.judge_teacher_suite import (
+    CalibratedJudge,
     GenerationJob,
+    JudgeSelection,
     TeacherJudgingConfig,
     cache_requests,
+    control_generation_jobs,
     generation_caps,
     generation_jobs,
     judge_generation_set,
+    run_control_judging,
     select_judge,
 )
 from scripts.run_judge import CalibrationSummary, calibration_cases
@@ -20,9 +24,11 @@ from speech_projector.models import (
     EvaluationCondition,
     GenerationDetails,
     GenerationKind,
+    Role,
     SampleGeneration,
     Split,
     SuiteState,
+    Turn,
 )
 
 
@@ -183,3 +189,68 @@ def test_main_full_coverage_and_no_active_writers_are_required(tmp_path: Path) -
     )
     with pytest.raises(ValueError, match="writers have exited"):
         generation_jobs(config.results_root)
+
+
+def test_controls_use_candidate_history_and_reuse_primary_judgments(tmp_path: Path) -> None:
+    path = tmp_path / "all_generations.jsonl"
+    history = (Turn(role=Role.USER, text="Earlier context"),)
+    for index in range(8):
+        primary = samples()[0].model_copy(
+            update={
+                "example_id": f"example-{index}",
+                "dialogue_id": f"dialogue-{index}",
+                "history": history,
+            }
+        )
+        append_record(path, primary)
+        for condition in (
+            EvaluationCondition.SHUFFLED_SPEECH,
+            EvaluationCondition.SPEECH_NO_HISTORY,
+            EvaluationCondition.SHUFFLED_SPEECH_NO_HISTORY,
+        ):
+            append_record(
+                path,
+                primary.model_copy(
+                    update={
+                        "condition": condition,
+                        "history": history
+                        if condition == EvaluationCondition.SHUFFLED_SPEECH
+                        else (),
+                    }
+                ),
+            )
+    config = configuration(tmp_path)
+    judge = CountingJudge(config.candidates[0])
+    job = GenerationJob("speech", Split.VALIDATION, path, 8)
+    primary_set = judge_generation_set(job, config, judge)
+    passed = calibration(judge, True)
+    calibrated = CalibratedJudge(
+        judge,
+        JudgeSelection(
+            attempts=(JudgeChallengeReport(calibration=passed, independent_challenge=passed),),
+            selected=judge.config,
+        ),
+    )
+    report = run_control_judging(config, calibrated, (job,), (primary_set,))
+    assert len(report.sets) == 3
+    assert len(report.comparisons) == 2
+    assert all(item.comparison.shared_requested == 8 for item in report.comparisons)
+    assert judge.calls == 4
+    for item in report.sets:
+        requests = tuple(
+            JudgeRequest.model_validate_json(line)
+            for line in (item.journal.path.parent / "requests.jsonl").read_bytes().splitlines()
+        )
+        expected = history if item.name.endswith("shuffled_speech") else ()
+        assert all(request.history == expected for request in requests)
+        assert all(request.transcript == "Hello" for request in requests)
+    run_control_judging(config, calibrated, (job,), (primary_set,))
+    assert judge.calls == 4
+    assert primary_set.name == "speech"
+
+
+def test_incomplete_control_coverage_is_not_silently_ignored(tmp_path: Path) -> None:
+    path = tmp_path / "generations.jsonl"
+    write_generations(path)
+    with pytest.raises(ValueError, match="requires 8 cases"):
+        control_generation_jobs((GenerationJob("speech", Split.TEST, path, 3),))

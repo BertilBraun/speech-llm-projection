@@ -180,16 +180,20 @@ def calibrate(
     return summary
 
 
-def requests_from_generations(path: Path) -> tuple[JudgeRequest, ...]:
+PRIMARY_CONDITIONS = (
+    EvaluationCondition.SPEECH,
+    EvaluationCondition.TEXT,
+    EvaluationCondition.ASR,
+)
+
+
+def requests_from_generations(
+    path: Path, *, conditions: tuple[EvaluationCondition, ...] = PRIMARY_CONDITIONS
+) -> tuple[JudgeRequest, ...]:
     samples = tuple(
         SampleGeneration.model_validate_json(line) for line in path.read_bytes().splitlines()
     )
-    primary = tuple(
-        item
-        for item in samples
-        if item.condition
-        in (EvaluationCondition.SPEECH, EvaluationCondition.TEXT, EvaluationCondition.ASR)
-    )
+    primary = tuple(item for item in samples if item.condition in conditions)
     return tuple(
         JudgeRequest(
             example_id=item.example_id,
