@@ -299,7 +299,7 @@ def report_overnight(configuration: OvernightReportConfig) -> Path:
         for item in decision.candidates
     )
     finals = tuple(
-        RunResult.model_validate_json((directory / "result.json").read_bytes())
+        RunResult.model_validate_json((directory / "final_result.json").read_bytes())
         for directory in configuration.final_run_directories
     )
     text = render_overnight_report(
