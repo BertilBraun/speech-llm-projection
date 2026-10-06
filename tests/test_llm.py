@@ -33,6 +33,7 @@ from speech_projector.models import (
     Split,
     SystemPromptConfig,
 )
+from speech_projector.overnight_continuation import prepare_continuation
 from speech_projector.projectors import Projector
 from speech_projector.training import (
     TrainingResourceRecord,
@@ -640,3 +641,35 @@ def test_fixed_update_budget_preserves_mid_epoch_offset_and_finished_resume(
     assert resumed.steps == outcome.steps == 1
     assert weights_digest(projector) == before
     assert len((directory / "train.jsonl").read_text().splitlines()) == 1
+
+
+def test_continuation_preserves_optimizer_cursor_and_exact_training_trajectory(
+    wrapper: FrozenQwen, example: Example, tmp_path: Path
+) -> None:
+    config = wrapper.config.model_copy(
+        update={"train_examples": 6, "epochs": 3, "max_optimizer_updates": 2}
+    )
+    examples = [example.model_copy(update={"example_id": str(index)}) for index in range(6)]
+    wrapper.config = config
+    torch.manual_seed(42)
+    uninterrupted = Projector(config.projector)
+    train_run(config, examples, [example], tmp_path / "full", wrapper, uninterrupted)
+    short = config.model_copy(update={"name": "short", "max_optimizer_updates": 1})
+    wrapper.config = short
+    torch.manual_seed(42)
+    projector = Projector(config.projector)
+    source = tmp_path / "source"
+    train_run(short, examples, [example], source, wrapper, projector)
+    original_state = (source / "checkpoint" / "state.json").read_bytes()
+    destination = tmp_path / "continued"
+    continuation = config.model_copy(update={"name": "continued"})
+    receipt = prepare_continuation(source, destination, continuation)
+    assert prepare_continuation(source, destination, continuation) == receipt
+    copied = TrainingState.model_validate_json(
+        (destination / "checkpoint" / "state.json").read_bytes()
+    )
+    assert copied.offset == 2 and copied.step == 1 and copied.final_validation_loss is None
+    wrapper.config = continuation
+    train_run(continuation, examples, [example], destination, wrapper, projector)
+    assert weights_digest(projector) == weights_digest(uninterrupted)
+    assert (source / "checkpoint" / "state.json").read_bytes() == original_state
