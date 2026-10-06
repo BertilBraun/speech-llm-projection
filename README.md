@@ -29,7 +29,8 @@ On this node use `/venv/main/bin/python` and `/venv/main/bin/ruff`. After
 downloading the three model checkpoints, batch jobs enable offline model loading.
 
 ```text
-python -m speech_projector.data --root data --download-train 1000
+python -m scripts.download_models
+python -m speech_projector.data --root data --download-train 1000 --workers 4
 python -m speech_projector.cache --root data --train-examples 1000
 python -m speech_projector.launcher --manifest data/examples.jsonl --output results --smoke
 python -m speech_projector.launcher --manifest data/examples.jsonl --output results
@@ -46,3 +47,39 @@ Teacher-forced sequences are right padded to multiples of 64 to reduce kernel
 recompilation. Labels mask all padding/history/speech positions. Generation
 uses the actual unpadded prompt. A left-padding optimization was deferred after
 an initial parity test diverged; that test preceded the chat stop-token repair.
+
+## Reading the experiment artifacts
+
+Start with `results/analysis/research_report.md`. It distinguishes measured runs
+from pending work and combines losses, semantic response comparisons, audio
+controls, fixed examples, resource accounting and unresolved limitations.
+`results/analysis/scientific_comparison.png` shows data scaling and compression
+with complementary metrics; `results/summary.csv` contains controlled final
+checkpoint comparisons.
+
+Each run directory contains its exact `config.json` and ordered `subset.jsonl`,
+`train.jsonl`, final `result.json`, rolling optimizer checkpoint, and retained
+best-validation projector. Its `validation` and `test` directories contain
+metrics, per-example losses, paired audio controls and readable generations.
+Supplementary best-checkpoint and matched-budget evaluations live in separate
+subdirectories and leave the main final-checkpoint result unchanged.
+
+`results/dataset` preserves the original metadata and quality/leakage audits.
+`results/audio` and `results/features` contain matching representative waveforms
+and raw encoder states. The reproducibility directory records immutable model
+and dataset revisions, exact manifest, environment, asset hashes and full result
+inventory. The full training audio/cache remains on the node; the result package
+preserves the subset definition and representative audit assets.
+
+After stopping all result writers, create the full inventory on the node and
+verify it again after copying the result directory:
+
+```text
+python -m scripts.inventory_results write-inventory --results results --writers-stopped
+python -m scripts.inventory_results verify --results results
+```
+
+The verification checks exact file membership, sizes and SHA256 hashes. Training
+source and the final validated source are archived separately when they differ;
+run metadata records the source used at completion/evaluation. Any one-time
+linear-config cleanup preserves the exact original JSON under `original_records`.
