@@ -3,7 +3,7 @@
 import argparse
 import hashlib
 from datetime import datetime, timezone
-from enum import StrEnum
+from enum import Enum
 from pathlib import Path
 
 from scripts.package_results import FileArtifact
@@ -21,7 +21,7 @@ EXCLUDED_PATHS = frozenset(
 )
 
 
-class Mode(StrEnum):
+class Mode(str, Enum):
     WRITE = "write-inventory"
     VERIFY = "verify"
 
@@ -114,7 +114,7 @@ def verify_inventory(root: Path) -> InventoryVerification:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", type=Mode, choices=tuple(Mode))
+    parser.add_argument("mode", type=Mode, choices=tuple(mode.value for mode in Mode))
     parser.add_argument("--results", type=Path, required=True)
     parser.add_argument("--writers-stopped", action="store_true")
     arguments = parser.parse_args()
