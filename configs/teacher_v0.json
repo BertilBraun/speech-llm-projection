@@ -20,11 +20,21 @@
   "checkpoint_interval": 100,
   "qualitative_examples": 16,
   "semantic_examples": 16,
+  "generation_batch_size": 1,
   "conditioning_examples": 32,
   "model_name": "Qwen/Qwen3.5-2B",
   "speech_model_name": "openai/whisper-small",
   "prompt": {
     "kind": "chat"
+  },
+  "decoding": {
+    "kind": "sampling",
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": 20,
+    "min_p": 0.0,
+    "presence_penalty": 2.0,
+    "repetition_penalty": 1.0
   },
   "projector": {
     "compression_factor": 5,

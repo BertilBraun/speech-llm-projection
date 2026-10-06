@@ -8,13 +8,18 @@ from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import Whitespace
 from torch import Tensor
 from torch.nn import functional as functional
-from transformers import PreTrainedTokenizerFast, Qwen3_5ForCausalLM
+from transformers import (
+    GenerationConfig,
+    LogitsProcessorList,
+    PreTrainedTokenizerFast,
+    Qwen3_5ForCausalLM,
+)
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
 from speech_projector.evaluation import evaluate, original_dialogue_text
 from speech_projector.generation import CompletedGeneration, TokenLimitedGeneration
 from speech_projector.inputs import SpeechInput, TranscriptInput
-from speech_projector.llm import FrozenQwen
+from speech_projector.llm import FrozenQwen, generation_seed
 from speech_projector.models import (
     ChatPromptConfig,
     EvaluationCondition,
@@ -23,6 +28,7 @@ from speech_projector.models import (
     GenerationKind,
     LinearProjectorConfig,
     RunConfig,
+    SamplingDecodingConfig,
     Split,
     SystemPromptConfig,
 )
@@ -49,14 +55,14 @@ class EosCheckingQwen(Qwen3_5ForCausalLM):
         *,
         inputs_embeds: Tensor,
         attention_mask: Tensor,
-        max_new_tokens: int,
-        do_sample: bool,
-        use_cache: bool,
-        pad_token_id: int | None,
-        eos_token_id: int | None,
+        generation_config: GenerationConfig,
+        logits_processor: LogitsProcessorList,
     ) -> Tensor:
-        assert eos_token_id == 0
-        return torch.tensor([[eos_token_id]], dtype=torch.long)
+        assert generation_config.eos_token_id == 0
+        assert not generation_config.do_sample
+        assert generation_config.use_cache
+        assert not logits_processor
+        return torch.tensor([[generation_config.eos_token_id]], dtype=torch.long)
 
 
 @pytest.fixture
@@ -245,13 +251,14 @@ class BatchEosQwen(Qwen3_5ForCausalLM):
         *,
         inputs_embeds: Tensor,
         attention_mask: Tensor,
-        max_new_tokens: int,
-        do_sample: bool,
-        use_cache: bool,
-        pad_token_id: int | None,
-        eos_token_id: int | None,
+        generation_config: GenerationConfig,
+        logits_processor: LogitsProcessorList,
     ) -> Tensor:
-        assert eos_token_id == 0
+        assert generation_config.eos_token_id == 0
+        assert generation_config.max_new_tokens == 3
+        assert not generation_config.do_sample
+        assert generation_config.use_cache
+        assert not logits_processor
         assert inputs_embeds.shape[0] == 2
         assert torch.all(attention_mask[:, -1] == 1)
         assert torch.any(attention_mask[:, 0] == 0)
@@ -498,3 +505,65 @@ def test_best_checkpoint_compares_the_same_subset_while_final_score_uses_full_va
     best_projector = Projector(config.projector)
     best_projector.load_state_dict(load_file(str(best.checkpoint_path)))
     assert weights_digest(best_projector) != weights_digest(projector)
+
+
+class SamplingCheckingQwen(Qwen3_5ForCausalLM):
+    def generate(
+        self,
+        *,
+        inputs_embeds: Tensor,
+        attention_mask: Tensor,
+        generation_config: GenerationConfig,
+        logits_processor: LogitsProcessorList,
+    ) -> Tensor:
+        assert generation_config.do_sample
+        assert generation_config.temperature == 1
+        assert generation_config.top_p == 1
+        assert generation_config.top_k == 20
+        assert generation_config.use_cache
+        assert generation_config.eos_token_id == 0
+        assert len(logits_processor) == 1
+        tokens = torch.randint(1, 3, (inputs_embeds.shape[0], 8))
+        return torch.cat(
+            (tokens, torch.zeros((inputs_embeds.shape[0], 1), dtype=torch.long)), dim=1
+        )
+
+
+def test_sampling_is_batch_deterministic_and_restores_external_rng(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    wrapper.config = wrapper.config.model_copy(update={"decoding": SamplingDecodingConfig()})
+    wrapper.tokenizer.eos_token = "[UNK]"
+    wrapper.tokenizer.pad_token = "no"
+    wrapper.model = SamplingCheckingQwen(wrapper.model.config)
+    original_rng = torch.random.get_rng_state().clone()
+    speech = SpeechInput(torch.zeros(3, 32))
+    first = wrapper.generate_batch((example,), (speech,), wrapper.config.max_new_tokens)
+    assert torch.equal(torch.random.get_rng_state(), original_rng)
+    torch.manual_seed(987654)
+    changed_rng = torch.random.get_rng_state().clone()
+    repeated = wrapper.generate_batch((example,), (speech,), wrapper.config.max_new_tokens)
+    assert repeated == first
+    assert torch.equal(torch.random.get_rng_state(), changed_rng)
+    transcript = wrapper.generate_batch(
+        (example,), (TranscriptInput(example.user_text),), wrapper.config.max_new_tokens
+    )
+    assert transcript == first
+    assert isinstance(first[0], CompletedGeneration)
+    assert wrapper.generate(example, speech) == first[0].text
+    assert torch.equal(torch.random.get_rng_state(), changed_rng)
+
+
+def test_generation_seed_depends_on_seed_ordered_identifiers_and_token_cap(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    other = example.model_copy(update={"example_id": "two"})
+    baseline = generation_seed(wrapper.config, (example, other), 100)
+    assert baseline == generation_seed(wrapper.config, (example, other), 100)
+    assert baseline != generation_seed(wrapper.config, (other, example), 100)
+    assert baseline != generation_seed(wrapper.config, (example, other), 101)
+    assert baseline != generation_seed(
+        wrapper.config.model_copy(update={"seed": wrapper.config.seed + 1}), (example, other), 100
+    )
+    changed_text = example.model_copy(update={"user_text": "different", "target_text": "different"})
+    assert baseline == generation_seed(wrapper.config, (changed_text, other), 100)

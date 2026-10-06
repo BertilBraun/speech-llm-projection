@@ -120,6 +120,25 @@ PromptConfig: TypeAlias = Annotated[
 ]
 
 
+class GreedyDecodingConfig(Record):
+    kind: Literal["greedy"] = "greedy"
+
+
+class SamplingDecodingConfig(Record):
+    kind: Literal["sampling"] = "sampling"
+    temperature: float = Field(default=1.0, gt=0)
+    top_p: float = Field(default=1.0, gt=0, le=1)
+    top_k: int = Field(default=20, ge=0)
+    min_p: float = Field(default=0.0, ge=0, le=1)
+    presence_penalty: float = Field(default=2.0, ge=0, le=2)
+    repetition_penalty: float = Field(default=1.0, gt=0)
+
+
+DecodingConfig: TypeAlias = Annotated[
+    GreedyDecodingConfig | SamplingDecodingConfig, Field(discriminator="kind")
+]
+
+
 class RunConfig(Record):
     name: str
     stage: ExperimentStage
@@ -147,6 +166,7 @@ class RunConfig(Record):
     model_name: str = "Qwen/Qwen3.5-2B"
     speech_model_name: str = "openai/whisper-small"
     prompt: PromptConfig = SystemPromptConfig()
+    decoding: DecodingConfig = GreedyDecodingConfig()
     projector: ProjectorConfig
 
 

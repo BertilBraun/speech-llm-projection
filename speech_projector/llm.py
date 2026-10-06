@@ -1,5 +1,6 @@
 """Frozen Qwen with differentiable speech embeddings and target-only logits."""
 
+import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -9,6 +10,7 @@ from torch.nn import functional as functional
 from transformers import AutoTokenizer, PreTrainedTokenizerBase, Qwen3_5ForCausalLM
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
+from speech_projector.decoding import generation_parameters, generation_processors
 from speech_projector.generation import (
     CompletedGeneration,
     GenerationResult,
@@ -38,6 +40,15 @@ class TargetScores:
 class GenerationBatch:
     embeddings: Tensor
     attention_mask: Tensor
+
+
+def generation_seed(config: RunConfig, examples: Sequence[Example], max_new_tokens: int) -> int:
+    digest = hashlib.sha256(f"{config.seed}:{max_new_tokens}:".encode("ascii"))
+    for example in examples:
+        identifier = example.example_id.encode("utf-8")
+        digest.update(len(identifier).to_bytes(8, "little"))
+        digest.update(identifier)
+    return int.from_bytes(digest.digest()[:8], "little") % (2**63 - 1)
 
 
 class FrozenQwen:
@@ -178,6 +189,31 @@ class FrozenQwen:
         return GenerationBatch(embeddings=embeddings, attention_mask=attention_mask)
 
     @torch.no_grad()
+    def _generate(
+        self,
+        examples: Sequence[Example],
+        embeddings: Tensor,
+        attention_mask: Tensor,
+        max_new_tokens: int,
+    ) -> Tensor:
+        devices = (
+            [self.device.index if self.device.index is not None else torch.cuda.current_device()]
+            if self.device.type == "cuda"
+            else []
+        )
+        with torch.random.fork_rng(devices=devices):
+            torch.manual_seed(generation_seed(self.config, examples, max_new_tokens))
+            generated: Tensor = self.model.generate(
+                inputs_embeds=embeddings,
+                attention_mask=attention_mask,
+                generation_config=generation_parameters(
+                    self.config.decoding, max_new_tokens, self.tokenizer
+                ),
+                logits_processor=generation_processors(self.config.decoding),
+            )
+        return generated
+
+    @torch.no_grad()
     def generate_batch(
         self,
         examples: Sequence[Example],
@@ -188,15 +224,7 @@ class FrozenQwen:
             raise ValueError("Generation token cap must be positive")
         self.model.eval()
         batch = self.prepare_generation_batch(examples, utterances)
-        generated: Tensor = self.model.generate(
-            inputs_embeds=batch.embeddings,
-            attention_mask=batch.attention_mask,
-            max_new_tokens=max_new_tokens,
-            do_sample=False,
-            use_cache=True,
-            pad_token_id=self.tokenizer.pad_token_id,
-            eos_token_id=self.tokenizer.eos_token_id,
-        )
+        generated = self._generate(examples, batch.embeddings, batch.attention_mask, max_new_tokens)
         results: list[GenerationResult] = []
         for row in generated:
             token_ids = tuple(int(token) for token in row.tolist())
@@ -224,13 +252,10 @@ class FrozenQwen:
     def generate(self, example: Example, utterance: UtteranceInput) -> str:
         self.model.eval()
         prompt = self._prompt(example, utterance).unsqueeze(0)
-        generated = self.model.generate(
-            inputs_embeds=prompt,
-            attention_mask=torch.ones(prompt.shape[:2], device=self.device, dtype=torch.long),
-            max_new_tokens=self.config.max_new_tokens,
-            do_sample=False,
-            use_cache=True,
-            pad_token_id=self.tokenizer.pad_token_id,
-            eos_token_id=self.tokenizer.eos_token_id,
+        generated = self._generate(
+            (example,),
+            prompt,
+            torch.ones(prompt.shape[:2], device=self.device, dtype=torch.long),
+            self.config.max_new_tokens,
         )
         return self.tokenizer.decode(generated[0], skip_special_tokens=True).strip()

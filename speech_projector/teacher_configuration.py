@@ -8,6 +8,7 @@ from speech_projector.models import (
     MlpProjectorConfig,
     ProjectorConfig,
     RunConfig,
+    SamplingDecodingConfig,
 )
 
 TEACHER_PROMPT = ChatPromptConfig()
@@ -39,6 +40,7 @@ def teacher_run(
         generation_batch_size=32,
         conditioning_examples=128,
         prompt=TEACHER_PROMPT,
+        decoding=SamplingDecodingConfig(),
         projector=projector,
     )
 
