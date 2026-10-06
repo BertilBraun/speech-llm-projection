@@ -52,12 +52,10 @@ def run(configuration: NeuCorpusConfig, limit: int) -> NeuCorpusResult:
         case for case in manifest.cases if restore_evidence(case, directory) is not None
     )
     completed = {case.case_id for case in restored}
-    pending = sorted(
-        (case for case in manifest.cases if case.case_id not in completed),
-        key=lambda case: (len(case.text), case.utterance_id, case.case_id),
-    )
+    pending = [case for case in manifest.cases if case.case_id not in completed]
     if limit:
         pending = pending[:limit]
+    pending.sort(key=lambda case: (len(case.text), case.utterance_id, case.case_id))
     sessions = read_journal(directory / "sessions.jsonl", NeuCorpusSession)
     starts_directory = directory / "session_starts"
     starts_directory.mkdir(exist_ok=True)
