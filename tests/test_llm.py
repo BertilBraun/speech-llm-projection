@@ -36,11 +36,14 @@ from speech_projector.models import (
 from speech_projector.overnight_continuation import prepare_continuation
 from speech_projector.projectors import Projector
 from speech_projector.training import (
+    BatchedParityPolicy,
     TrainingResourceRecord,
     TrainingState,
     ValidationCheckpointRecord,
+    batched_gradient_sanity,
     gradient_sanity,
     train_run,
+    validate_batched_parity,
     validation_loss,
     weights_digest,
 )
@@ -673,3 +676,21 @@ def test_continuation_preserves_optimizer_cursor_and_exact_training_trajectory(
     train_run(continuation, examples, [example], destination, wrapper, projector)
     assert weights_digest(projector) == weights_digest(uninterrupted)
     assert (source / "checkpoint" / "state.json").read_bytes() == original_state
+
+
+def test_batched_gradient_gate_compares_same_weights_and_rejects_misalignment(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    projector = Projector(wrapper.config.projector)
+    other = example.model_copy(update={"example_id": "two", "target_text": "yes no yes"})
+    check = batched_gradient_sanity(wrapper, projector, [example, other])
+    assert check.absolute_loss_difference < 1e-6
+    assert check.gradient_cosine > 0.99999
+    assert check.gradient_norm_ratio == pytest.approx(1, abs=1e-5)
+    assert check.llm_weights_unchanged and check.projector_weights_unchanged
+    assert not check.llm_has_gradients
+    validate_batched_parity(check, BatchedParityPolicy())
+    with pytest.raises(ValueError, match="parity failed"):
+        validate_batched_parity(
+            check.model_copy(update={"gradient_cosine": 0.5}), BatchedParityPolicy()
+        )

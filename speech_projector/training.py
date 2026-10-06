@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import torch
+from pydantic import Field
 from safetensors.torch import load_file, save_file
 from torch import Tensor
 
@@ -39,6 +40,118 @@ class ValidationCheckpointRecord(Record):
 
 class TrainingResourceRecord(Record):
     peak_vram_gb: float
+
+
+class BatchedParityPolicy(Record):
+    absolute_loss_tolerance: float = Field(default=0.01, gt=0)
+    relative_loss_tolerance: float = Field(default=0.01, gt=0)
+    minimum_gradient_cosine: float = Field(default=0.99, ge=-1, le=1)
+    gradient_norm_relative_tolerance: float = Field(default=0.1, gt=0)
+
+
+class BatchedGradientCheck(Record):
+    example_ids: tuple[str, ...]
+    target_tokens: tuple[int, ...]
+    reference_loss: float
+    batched_loss: float
+    absolute_loss_difference: float
+    relative_loss_difference: float
+    gradient_cosine: float
+    gradient_norm_ratio: float
+    reference_gradient_norm: float
+    batched_gradient_norm: float
+    llm_has_gradients: bool
+    llm_weights_unchanged: bool
+    projector_weights_unchanged: bool
+    runtime_seconds: float
+    peak_vram_gb: float
+
+
+def batched_gradient_sanity(
+    wrapper: FrozenQwen, projector: Projector, examples: list[Example]
+) -> BatchedGradientCheck:
+    if len(examples) < 2:
+        raise ValueError("Batched parity requires at least two real examples")
+    before_llm = weights_digest(wrapper.model)
+    before_projector = weights_digest(projector)
+    wrapper.model.train(wrapper.config.gradient_checkpointing)
+    projector.train()
+    if wrapper.device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(wrapper.device)
+        torch.cuda.synchronize(wrapper.device)
+    started = time.monotonic()
+    projector.zero_grad(set_to_none=True)
+    reference_loss = 0.0
+    for example in examples:
+        loss = wrapper.loss(example, SpeechInput(projector(load_features(example, wrapper.device))))
+        (loss / len(examples)).backward()
+        reference_loss += loss.item() / len(examples)
+    reference_gradient = torch.cat(
+        tuple(
+            parameter.grad.detach().float().flatten().clone()
+            for parameter in projector.parameters()
+            if parameter.grad is not None
+        )
+    )
+    projector.zero_grad(set_to_none=True)
+    inputs = tuple(
+        SpeechInput(projector(load_features(example, wrapper.device))) for example in examples
+    )
+    batched_loss = wrapper.loss_batch(examples, inputs)
+    batched_loss.backward()
+    batched_gradient = torch.cat(
+        tuple(
+            parameter.grad.detach().float().flatten()
+            for parameter in projector.parameters()
+            if parameter.grad is not None
+        )
+    )
+    reference_norm = reference_gradient.norm().item()
+    batched_norm = batched_gradient.norm().item()
+    assert reference_norm > 0 and batched_norm > 0
+    absolute_difference = abs(reference_loss - batched_loss.item())
+    if wrapper.device.type == "cuda":
+        torch.cuda.synchronize(wrapper.device)
+    result = BatchedGradientCheck(
+        example_ids=tuple(example.example_id for example in examples),
+        target_tokens=tuple(wrapper.target_token_count(example) for example in examples),
+        reference_loss=reference_loss,
+        batched_loss=batched_loss.item(),
+        absolute_loss_difference=absolute_difference,
+        relative_loss_difference=absolute_difference / abs(reference_loss),
+        gradient_cosine=torch.nn.functional.cosine_similarity(
+            reference_gradient, batched_gradient, dim=0
+        ).item(),
+        gradient_norm_ratio=batched_norm / reference_norm,
+        reference_gradient_norm=reference_norm,
+        batched_gradient_norm=batched_norm,
+        llm_has_gradients=any(
+            parameter.grad is not None for parameter in wrapper.model.parameters()
+        ),
+        llm_weights_unchanged=weights_digest(wrapper.model) == before_llm,
+        projector_weights_unchanged=weights_digest(projector) == before_projector,
+        runtime_seconds=time.monotonic() - started,
+        peak_vram_gb=torch.cuda.max_memory_allocated(wrapper.device) / 1e9
+        if wrapper.device.type == "cuda"
+        else 0.0,
+    )
+    projector.zero_grad(set_to_none=True)
+    return result
+
+
+def validate_batched_parity(check: BatchedGradientCheck, policy: BatchedParityPolicy) -> None:
+    if (
+        check.llm_has_gradients
+        or not check.llm_weights_unchanged
+        or not check.projector_weights_unchanged
+        or check.absolute_loss_difference > policy.absolute_loss_tolerance
+        or check.relative_loss_difference > policy.relative_loss_tolerance
+        or check.gradient_cosine < policy.minimum_gradient_cosine
+        or abs(check.gradient_norm_ratio - 1) > policy.gradient_norm_relative_tolerance
+    ):
+        raise ValueError(
+            f"Batched backward parity failed; inspect saved measurements: {check.model_dump_json()}"
+        )
 
 
 @dataclass(frozen=True)
