@@ -12,6 +12,11 @@ class PilotEmotion(str, Enum):
     HAPPY = "happy"
     ANGRY = "angry"
     SAD = "sad"
+    AFRAID = "afraid"
+    FEARFUL = "fearful"
+    DISGUSTED = "disgusted"
+    MELANCHOLIC = "melancholic"
+    SURPRISED = "surprised"
 
 
 class PilotTermination(str, Enum):

@@ -27,14 +27,19 @@ from speech_projector.tts_pilot import (
         (PilotEmotion.HAPPY, 0),
         (PilotEmotion.ANGRY, 1),
         (PilotEmotion.SAD, 2),
+        (PilotEmotion.AFRAID, 3),
+        (PilotEmotion.DISGUSTED, 4),
+        (PilotEmotion.MELANCHOLIC, 5),
+        (PilotEmotion.SURPRISED, 6),
         (PilotEmotion.NEUTRAL, 7),
     ),
 )
-def test_index_emotion_vector(emotion: PilotEmotion, index: int) -> None:
-    vector = emotion_vector(emotion, 0.7)
+@pytest.mark.parametrize("intensity", (0.7, 1.0))
+def test_index_emotion_vector(emotion: PilotEmotion, index: int, intensity: float) -> None:
+    vector = emotion_vector(emotion, intensity)
     assert len(vector) == 8
-    assert vector[index] == 0.7
-    assert sum(vector) == pytest.approx(0.7)
+    assert vector[index] == intensity
+    assert sum(vector) == pytest.approx(intensity)
 
 
 @pytest.mark.parametrize("intensity", (0.0, -0.1, 1.01))

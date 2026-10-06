@@ -80,8 +80,18 @@ def emotion_vector(emotion: PilotEmotion, intensity: float) -> tuple[float, ...]
             index = 1
         case PilotEmotion.SAD:
             index = 2
+        case PilotEmotion.AFRAID:
+            index = 3
+        case PilotEmotion.DISGUSTED:
+            index = 4
+        case PilotEmotion.MELANCHOLIC:
+            index = 5
+        case PilotEmotion.SURPRISED:
+            index = 6
         case PilotEmotion.NEUTRAL:
             index = 7
+        case PilotEmotion.FEARFUL:
+            raise ValueError("IndexTTS calls its fear component afraid; use that label")
     return tuple(intensity if position == index else 0.0 for position in range(8))
 
 

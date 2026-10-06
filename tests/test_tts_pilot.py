@@ -68,7 +68,7 @@ def test_literal_utterance_remains_identical_across_emotions_and_manifest_roundt
     path.write_text(manifest.model_dump_json(), encoding="utf-8")
     assert load_pilot_manifest(path) == manifest
     assert len({item.text for item in manifest.cases}) == 1
-    assert len({item.case_id for item in manifest.cases}) == 4
+    assert len({item.case_id for item in manifest.cases}) == len(PilotEmotion)
     assert manifest.cases[0].seed == 42
 
 

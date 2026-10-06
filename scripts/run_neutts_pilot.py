@@ -89,8 +89,10 @@ def run(configuration: NeuTtsPilotConfig) -> TtsPilotResult:
     validate_configuration(configuration)
     if configuration.speaker not in NeuTTS2E.SPEAKERS:
         raise ValueError(f"Unsupported official NeuTTS-2E speaker: {configuration.speaker}")
-    if len(manifest.cases) != 8:
-        raise ValueError("This bounded comparison requires exactly eight canonical cases")
+    supported_emotions = {"neutral", "happy", "angry", "sad", "fearful", "disgusted", "surprised"}
+    for case in manifest.cases:
+        if case.emotion.value not in supported_emotions:
+            raise ValueError(f"Unsupported NeuTTS-2E emotion: {case.emotion.value}")
     backbone, codec = configuration.preparation.repositories
     if backbone.repository != "neuphonic/neutts-2e" or codec.repository != "neuphonic/neucodec":
         raise ValueError("Preparation must pin the official NeuTTS-2E backbone and NeuCodec")
