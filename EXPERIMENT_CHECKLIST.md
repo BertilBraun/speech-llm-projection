@@ -15,13 +15,13 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 45.1GiB cgroup RAM limi
 - [x] Text and ASR baselines on fixed validation/test examples.
 - [x] V1 nested 1k/3k/10k data sizes.
 - [x] V2 compression curve.
-- [ ] V3 linear/MLP/learned temporal comparison.
+- [x] V3 linear/MLP/learned temporal comparison.
 - [ ] Aggregate metrics, plots, readable qualitative examples and failures.
 - [ ] Copy irreplaceable results/checkpoints off the nonpersistent node.
 
 ## Experiment state
 
-Updated 2026-10-06 05:32 Europe/Berlin.
+Updated 2026-10-06 05:53 Europe/Berlin.
 Completed: V0, all four heldout baselines, training/untrained conditioning probes,
 first cache and ASR, model gradient/memory profile, 10k audio download.
 Completed V1:1k,3k and10k runs, including full validation/test and conditioning diagnostics.
@@ -35,14 +35,17 @@ Twentyfold compression remains functional but topic recovery is inconsistent.
 Completed V3 pooledlinear at25 tokens/s: validation/test CE1.78585/1.69272,
 semantic0.40872/0.41229,1,576,448 parameters; locally backed up with raw records preserved.
 Validation shuffled margin+0.55467(SE0.09239), no-history margin+0.72533(SE0.09743).
-Running: V3 convolutional at25 tokens/s with10k examples; no other GPU workload.
+Completed V3 convolutional at25 tokens/s: validation/test CE1.90110/1.80423,
+semantic0.35038/0.34481,4,068,608 parameters; locally backed up.
+Fullcore suite EXITED0 at05:50:36Berlin, no failures or activecore run.
+Running:20k two-epoch V1 extension at10 tokens/s, started05:51:22Berlin after verified core success.
 Completed:30k audio download,20k new clips/6.889GB in84 minutes, zero failures.
 Full30k train plus128val/128test waveform SHA256 audit found zero cross-split overlaps.
 V3 reuses the completedMLP comparison at25 tokens/s; final architecture conclusions pending CONV.
 Reviewed all4 rates using validation CE, validation controls and fixed validation topics;
 selected25Hz and resumed the suite after a70-second pause. Decision saved inresults.
-Confirmed and registered but stopped:20k two-epoch V1 extension at10 tokens/s, to start
-after fullcore success before06:10Berlin; hold for reassessment if completion is later.
+Twenty-k extension uses the unchanged nested collected prefix for controlled comparisons;
+source/manifest remain frozen and the first-epoch snapshot watcher will preserve2500updates.
 The30k configuration remains available but unqueued.
 Prepared: first-epoch checkpoint preservation for a2500-update/20k-exposure comparison
 against the10k two-epoch model, with supplementary evaluation kept separate.
@@ -80,7 +83,7 @@ Best10k validation checkpoint is step2400, CE1.7957, retained separately from fi
 Exact selected-subset distributions and manifest-prefix agreement are audited and saved.
 Package hashes verified for46 copied files/118.60MB, including original metadata and audit assets.
 All-result SHA256 inventory/relocation verification is ready for the final stopped-writer backup.
-Remaining: finish V3 and the authorized20k run, evaluate matched-budget and promising best checkpoints,
+Remaining: finish the authorized20k run, evaluate matched-budget and promising best checkpoints,
 validate the typed API on GPU, finalize the research report, verify and back up all artifacts.
 Late audit: the initial random quality check missed audio/text alignment defects.
 Training-prefix256/1k/3k/10k/20k mismatches:6/21/55/187/389;20k audio-target matches357.
