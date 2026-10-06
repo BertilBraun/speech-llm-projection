@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from importlib.metadata import Distribution, distributions
 from pathlib import Path
 
-from huggingface_hub import HfApi, RepoFile, RepoFolder
+from huggingface_hub.hf_api import HfApi, RepoFile, RepoFolder
 
 from speech_projector.cache import CacheStatistics, load_asr
 from speech_projector.data import DATASET_URL, load_examples

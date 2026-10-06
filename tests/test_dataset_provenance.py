@@ -2,8 +2,7 @@ import hashlib
 from pathlib import Path
 
 import pytest
-from huggingface_hub import RepoFile
-from huggingface_hub.hf_api import BlobLfsInfo
+from huggingface_hub.hf_api import BlobLfsInfo, RepoFile
 
 from scripts.package_results import METADATA_REPOSITORY_PATH, verify_dataset_source
 
