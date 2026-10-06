@@ -11,6 +11,7 @@ from scripts.prepare_teacher_data import (
     prepared_example,
     preserve_asr,
     select_heldout,
+    teacher_prompt,
     write_feature_plan,
     write_immutable,
 )
@@ -180,3 +181,30 @@ def test_transcript_overlap_is_reported_separately_from_response_pair(tmp_path: 
     assert report.cleaned_user_transcript_overlap[0].shared_transcripts == 1
     assert report.cleaned_user_transcript_overlap[0].left_examples_with_overlap == 1
     assert report.bootstrap[0].missing_features == 1
+
+
+def test_exact_teacher_prompt_excludes_dialogue_without_broad_user_only_filter(
+    tmp_path: Path,
+) -> None:
+    training = prepared_example(aligned(0), tmp_path)
+    original = aligned(1, Split.VALIDATION)
+    collision = original.model_copy(
+        update={
+            "source": original.source.model_copy(update={"audio_cleaned_text": training.user_text})
+        }
+    )
+    different_history = collision.model_copy(
+        update={
+            "example": collision.example.model_copy(
+                update={
+                    "example_id": "different-history",
+                    "dialogue_id": "different-dialogue",
+                    "history": (Turn(role=Role.ASSISTANT, text="A distinct previous reply"),),
+                }
+            )
+        }
+    )
+    selected, excluded = select_heldout((collision, different_history), (training,), 1, tmp_path)
+    assert selected == (different_history,)
+    assert excluded == (collision.example.dialogue_id,)
+    assert teacher_prompt(training) != teacher_prompt(prepared_example(different_history, tmp_path))

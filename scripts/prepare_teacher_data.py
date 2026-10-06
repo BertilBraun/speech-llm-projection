@@ -33,7 +33,7 @@ from speech_projector.data import (
     load_source,
     save_examples,
 )
-from speech_projector.models import Example, Record, Split
+from speech_projector.models import Example, Record, Split, Turn
 
 
 class TeacherDataConfig(Record):
@@ -111,6 +111,16 @@ class TeacherInputReadiness(Record):
 
 
 @dataclass(frozen=True)
+class TeacherPrompt:
+    user_text: str
+    history: tuple[Turn, ...]
+
+
+def teacher_prompt(example: Example) -> TeacherPrompt:
+    return TeacherPrompt(example.user_text, example.history[-2:])
+
+
+@dataclass(frozen=True)
 class CleanCandidates:
     alignments: tuple[SynthesisAlignment, ...]
     material_exclusions: int
@@ -169,6 +179,7 @@ def select_heldout(
     retained_dialogues = {example.dialogue_id for example in retained}
     retained_paths = {example.audio_path for example in retained}
     retained_pairs = {normalized_pair(example) for example in retained}
+    retained_prompts = {teacher_prompt(example) for example in retained}
     excluded = {
         alignment.example.dialogue_id
         for alignment in candidates
@@ -176,6 +187,7 @@ def select_heldout(
             alignment.example.dialogue_id in retained_dialogues
             or prepared_example(alignment, output_root).audio_path in retained_paths
             or normalized_pair(prepared_example(alignment, output_root)) in retained_pairs
+            or teacher_prompt(prepared_example(alignment, output_root)) in retained_prompts
         )
     }
     selected = tuple(
@@ -295,7 +307,8 @@ def write_dataset_report(
             "split_method": (
                 source_report.split_method
                 + "; selected teacher inputs remove lexical synthesis mismatch/substitution "
-                "and complete heldout dialogues with cleaned-user/source-target collisions. "
+                "and complete heldout dialogues with cleaned-user/source-target or exact "
+                "cleaned-user plus role/text history[-2:] prompt collisions. "
                 "Filters/usable_pairs describe source eligibility; "
                 "additional cleaning is in preparation.json."
             ),
@@ -427,7 +440,8 @@ def prepare(configuration: TeacherDataConfig) -> tuple[Example, ...]:
         subset_definition=(
             "TRAIN: first requested clean examples in original 30k seeded order; nested prefixes. "
             "Heldout: original seed-42 dialogue/hash splits and example order, lexical alignment "
-            "and TTS substitutions removed; whole dialogues with cross-split path/pair collisions "
+            "and TTS substitutions removed; whole dialogues with cross-split path/pair or exact "
+            "teacher prompt (cleaned user plus role/text history[-2:]) collisions "
             "excluded. Original data.build_examples test-pair exclusion also applies to the pool."
         ),
         transcript_reference=(
