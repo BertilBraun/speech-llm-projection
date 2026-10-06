@@ -55,7 +55,7 @@ def snapshot_launch(manifest: Path, output: Path) -> LaunchProvenance:
     output.mkdir(parents=True, exist_ok=True)
     source_archive = output / f"source_{revision}.zip"
     if not source_archive.exists():
-        subprocess.run(["git", "archive", "HEAD", "-o", str(source_archive)], check=True)
+        subprocess.run(["git", "archive", revision, "-o", str(source_archive)], check=True)
     record = LaunchProvenance(
         git_revision=revision,
         manifest_path=manifest,
