@@ -320,7 +320,14 @@ def train_run(
         resources = _save_training_resources(output_dir, wrapper.device, resources)
     if state.final_validation_loss is None:
         final_validation = validation_loss(wrapper, projector, validation)
-        _save_best_validation(output_dir, projector, state.step, final_validation, best_validation)
+        selection_validation = (
+            final_validation
+            if len(checkpoint_validation) == len(validation)
+            else validation_loss(wrapper, projector, checkpoint_validation)
+        )
+        _save_best_validation(
+            output_dir, projector, state.step, selection_validation, best_validation
+        )
         state = state.model_copy(update={"final_validation_loss": final_validation})
     if state.final_fixed_training_loss is None:
         state = state.model_copy(

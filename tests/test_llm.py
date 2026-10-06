@@ -29,6 +29,7 @@ from speech_projector.models import (
 from speech_projector.projectors import Projector
 from speech_projector.training import (
     TrainingResourceRecord,
+    TrainingState,
     ValidationCheckpointRecord,
     gradient_sanity,
     train_run,
@@ -435,3 +436,65 @@ def test_right_padding_does_not_change_real_logits(
     mask = functional.pad(prepared.attention_mask, (0, padding))
     output = wrapper.model(inputs_embeds=padded, attention_mask=mask, use_cache=False)
     torch.testing.assert_close(original.logits, output.logits[:, : prepared.embeddings.shape[1]])
+
+
+def test_best_checkpoint_compares_the_same_subset_while_final_score_uses_full_validation(
+    wrapper: FrozenQwen,
+    example: Example,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = wrapper.config.model_copy(
+        update={"epochs": 2, "evaluation_interval": 1, "training_validation_examples": 1}
+    )
+    wrapper.config = config
+    training_examples = [example, example.model_copy(update={"example_id": "train-two"})]
+    validation_examples = [
+        example.model_copy(update={"example_id": "validation-one", "split": Split.VALIDATION}),
+        example.model_copy(update={"example_id": "validation-two", "split": Split.VALIDATION}),
+    ]
+    subset_scores = iter((2.0, 1.0, 1.5, 1.6))
+    training_scores = iter((5.0, 2.0))
+    populations: list[tuple[Split, int]] = []
+
+    def deterministic_validation_loss(
+        selected_wrapper: FrozenQwen,
+        selected_projector: Projector,
+        selected_examples: list[Example],
+    ) -> float:
+        assert selected_wrapper is wrapper
+        assert selected_projector is projector
+        split = selected_examples[0].split
+        populations.append((split, len(selected_examples)))
+        if split == Split.TRAIN:
+            return next(training_scores)
+        return next(subset_scores) if len(selected_examples) == 1 else 0.1
+
+    monkeypatch.setattr("speech_projector.training.validation_loss", deterministic_validation_loss)
+    projector = Projector(config.projector)
+    output_directory = tmp_path / "selection"
+    outcome = train_run(
+        config, training_examples, validation_examples, output_directory, wrapper, projector
+    )
+    best = ValidationCheckpointRecord.model_validate_json(
+        (output_directory / "best_validation.json").read_bytes()
+    )
+    assert best.step == 1
+    assert best.cross_entropy == 1.0
+    assert outcome.steps == 2
+    assert populations == [
+        (Split.VALIDATION, 1),
+        (Split.TRAIN, 2),
+        (Split.VALIDATION, 1),
+        (Split.VALIDATION, 1),
+        (Split.VALIDATION, 2),
+        (Split.VALIDATION, 1),
+        (Split.TRAIN, 2),
+    ]
+    final_state = TrainingState.model_validate_json(
+        (output_directory / "checkpoint" / "state.json").read_bytes()
+    )
+    assert final_state.final_validation_loss == 0.1
+    best_projector = Projector(config.projector)
+    best_projector.load_state_dict(load_file(str(best.checkpoint_path)))
+    assert weights_digest(best_projector) != weights_digest(projector)
