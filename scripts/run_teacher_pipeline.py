@@ -28,6 +28,7 @@ class Phase(str, Enum):
     AUDIT = "teacher_split_audit"
     TARGET_AUDIT = "teacher_target_statistics"
     SUITE = "teacher_research_suite"
+    CONDITIONING_ANALYSIS = "conditioning_analysis"
     JUDGE = "response_quality_judging"
     REPORT = "research_report"
 
@@ -174,6 +175,20 @@ def jobs(root: Path, teacher_batch_size: int, include_scaling: bool) -> tuple[Jo
             (results / "teacher_targets/target_audit.json",),
         ),
         Job(Phase.SUITE, suite, (results / "completed_results.json",)),
+        Job(
+            Phase.CONDITIONING_ANALYSIS,
+            (
+                "-m",
+                "scripts.analyze_teacher_conditioning",
+                "--results-root",
+                str(results),
+                "--manifest",
+                str(full),
+                "--output",
+                str(results / "analysis/conditioning_strata"),
+            ),
+            (results / "analysis/conditioning_strata/index.md",),
+        ),
         Job(
             Phase.JUDGE,
             (

@@ -588,6 +588,10 @@ def render_teacher_report(data: TeacherReportData) -> str:
             "",
             "See qualitative_comparisons.md for the fixed first 8 validation + first 8 test "
             "cases and report_inputs.json for exact input hashes.",
+            "History-specific teacher fidelity and paired audio-conditioning intervals "
+            "are in [the conditioning reports](conditioning_strata/index.md). "
+            "Small generated-response audio controls are in "
+            "[the control-quality report](../response_quality/control_quality.md).",
             "",
         )
     )
