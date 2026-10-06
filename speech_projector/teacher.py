@@ -5,6 +5,7 @@ import time
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from enum import Enum
+from functools import partial
 from pathlib import Path
 from typing import Annotated, Literal, TypeAlias
 
@@ -194,6 +195,15 @@ def generate_targets(
     return tuple(targets)
 
 
+def teacher_batch_key(history_turns: int, example: Example) -> tuple[bool, int, str]:
+    history = example.history[-history_turns:] if history_turns else ()
+    return (
+        not bool(history),
+        len(example.user_text) + sum(len(turn.text) for turn in history),
+        example.example_id,
+    )
+
+
 def run_teacher(config: TeacherConfig, selection: TeacherSelection) -> TeacherProgress:
     if config.retry_max_new_tokens <= config.initial_max_new_tokens:
         raise ValueError("Teacher retry cap must be larger than its initial cap")
@@ -245,7 +255,13 @@ def run_teacher(config: TeacherConfig, selection: TeacherSelection) -> TeacherPr
             raise ValueError("Teacher journal contains a duplicate completed identifier")
         completed_ids.add(target.example.example_id)
     selected = select_examples(examples, selection)
-    pending = tuple(example for example in selected if example.example_id not in completed_ids)
+    # Separating chat continuations from opening questions limits finished-row padding waste.
+    pending = tuple(
+        sorted(
+            (example for example in selected if example.example_id not in completed_ids),
+            key=partial(teacher_batch_key, config.run.history_turns),
+        )
+    )
     history = read_journal(config.output_directory / "progress.jsonl", TeacherProgress)
     previous_elapsed = history[-1].elapsed_seconds if history else 0.0
     previous_peak = history[-1].peak_vram_gb if history else 0.0

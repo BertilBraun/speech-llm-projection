@@ -18,6 +18,7 @@ from speech_projector.models import (
     SuiteState,
 )
 from speech_projector.teacher_configuration import teacher_feasibility_run
+from speech_projector.teacher_launcher import snapshot_launch
 
 
 @dataclass(frozen=True)
@@ -311,3 +312,75 @@ def test_zero_exit_without_expected_output_is_failed_phase(tmp_path: Path) -> No
     )
     assert state.failed == (pipeline.Phase.BOOTSTRAP.value,)
     assert state.completed == ()
+
+
+@dataclass(frozen=True)
+class SnapshotRepository:
+    root: Path
+    manifest: Path
+    output: Path
+
+
+@pytest.fixture
+def snapshot_repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SnapshotRepository:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    (repository / "source.py").write_text("value = 1\n", encoding="utf-8")
+    (repository / ".gitignore").write_text("data/\nresults/\n", encoding="utf-8")
+    commands = (
+        ("init",),
+        ("add", "source.py", ".gitignore"),
+        (
+            "-c",
+            "user.name=Research Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-m",
+            "Committed test source",
+        ),
+    )
+    for arguments in commands:
+        subprocess.run(["git", *arguments], cwd=repository, check=True, capture_output=True)
+    manifest = repository / "data/teacher.jsonl"
+    manifest.parent.mkdir()
+    manifest.write_bytes(b"test-local immutable dataset identity")
+    monkeypatch.chdir(repository)
+    return SnapshotRepository(repository, manifest, repository / "results/reproducibility")
+
+
+def test_launch_resume_reuses_original_provenance_and_start_time(
+    snapshot_repository: SnapshotRepository,
+) -> None:
+    first = snapshot_launch(snapshot_repository.manifest, snapshot_repository.output)
+    launch_path = snapshot_repository.output / f"launch_{first.git_revision}.json"
+    before = launch_path.read_bytes()
+    resumed = snapshot_launch(snapshot_repository.manifest, snapshot_repository.output)
+    assert resumed == first
+    assert resumed.started_at == first.started_at
+    assert launch_path.read_bytes() == before
+    assert first.source_archive_path.is_file()
+
+
+@pytest.mark.parametrize("changed_artifact", ["manifest", "archive"])
+def test_resume_rejects_changed_dataset_or_source_archive(
+    snapshot_repository: SnapshotRepository, changed_artifact: str
+) -> None:
+    first = snapshot_launch(snapshot_repository.manifest, snapshot_repository.output)
+    path = (
+        snapshot_repository.manifest
+        if changed_artifact == "manifest"
+        else first.source_archive_path
+    )
+    with path.open("ab") as stream:
+        stream.write(b"changed evidence")
+    with pytest.raises(ValueError, match="provenance"):
+        snapshot_launch(snapshot_repository.manifest, snapshot_repository.output)
+
+
+def test_launch_rejects_uncommitted_tracked_training_source(
+    snapshot_repository: SnapshotRepository,
+) -> None:
+    (snapshot_repository.root / "source.py").write_text("value = 2\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="Commit tracked source"):
+        snapshot_launch(snapshot_repository.manifest, snapshot_repository.output)

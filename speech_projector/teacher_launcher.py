@@ -13,7 +13,7 @@ from safetensors.torch import load_file
 
 from speech_projector.data import load_examples
 from speech_projector.evaluation import SemanticEvaluator
-from speech_projector.launcher import run_baselines, run_experiment, smoke
+from speech_projector.launcher import run_experiment, smoke
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
     Example,
@@ -26,6 +26,7 @@ from speech_projector.models import (
 )
 from speech_projector.projectors import Projector
 from speech_projector.report import aggregate_report
+from speech_projector.teacher_baselines import TeacherBaselineConfig, run_teacher_baselines
 from speech_projector.teacher_configuration import (
     teacher_compression_runs,
     teacher_feasibility_run,
@@ -168,7 +169,17 @@ def run_teacher_suite(manifest: Path, output: Path, include_scaling: bool) -> No
         raise ValueError("Teacher-target feasibility failed to reduce the fixed training loss")
     results = [execute(config) for config in configurations]
     wrapper.config = configurations[0]
-    run_baselines(wrapper, validation, test, manifest, output, semantic_evaluator)
+    run_teacher_baselines(
+        wrapper,
+        validation,
+        test,
+        TeacherBaselineConfig(
+            manifest=manifest,
+            teacher_directory=output / "teacher_targets",
+            output_root=output,
+        ),
+        semantic_evaluator,
+    )
     best = min(results, key=lambda result: result.validation.cross_entropy)
     execute(teacher_linear_run(best.config.projector.compression_factor))
     if include_scaling:

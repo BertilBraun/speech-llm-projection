@@ -99,9 +99,10 @@ def test_token_cap_retries_and_never_journals_partial_target(tmp_path: Path) -> 
     capped = TokenLimitedGeneration(partial_text="unfinished", token_ids=(1,))
     completed = CompletedGeneration(text="yes", token_ids=(1, 248046))
     wrapper = TeacherQwen(((capped,), (completed,)))
-    targets = generate_targets(wrapper, (example(0),), configuration(tmp_path))
-    assert wrapper.calls[0].token_cap == 128
-    assert wrapper.calls[1].token_cap == 256
+    policy = configuration(tmp_path)
+    targets = generate_targets(wrapper, (example(0),), policy)
+    assert wrapper.calls[0].token_cap == policy.initial_max_new_tokens
+    assert wrapper.calls[1].token_cap == policy.retry_max_new_tokens
     assert targets[0].response == completed
     assert targets[0].capped_attempts == (capped,)
 
