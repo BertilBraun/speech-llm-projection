@@ -19,7 +19,7 @@ from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
 from speech_projector.emotion_preview import PreviewPlan, default_preview_plan
 from speech_projector.generation import CompletedGeneration, TokenLimitedGeneration
-from speech_projector.models import SamplingDecodingConfig
+from speech_projector.models import DecodingConfig, GreedyDecodingConfig, SamplingDecodingConfig
 from speech_projector.preview_responses import (
     PREVIEW_SYSTEM,
     ChatMessage,
@@ -299,6 +299,10 @@ def test_readable_comparison_preserves_metadata_only_limit_and_controls() -> Non
 
 
 class CheckingPreviewModel(Qwen3_5ForCausalLM):
+    def __init__(self, config: Qwen3_5TextConfig, expected_decoding: DecodingConfig) -> None:
+        super().__init__(config)
+        self.expected_decoding = expected_decoding
+
     def generate(
         self,
         *,
@@ -311,22 +315,31 @@ class CheckingPreviewModel(Qwen3_5ForCausalLM):
         assert not self.training
         assert inputs_embeds.shape[:2] == attention_mask.shape
         assert attention_mask.eq(1).all()
-        assert generation_config.do_sample
-        assert generation_config.temperature == 1
-        assert generation_config.top_p == 1
-        assert generation_config.top_k == 20
+        match self.expected_decoding:
+            case SamplingDecodingConfig():
+                assert generation_config.do_sample
+                assert generation_config.temperature == 1
+                assert generation_config.top_p == 1
+                assert generation_config.top_k == 20
+                assert len(logits_processor) == 1
+            case GreedyDecodingConfig():
+                assert generation_config.do_sample is False
+                assert not logits_processor
         assert generation_config.eos_token_id == 2
-        assert len(logits_processor) == 1
         scores = torch.zeros((1, self.config.vocab_size))
         assert torch.equal(logits_processor(torch.empty((1, 0), dtype=torch.long), scores), scores)
         torch.rand(1)
         return torch.tensor([[1, 2]], dtype=torch.long)
 
 
+@pytest.mark.parametrize("decoding", (SamplingDecodingConfig(), GreedyDecodingConfig()))
 def test_pinned_inference_freezes_weights_uses_native_chat_and_restores_rng(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, decoding: DecodingConfig
 ) -> None:
-    config = configuration(tmp_path)
+    config = PreviewResponseConfig.model_validate_json(
+        configuration(tmp_path).model_copy(update={"decoding": decoding}).model_dump_json()
+    )
+    assert config.decoding == decoding
     vocabulary = Tokenizer(WordLevel({"[UNK]": 0, "reply": 1, "[EOS]": 2}, unk_token="[UNK]"))
     vocabulary.pre_tokenizer = Whitespace()
     tokenizer = PreTrainedTokenizerFast(
@@ -344,7 +357,7 @@ def test_pinned_inference_freezes_weights_uses_native_chat_and_restores_rng(
         layer_types=["full_attention"],
         rope_parameters={"rope_type": "default", "rope_theta": 10000, "mrope_section": [1, 1, 0]},
     )
-    model = CheckingPreviewModel(text_config)
+    model = CheckingPreviewModel(text_config, decoding)
 
     def tokenizer_provider(model_name: str, revision: str) -> PreTrainedTokenizerFast:
         assert (model_name, revision) == (config.model_name, config.revision)

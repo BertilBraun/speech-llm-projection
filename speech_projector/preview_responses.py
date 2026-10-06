@@ -20,7 +20,7 @@ from speech_projector.generation import (
     TokenLimitedGeneration,
 )
 from speech_projector.journal import append_record, read_journal
-from speech_projector.models import Record, SamplingDecodingConfig
+from speech_projector.models import DecodingConfig, Record, SamplingDecodingConfig
 
 PREVIEW_SYSTEM = (
     "Respond conversationally to the user in one or two short sentences. "
@@ -61,7 +61,7 @@ class PreviewResponseConfig(Record):
     source_git_commit: str = Field(min_length=7)
     model_name: str = "Qwen/Qwen3.5-2B"
     system_text: str = PREVIEW_SYSTEM
-    decoding: SamplingDecodingConfig = SamplingDecodingConfig()
+    decoding: DecodingConfig = SamplingDecodingConfig()
     include_transcript_controls: bool = True
     seed: int = 42
     initial_token_cap: int = Field(default=256, gt=0)
