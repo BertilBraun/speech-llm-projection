@@ -11,9 +11,11 @@ from torch.nn import functional as functional
 from transformers import PreTrainedTokenizerFast, Qwen3_5ForCausalLM
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
+from speech_projector.evaluation import evaluate, original_dialogue_text
 from speech_projector.inputs import SpeechInput, TranscriptInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
+    EvaluationCondition,
     Example,
     ExperimentStage,
     LinearProjectorConfig,
@@ -162,6 +164,74 @@ def test_speech_input_does_not_expose_current_user_transcript(
     )
     torch.testing.assert_close(original.embeddings, changed.embeddings)
     torch.testing.assert_close(original.labels, changed.labels)
+
+
+class TextRecordingQwen(FrozenQwen):
+    def __init__(self, wrapper: FrozenQwen) -> None:
+        self.config = wrapper.config
+        self.device = wrapper.device
+        self.model = wrapper.model
+        self.tokenizer = wrapper.tokenizer
+        self.loss_inputs: list[TranscriptInput] = []
+        self.generation_inputs: list[TranscriptInput] = []
+
+    def loss(self, example: Example, utterance: TranscriptInput | SpeechInput) -> Tensor:
+        assert isinstance(utterance, TranscriptInput)
+        self.loss_inputs.append(utterance)
+        return super().loss(example, utterance)
+
+    def generate(self, example: Example, utterance: TranscriptInput | SpeechInput) -> str:
+        assert isinstance(utterance, TranscriptInput)
+        self.generation_inputs.append(utterance)
+        return "yes"
+
+
+def test_selected_text_reaches_loss_and_generation_without_mutating_example(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    recording = TextRecordingQwen(wrapper)
+    original = example.model_dump_json()
+
+    def synthesis_text(selected: Example) -> TranscriptInput:
+        assert selected is example
+        return TranscriptInput("yes yes")
+
+    outcome = evaluate(
+        recording,
+        None,
+        [example],
+        wrapper.config,
+        EvaluationCondition.TEXT,
+        text_input=synthesis_text,
+    )
+    assert recording.loss_inputs == [TranscriptInput("yes yes")]
+    assert recording.generation_inputs == [TranscriptInput("yes yes")]
+    assert example.model_dump_json() == original
+    assert outcome.samples[0].user_transcript == example.user_text
+    assert outcome.metrics.cross_entropy == pytest.approx(
+        wrapper.loss(example, TranscriptInput("yes yes")).item()
+    )
+
+
+def test_default_text_factory_preserves_original_dialogue_input(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    default = TextRecordingQwen(wrapper)
+    explicit = TextRecordingQwen(wrapper)
+    default_outcome = evaluate(default, None, [example], wrapper.config, EvaluationCondition.TEXT)
+    explicit_outcome = evaluate(
+        explicit,
+        None,
+        [example],
+        wrapper.config,
+        EvaluationCondition.TEXT,
+        text_input=original_dialogue_text,
+    )
+    expected = [TranscriptInput(example.user_text)]
+    assert default.loss_inputs == explicit.loss_inputs == expected
+    assert default.generation_inputs == explicit.generation_inputs == expected
+    assert default_outcome.example_losses == explicit_outcome.example_losses
+    assert default_outcome.samples == explicit_outcome.samples
 
 
 def test_generation_stops_at_tokenizer_eos_when_model_config_disagrees(

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import mean, stdev
@@ -199,6 +199,10 @@ def _mean_ce(losses: Sequence[ExampleLoss], condition: EvaluationCondition) -> f
     return cross_entropy
 
 
+def original_dialogue_text(example: Example) -> TranscriptInput:
+    return TranscriptInput(example.user_text)
+
+
 @torch.no_grad()
 def evaluate(
     wrapper: FrozenQwen,
@@ -209,6 +213,8 @@ def evaluate(
     asr_transcripts: Sequence[AsrTranscript] = (),
     semantic_evaluator: SemanticEvaluator | None = None,
     diagnostics: bool = True,
+    *,
+    text_input: Callable[[Example], TranscriptInput] = original_dialogue_text,
 ) -> EvaluationOutcome:
     if not examples:
         raise ValueError("Evaluation requires examples")
@@ -233,7 +239,7 @@ def evaluate(
         utterance: UtteranceInput
         match condition:
             case EvaluationCondition.TEXT:
-                utterance = TranscriptInput(example.user_text)
+                utterance = text_input(example)
             case EvaluationCondition.ASR:
                 utterance = TranscriptInput(_asr_text(example, asr_transcripts))
             case EvaluationCondition.SPEECH:
