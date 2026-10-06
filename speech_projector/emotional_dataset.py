@@ -458,13 +458,23 @@ def draft_prompt(request: DraftRequest) -> str:
     prompt = (
         instructions
         + "Assignments:\n"
-        + request.model_dump_json()
-        + "\n\nJSON schema:\n"
-        + (json.dumps(GeneratedDraftBatch.model_json_schema(), ensure_ascii=False))
+        + "["
+        + ",".join(assignment.model_dump_json() for assignment in request.assignments)
+        + "]"
     )
     if request.feedback:
-        prompt += "\n\nRequired structural correction:\n" + "\n".join(request.feedback)
-    return prompt
+        prompt += "\n\nRequired structural corrections:\n" + "\n".join(request.feedback)
+        prompt += (
+            "\nReplace the offending rows with corrected literal utterances. "
+            "Every assigned ID must have its own distinct text. Do not copy the previous "
+            "invalid wording. Return every assigned ID in the original order; "
+            "preserve rows that already satisfy these required constraints where possible."
+        )
+    return (
+        prompt
+        + "\n\nJSON schema:\n"
+        + json.dumps(GeneratedDraftBatch.model_json_schema(), ensure_ascii=False)
+    )
 
 
 def normalized_utterance(text: str) -> str:

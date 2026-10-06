@@ -315,3 +315,21 @@ def test_all_structurally_invalid_rows_report_exact_ids_and_counts() -> None:
         accept_draft_batch(request, batch, ())
     assert f"{first.base_id}: word_count=6; required minimum=7" in str(failure.value)
     assert f"{second.base_id}: word_count=5; required minimum=7" in str(failure.value)
+
+
+def test_structural_feedback_is_direct_after_assignments_before_schema() -> None:
+    request = build_draft_requests(EmotionalDatasetConfig(utterance_count=1))[0]
+    correction = "utterance_00000: word_count=6; required minimum=7"
+    repaired = DraftRequest(
+        batch_id="batch_0000_repair_1",
+        configuration=request.configuration,
+        assignments=request.assignments,
+        feedback=(correction, 'Previous invalid JSON: {"utterances":[]}'),
+    )
+    prompt = draft_prompt(repaired)
+    assert prompt.index("Assignments:") < prompt.index("Required structural corrections:")
+    assert prompt.index("Required structural corrections:") < prompt.index("JSON schema:")
+    assert correction in prompt
+    assert 'Previous invalid JSON: {"utterances":[]}' in prompt
+    assert "Every assigned ID must have its own distinct text" in prompt
+    assert '"feedback"' not in prompt
