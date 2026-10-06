@@ -9,7 +9,7 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 45.1GiB cgroup RAM limi
 - [x] Dialogue-disjoint manifests, filtering and audio quality inspection.
 - [x] Selective audio acquisition and reusable final Whisper state cache (first1k+256heldout).
 - [x] Frozen Qwen wrapper, target masking, gradient and weight invariance verification.
-- [x] CPU sanity tests, formatting and lint checks (79 local tests; earlier65 passed isolated node staging).
+- [x] CPU sanity tests, formatting and lint checks (87 local tests; 79 passed isolated node staging).
 - [x] GPU smoke test, memory and throughput profile, initial generations.
 - [x] V0 small subset training, evaluation and audio-conditioning diagnostics.
 - [x] Text and ASR baselines on fixed validation/test examples.
@@ -21,7 +21,7 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 45.1GiB cgroup RAM limi
 
 ## Experiment state
 
-Updated 2026-10-06 05:53 Europe/Berlin.
+Updated 2026-10-06 06:07 Europe/Berlin.
 Completed: V0, all four heldout baselines, training/untrained conditioning probes,
 first cache and ASR, model gradient/memory profile, 10k audio download.
 Completed V1:1k,3k and10k runs, including full validation/test and conditioning diagnostics.
@@ -41,7 +41,8 @@ Fullcore suite EXITED0 at05:50:36Berlin, no failures or activecore run.
 Running:20k two-epoch V1 extension at10 tokens/s, started05:51:22Berlin after verified core success.
 Completed:30k audio download,20k new clips/6.889GB in84 minutes, zero failures.
 Full30k train plus128val/128test waveform SHA256 audit found zero cross-split overlaps.
-V3 reuses the completedMLP comparison at25 tokens/s; final architecture conclusions pending CONV.
+V3 reuses the completed MLP comparison at25 tokens/s. Linear nearly matches MLP with
+fewer parameters; convolution has worse losses, semantic similarity and audio sensitivity.
 Reviewed all4 rates using validation CE, validation controls and fixed validation topics;
 selected25Hz and resumed the suite after a70-second pause. Decision saved inresults.
 Twenty-k extension uses the unchanged nested collected prefix for controlled comparisons;
@@ -54,7 +55,7 @@ Prepared: verified result package with original80MB Parquet, exact subset manife
 Dataset revision0495356d589c06f08253ab29ad1a1482e05d90f8 matches the original Parquet SHA256.
 Typed input API, canonical stage/condition enums and discriminated projector configs
 validated in separate node staging, pending post-training GPU parity for all architectures.
-Local code candidate commit85fbe5e. Seeded projector weights/forward outputs are byte-identical
+Local code candidate commit75c1c04. Seeded projector weights/forward outputs are byte-identical
 to the running source for linear,MLP andconvolutional architectures.
 The external CPU watcher paused the suite after V2 for the completed review and exited.
 The live source and training process remained preserved; no completed run was repeated.
@@ -83,8 +84,9 @@ Best10k validation checkpoint is step2400, CE1.7957, retained separately from fi
 Exact selected-subset distributions and manifest-prefix agreement are audited and saved.
 Package hashes verified for46 copied files/118.60MB, including original metadata and audit assets.
 All-result SHA256 inventory/relocation verification is ready for the final stopped-writer backup.
-Remaining: finish the authorized20k run, evaluate matched-budget and promising best checkpoints,
-validate the typed API on GPU, finalize the research report, verify and back up all artifacts.
+Remaining: finish the authorized20k run, evaluate matched-budget and a promising best checkpoint,
+validate the typed API on GPU, run the clean V0 control and synthesis-text baseline,
+finalize the research report, verify and back up all artifacts.
 Late audit: the initial random quality check missed audio/text alignment defects.
 Training-prefix256/1k/3k/10k/20k mismatches:6/21/55/187/389;20k audio-target matches357.
 Heldout3validation and3test mismatches:five audio originals equal the assistant target.
@@ -94,5 +96,8 @@ No fixed-case topic audit examples are misaligned. Raw128-case comparisons and m
 Twenty-k expansion reauthorized on the same collected data to preserve controlled comparisons;
 known target-audio contamination is prominent in the report and must be cleaned before follow-up.
 Canonical synthesis audit and actual-synthesis-text baseline helper tested; baseline GPU run pending.
-Planned: initial V0 256–1,000 examples at factor5 (10 tokens/s); matrix adapts to measured speed.
-No long run starts until V0 correctness gates pass.
+Prepared separate clean V0 control: first256 retained training pairs after excluding known
+turn/audio mismatches,125 aligned validation and125 aligned test examples. All existing
+cached features are required; original matrix inputs stay unchanged. Same5-epoch V0
+configuration, followed by clean training/untrained-heldout audio-conditioning probes.
+This late control addresses accidental target-audio supervision in six original V0 samples.
