@@ -13,7 +13,6 @@ from scripts.audit_synthesis_alignment import normalize
 from scripts.package_results import FileArtifact, file_digest
 from scripts.summarize_teacher_targets import HistoryGroup
 from speech_projector.data import Distribution, distribution, load_examples
-from speech_projector.journal import read_journal
 from speech_projector.models import AsrTranscript, Example, Record, Split
 
 
@@ -149,13 +148,20 @@ def artifact(path: Path) -> FileArtifact:
     )
 
 
+def load_asr_snapshot(path: Path) -> tuple[AsrTranscript, ...]:
+    content = path.read_bytes()
+    if content and not content.endswith(b"\n"):
+        raise ValueError("ASR journal has an incomplete final line; wait for extraction to finish")
+    return tuple(AsrTranscript.model_validate_json(line) for line in content.splitlines())
+
+
 def evaluate(configuration: AsrQualityConfiguration) -> TeacherAsrQuality:
     examples = [
         example
         for split in (Split.VALIDATION, Split.TEST)
         for example in load_examples(configuration.manifest, split)
     ]
-    records = observations(examples, read_journal(configuration.transcripts, AsrTranscript))
+    records = observations(examples, load_asr_snapshot(configuration.transcripts))
     splits: list[SplitAsrQuality] = []
     histories: list[HistoryAsrQuality] = []
     domains: list[DomainAsrQuality] = []

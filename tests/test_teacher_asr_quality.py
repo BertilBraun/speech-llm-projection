@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.teacher_asr_quality import aggregate, observations
+from scripts.teacher_asr_quality import aggregate, load_asr_snapshot, observations
 from speech_projector.models import AsrTranscript, Example, Split
 
 
@@ -101,3 +101,13 @@ def test_empty_normalized_synthesis_reference_is_invalid() -> None:
             (example("selected", "...!"),),
             (AsrTranscript(example_id="selected", text="recognized"),),
         )
+
+
+def test_asr_audit_rejects_partial_line_without_repairing_source(tmp_path: Path) -> None:
+    path = tmp_path / "asr.jsonl"
+    content = AsrTranscript(example_id="selected", text="recognized").model_dump_json().encode()
+    path.write_bytes(content)
+    with pytest.raises(ValueError, match="incomplete final line"):
+        load_asr_snapshot(path)
+    assert path.read_bytes() == content
+    assert tuple(tmp_path.iterdir()) == (path,)
