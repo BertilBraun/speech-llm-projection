@@ -1,5 +1,7 @@
 """Same-word audio preferences and validation-only overnight sweep selection."""
 
+from __future__ import annotations
+
 import hashlib
 import math
 import random
@@ -116,7 +118,7 @@ class ValidationCohorts(Record):
     new_neu_emotional: EvaluationMetrics
 
     @model_validator(mode="after")
-    def validate_cohort_coverage(self) -> "ValidationCohorts":
+    def validate_cohort_coverage(self) -> ValidationCohorts:
         for item in (self.old_ordinary, self.old_emotional, self.new_neu_emotional):
             if item.examples < 1 or item.target_tokens < 1 or not math.isfinite(item.cross_entropy):
                 raise ValueError("Each validation cohort needs nonempty finite scored coverage")
@@ -147,7 +149,7 @@ class SweepCandidate(Record):
         )
 
     @model_validator(mode="after")
-    def validate_finite_metrics(self) -> "SweepCandidate":
+    def validate_finite_metrics(self) -> SweepCandidate:
         values = (
             self.validation.old_ordinary.cross_entropy,
             self.validation.old_emotional.cross_entropy,
@@ -186,7 +188,7 @@ class FixedValidationConfig(Record):
     generated_pairs_per_cohort: int = Field(default=4, gt=0)
 
     @model_validator(mode="after")
-    def validate_generation_coverage(self) -> "FixedValidationConfig":
+    def validate_generation_coverage(self) -> FixedValidationConfig:
         if self.ordinary_generations > self.ordinary_examples:
             raise ValueError("Ordinary generations exceed selected validation examples")
         if self.generated_pairs_per_cohort > self.pairs_per_emotional_cohort:
