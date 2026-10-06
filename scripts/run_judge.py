@@ -13,6 +13,7 @@ from speech_projector.judge import (
     JudgeSuccess,
     LocalJudge,
     evaluate_judge,
+    rubric_digest,
     summarize_judge,
 )
 from speech_projector.models import EvaluationCondition, Record, SampleGeneration
@@ -40,6 +41,7 @@ class CalibrationGroup(Record):
 
 class CalibrationSummary(Record):
     config: JudgeConfig
+    rubric_sha256: str
     cases: tuple[CalibrationCase, ...]
     groups: tuple[CalibrationGroup, ...]
     passed: bool
@@ -51,7 +53,6 @@ def calibration_cases() -> tuple[CalibrationCase, ...]:
     topics = (
         (
             "Where is the Grand Canyon?",
-            "The Grand Canyon is in northern Arizona, United States.",
             "You'll find the Grand Canyon in Arizona in the US.",
             "A piano has eighty-eight keys.",
             "Wow, that's an amazing place! I'm so excited to explore it with you.",
@@ -59,7 +60,6 @@ def calibration_cases() -> tuple[CalibrationCase, ...]:
         ),
         (
             "Is the Ford Mustang Shelby GT500 an electric car?",
-            "No. The Shelby GT500 is a gasoline-powered performance Mustang.",
             "It isn't electric: the Shelby GT500 uses a petrol engine.",
             "Water your houseplants only when they need it.",
             "That car sounds incredible! I love hearing about exciting vehicles.",
@@ -67,8 +67,6 @@ def calibration_cases() -> tuple[CalibrationCase, ...]:
         ),
         (
             "My succulent leaves are mushy. Should I water it more often?",
-            "Mushy succulent leaves can indicate overwatering. "
-            "Let the soil dry and check drainage.",
             "More water may make it worse. Allow the soil to dry and ensure the pot drains well.",
             "The NBA playoffs are exciting to follow.",
             "Plants can be such a fun challenge. I'm curious to hear how it goes!",
@@ -76,7 +74,7 @@ def calibration_cases() -> tuple[CalibrationCase, ...]:
         ),
     )
     cases: list[CalibrationCase] = []
-    for index, (transcript, reference, *responses) in enumerate(topics):
+    for index, (transcript, *responses) in enumerate(topics):
         for category, candidate in zip(
             (
                 CalibrationCategory.PARAPHRASE,
@@ -95,7 +93,6 @@ def calibration_cases() -> tuple[CalibrationCase, ...]:
                         dialogue_id=f"calibration-dialogue-{index}",
                         history=(),
                         transcript=transcript,
-                        reference_response=reference,
                         candidate_response=candidate,
                     ),
                 )
@@ -108,9 +105,6 @@ def calibration_cases() -> tuple[CalibrationCase, ...]:
                 dialogue_id="calibration-conversation",
                 history=(),
                 transcript="I'm so excited for my trip to Tokyo next week!",
-                reference_response=(
-                    "That sounds wonderful! I hope you have an amazing time in Tokyo."
-                ),
                 candidate_response="That sounds really exciting! Hope you have a wonderful trip.",
             ),
         )
@@ -124,7 +118,11 @@ def calibrate(judge: LocalJudge, output: Path) -> CalibrationSummary:
     summary_path = output / "calibration_summary.json"
     if summary_path.exists():
         existing = CalibrationSummary.model_validate_json(summary_path.read_bytes())
-        if existing.config != judge.config or existing.cases != cases:
+        if (
+            existing.config != judge.config
+            or existing.cases != cases
+            or existing.rubric_sha256 != rubric_digest()
+        ):
             raise ValueError("Calibration output belongs to different judge/cases")
         return existing
     started = time.perf_counter()
@@ -158,6 +156,7 @@ def calibrate(judge: LocalJudge, output: Path) -> CalibrationSummary:
     )
     summary = CalibrationSummary(
         config=judge.config,
+        rubric_sha256=rubric_digest(),
         cases=cases,
         groups=tuple(groups),
         passed=passed,
@@ -188,7 +187,6 @@ def requests_from_generations(path: Path) -> tuple[JudgeRequest, ...]:
             dialogue_id=item.dialogue_id,
             history=item.history,
             transcript=item.user_transcript,
-            reference_response=item.gold_response,
             candidate_response=item.generated_response,
         )
         for item in primary

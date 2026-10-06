@@ -4,10 +4,12 @@ from pathlib import Path
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
+from scripts.compare_judgments import paired_values
 from scripts.run_judge import CalibrationCategory, calibration_cases
 from speech_projector.journal import append_record, read_journal
 from speech_projector.judge import (
     JudgeFailure,
+    JudgeMetric,
     JudgeOutcome,
     JudgeRequest,
     JudgeSuccess,
@@ -26,24 +28,23 @@ def request() -> JudgeRequest:
         dialogue_id="hidden-dialogue",
         history=(),
         transcript="Where is the Grand Canyon?",
-        reference_response="In Arizona.",
         candidate_response="In Wyoming.",
     )
 
 
-def test_judge_prompt_is_source_blind_and_reference_not_unique_answer() -> None:
+def test_judge_prompt_is_source_blind_and_excludes_reference_answers() -> None:
     prompt = judge_prompt(request())
     assert "hidden-source-id" not in prompt and "hidden-dialogue" not in prompt
-    assert "NOT a unique correct wording" in prompt
+    assert "reference_response" not in prompt
+    assert "In Arizona" not in prompt
     assert "In Wyoming." in prompt
 
 
-def test_judge_rejects_inconsistent_scores_and_preserves_retry_failure() -> None:
+def test_judge_rejects_invalid_scores_and_preserves_retry_failure() -> None:
     responses = iter(
         (
-            '{"relevance":0,"grounded_detail":0,"naturalness":3,"acceptable":true,"evidence":"wrong"}',
-            '{"relevance":1,"grounded_detail":0,"naturalness":3,'
-            '"acceptable":false,"evidence":"wrong named entity"}',
+            '{"relevance":7,"grounded_detail":0,"naturalness":3,"evidence":"wrong"}',
+            '{"relevance":1,"grounded_detail":0,"naturalness":3,"evidence":"wrong named entity"}',
         )
     )
     corrections: list[str] = []
@@ -72,6 +73,40 @@ def test_verdict_extra_fields_and_acceptability_invariants() -> None:
         JudgeVerdict.model_validate_json(
             '{"relevance":3,"grounded_detail":3,"naturalness":3,"acceptable":true,"evidence":"fine","extra":1}'
         )
+
+
+@pytest.mark.parametrize(
+    ("scores", "acceptable"),
+    (((3, 0, 3), False), ((1, 3, 3), False), ((3, 3, 1), False), ((2, 2, 2), True)),
+)
+def test_acceptance_requires_all_quality_dimensions(
+    scores: tuple[int, int, int], acceptable: bool
+) -> None:
+    verdict = JudgeVerdict(
+        relevance=scores[0],
+        grounded_detail=scores[1],
+        naturalness=scores[2],
+        evidence="Assessed candidate content",
+    )
+    assert verdict.acceptable is acceptable
+    assert "acceptable" not in verdict.model_dump()
+
+
+def test_paired_quality_excludes_parse_failures_and_rejects_different_inputs() -> None:
+    success = JudgeSuccess(
+        request=request(),
+        verdict=JudgeVerdict(relevance=3, grounded_detail=0, naturalness=3, evidence="wrong"),
+        raw_responses=("valid",),
+    )
+    failure = JudgeFailure(
+        request=request(), raw_responses=("invalid",), validation_errors=("schema error",)
+    )
+    assert paired_values((success,), (failure,), JudgeMetric.ACCEPTABLE) == ()
+    changed = success.model_copy(
+        update={"request": request().model_copy(update={"transcript": "Different user"})}
+    )
+    with pytest.raises(ValueError, match="differ in transcript/history"):
+        paired_values((success,), (changed,), JudgeMetric.RELEVANCE)
 
 
 def test_calibration_contains_valid_generic_conversation_and_bad_specific_generic() -> None:
@@ -106,13 +141,9 @@ def test_batched_retry_preserves_order_and_only_retries_invalid_rows() -> None:
         dialogue_id="another",
         history=(),
         transcript="Hello",
-        reference_response="Hi",
         candidate_response="Hi",
     )
-    valid = (
-        '{"relevance":3,"grounded_detail":3,"naturalness":3,'
-        '"acceptable":true,"evidence":"responsive"}'
-    )
+    valid = '{"relevance":3,"grounded_detail":3,"naturalness":3,"evidence":"responsive"}'
     sizes: list[int] = []
 
     def generate(items: Sequence[JudgeRequest], corrections: Sequence[str]) -> tuple[str, ...]:
