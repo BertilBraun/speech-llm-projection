@@ -14,6 +14,8 @@ from pydantic import Field
 
 from scripts.package_results import FileArtifact, ModelRevision, file_digest
 from speech_projector.generation import (
+    INITIAL_TEACHER_TOKEN_CAP,
+    RETRY_TEACHER_TOKEN_CAP,
     CompletedGeneration,
     GenerationResult,
     TokenLimitedGeneration,
@@ -30,8 +32,8 @@ class TeacherConfig(Record):
     manifest: Path
     output_directory: Path
     batch_size: int = Field(default=8, gt=0)
-    initial_max_new_tokens: int = Field(default=128, gt=0)
-    retry_max_new_tokens: int = Field(default=256, gt=0)
+    initial_max_new_tokens: int = Field(default=INITIAL_TEACHER_TOKEN_CAP, gt=0)
+    retry_max_new_tokens: int = Field(default=RETRY_TEACHER_TOKEN_CAP, gt=0)
 
 
 class TeacherProvenance(Record):

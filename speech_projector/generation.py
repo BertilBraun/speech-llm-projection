@@ -7,6 +7,9 @@ from pydantic import Field
 
 from speech_projector.models import Record
 
+INITIAL_TEACHER_TOKEN_CAP = 2048
+RETRY_TEACHER_TOKEN_CAP = 4096
+
 
 class GenerationKind(str, Enum):
     COMPLETED = "completed"

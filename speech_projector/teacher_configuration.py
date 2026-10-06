@@ -1,5 +1,6 @@
 """Controlled configurations for transcript-teacher distillation."""
 
+from speech_projector.generation import RETRY_TEACHER_TOKEN_CAP
 from speech_projector.models import (
     ChatPromptConfig,
     ExperimentStage,
@@ -31,8 +32,8 @@ def teacher_run(
         gradient_accumulation=8,
         evaluation_interval=250,
         checkpoint_interval=100,
-        max_target_tokens=513,
-        max_new_tokens=512,
+        max_target_tokens=RETRY_TEACHER_TOKEN_CAP + 1,
+        max_new_tokens=RETRY_TEACHER_TOKEN_CAP,
         qualitative_examples=16,
         semantic_examples=512,
         conditioning_examples=128,

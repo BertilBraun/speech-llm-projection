@@ -3,6 +3,7 @@
 import argparse
 from pathlib import Path
 
+from speech_projector.generation import INITIAL_TEACHER_TOKEN_CAP, RETRY_TEACHER_TOKEN_CAP
 from speech_projector.models import RunConfig
 from speech_projector.teacher import (
     BootstrapTeacherSelection,
@@ -20,8 +21,8 @@ def main() -> None:
     parser.add_argument("--bootstrap", action="store_true")
     parser.add_argument("--run-config", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=8)
-    parser.add_argument("--initial-max-new-tokens", type=int, default=128)
-    parser.add_argument("--retry-max-new-tokens", type=int, default=256)
+    parser.add_argument("--initial-max-new-tokens", type=int, default=INITIAL_TEACHER_TOKEN_CAP)
+    parser.add_argument("--retry-max-new-tokens", type=int, default=RETRY_TEACHER_TOKEN_CAP)
     arguments = parser.parse_args()
     progress = run_teacher(
         TeacherConfig(

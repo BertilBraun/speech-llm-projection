@@ -12,6 +12,7 @@ from pathlib import Path
 from pydantic import TypeAdapter
 
 from speech_projector.evaluation import ConditioningDiagnostic
+from speech_projector.generation import INITIAL_TEACHER_TOKEN_CAP, RETRY_TEACHER_TOKEN_CAP
 from speech_projector.models import EvaluationCondition, GradientCheck, RunResult, SuiteState
 
 
@@ -51,9 +52,9 @@ def jobs(root: Path, teacher_batch_size: int, include_scaling: bool) -> tuple[Jo
         "--batch-size",
         str(teacher_batch_size),
         "--initial-max-new-tokens",
-        "256",
+        str(INITIAL_TEACHER_TOKEN_CAP),
         "--retry-max-new-tokens",
-        "512",
+        str(RETRY_TEACHER_TOKEN_CAP),
     )
     launch_feasibility = (
         "-m",
