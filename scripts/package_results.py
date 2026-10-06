@@ -10,11 +10,14 @@ from dataclasses import dataclass
 from importlib.metadata import Distribution, distributions
 from pathlib import Path
 
+from huggingface_hub import HfApi, RepoFile, RepoFolder
+
 from speech_projector.cache import CacheStatistics, load_asr
 from speech_projector.data import DATASET_URL, load_examples
 from speech_projector.models import Record, Split
 
 DATASET_ARTIFACTS = (
+    "metadata.parquet",
     "dataset_report.json",
     "dataset_quality.json",
     "dataset_leakage.json",
@@ -23,6 +26,8 @@ DATASET_ARTIFACTS = (
     "cache_history.jsonl",
     "examples.jsonl",
 )
+DATASET_REPOSITORY = "SALT-Research/DeepDialogue-xtts"
+METADATA_REPOSITORY_PATH = "data/train-00000-of-00001.parquet"
 
 
 @dataclass(frozen=True)
@@ -69,9 +74,14 @@ class EnvironmentInventory(Record):
 
 
 class DatasetSource(Record):
+    dataset_repository: str
+    dataset_revision: str
+    metadata_repository_path: str
+    original_download_url: str
     metadata_url: str
     metadata_bytes: int
     metadata_sha256: str
+    metadata_lfs_sha256: str
 
 
 class CacheSummary(Record):
@@ -137,6 +147,8 @@ def copy_artifact(
 
 
 def copy_dataset(configuration: PackageConfiguration) -> list[FileArtifact]:
+    source = configuration.dataset_root / "metadata.parquet"
+    provenance = resolve_dataset_source(source, HfApi())
     artifacts = [
         copy_artifact(
             configuration.dataset_root / name,
@@ -148,16 +160,68 @@ def copy_dataset(configuration: PackageConfiguration) -> list[FileArtifact]:
     expansion = configuration.dataset_root / "download_expansion.json"
     if expansion.exists():
         artifacts.append(copy_artifact(expansion, Path("dataset") / expansion.name, configuration))
-    source = configuration.dataset_root / "metadata.parquet"
-    write_record(
-        configuration.results_root / "dataset" / "source.json",
-        DatasetSource(
-            metadata_url=DATASET_URL + "data/train-00000-of-00001.parquet",
-            metadata_bytes=source.stat().st_size,
-            metadata_sha256=file_digest(source),
-        ),
+    provenance_path = Path("dataset") / "source.json"
+    destination = configuration.results_root / provenance_path
+    write_record(destination, provenance)
+    artifacts.append(
+        FileArtifact(
+            path=provenance_path,
+            source_path=destination,
+            bytes=destination.stat().st_size,
+            sha256=file_digest(destination),
+        )
     )
     return artifacts
+
+
+def verify_dataset_source(source: Path, revision: str, metadata: RepoFile) -> DatasetSource:
+    if metadata.path != METADATA_REPOSITORY_PATH:
+        raise ValueError(f"Unexpected dataset metadata path: {metadata.path}")
+    if metadata.lfs is None:
+        raise ValueError("Dataset metadata has no LFS SHA256 to verify against the downloaded file")
+    size = source.stat().st_size
+    digest = file_digest(source)
+    if size != metadata.size or size != metadata.lfs.size:
+        raise ValueError("Downloaded Parquet size differs from the dataset repository LFS metadata")
+    if digest != metadata.lfs.sha256:
+        raise ValueError(
+            "Downloaded Parquet SHA256 differs from the dataset repository LFS metadata"
+        )
+    return DatasetSource(
+        dataset_repository=DATASET_REPOSITORY,
+        dataset_revision=revision,
+        metadata_repository_path=METADATA_REPOSITORY_PATH,
+        original_download_url=DATASET_URL + METADATA_REPOSITORY_PATH,
+        metadata_url=(
+            f"https://huggingface.co/datasets/{DATASET_REPOSITORY}/resolve/"
+            f"{revision}/{METADATA_REPOSITORY_PATH}"
+        ),
+        metadata_bytes=size,
+        metadata_sha256=digest,
+        metadata_lfs_sha256=metadata.lfs.sha256,
+    )
+
+
+def resolve_dataset_source(source: Path, api: HfApi) -> DatasetSource:
+    information = api.dataset_info(
+        DATASET_REPOSITORY, revision="main", expand=["sha"], token=False, timeout=30
+    )
+    if information.sha is None:
+        raise ValueError("Dataset repository response did not include an immutable commit SHA")
+    paths = api.get_paths_info(
+        DATASET_REPOSITORY,
+        [METADATA_REPOSITORY_PATH],
+        revision=information.sha,
+        repo_type="dataset",
+        token=False,
+    )
+    if len(paths) != 1:
+        raise ValueError("Dataset repository did not return the exact Parquet metadata file")
+    match paths[0]:
+        case RepoFile() as metadata:
+            return verify_dataset_source(source, information.sha, metadata)
+        case RepoFolder():
+            raise ValueError("Dataset metadata path unexpectedly identifies a repository folder")
 
 
 def package_audio(
