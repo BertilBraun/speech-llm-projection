@@ -12,8 +12,12 @@ Code uses typed Pydantic configuration/manifests and local JSON/JSONL artifacts.
 The rented node is `/workspace/speech-projector`; checkpoints and results must
 also be copied locally because the node has no persistent volume.
 
-See [EXPERIMENT_CHECKLIST.md](EXPERIMENT_CHECKLIST.md) for live progress. Exact
-commands and results will be added as the pipeline is validated.
+Start with [the morning summary](results/analysis/morning_summary.md),
+[the detailed research report](results/analysis/research_report.md),
+[representative responses](results/analysis/core_qualitative_comparison.md), and
+[the experiment checklist](EXPERIMENT_CHECKLIST.md). The executed program includes
+nested 1k/3k/10k/20k training, four compression rates, three architectures, and
+a separate clean 256-example feasibility control.
 
 The late synthesis-alignment audit found material turn/audio mismatches in about
 1.9% of the measured training prefixes, often with assistant-target speech in
@@ -57,9 +61,10 @@ an initial parity test diverged; that test preceded the chat stop-token repair.
 
 ## Reading the experiment artifacts
 
-Start with `results/analysis/research_report.md`. It distinguishes measured runs
-from pending work and combines losses, semantic response comparisons, audio
-controls, fixed examples, resource accounting and unresolved limitations.
+Start with `results/analysis/morning_summary.md`; the detailed
+`results/analysis/research_report.md` combines losses, semantic response
+comparisons, audio controls, fixed examples, resource accounting and unresolved
+limitations.
 `results/analysis/scientific_comparison.png` shows data scaling and compression
 with complementary metrics; `results/summary.csv` contains controlled final
 checkpoint comparisons.
