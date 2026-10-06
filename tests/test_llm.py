@@ -12,6 +12,7 @@ from transformers import PreTrainedTokenizerFast, Qwen3_5ForCausalLM
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
 from speech_projector.evaluation import evaluate, original_dialogue_text
+from speech_projector.generation import CompletedGeneration, TokenLimitedGeneration
 from speech_projector.inputs import SpeechInput, TranscriptInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
@@ -19,6 +20,7 @@ from speech_projector.models import (
     Example,
     ExperimentStage,
     LinearProjectorConfig,
+    PromptConfig,
     RunConfig,
     Split,
 )
@@ -164,6 +166,90 @@ def test_speech_input_does_not_expose_current_user_transcript(
     )
     torch.testing.assert_close(original.embeddings, changed.embeddings)
     torch.testing.assert_close(original.labels, changed.labels)
+
+
+def test_custom_system_prompt_is_shared_by_transcript_and_speech(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    original_text = wrapper.prepare(example, TranscriptInput(example.user_text))
+    original_speech = wrapper.prepare(example, SpeechInput(torch.zeros(3, 32)))
+    wrapper.config = wrapper.config.model_copy(
+        update={"prompt": PromptConfig(system_text="yes yes")}
+    )
+    changed_text = wrapper.prepare(example, TranscriptInput(example.user_text))
+    changed_speech = wrapper.prepare(example, SpeechInput(torch.zeros(3, 32)))
+    difference = original_text.target_start - changed_text.target_start
+    assert difference != 0
+    assert original_speech.target_start - changed_speech.target_start == difference
+    torch.testing.assert_close(changed_text.embeddings[0, :2], changed_speech.embeddings[0, :2])
+
+
+def test_target_scores_match_loss_and_preserve_target_ids(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    utterance = TranscriptInput(example.user_text)
+    scores = wrapper.score_target(example, utterance)
+    assert scores.logits.shape[0] == scores.target_token_ids.shape[0]
+    expected = functional.cross_entropy(scores.logits.float(), scores.target_token_ids)
+    torch.testing.assert_close(wrapper.loss(example, utterance), expected)
+
+
+def test_left_padding_batch_preserves_each_prompt_and_real_next_logits(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    examples = (example, example.model_copy(update={"user_text": "yes yes yes"}))
+    utterances = tuple(TranscriptInput(item.user_text) for item in examples)
+    batch = wrapper.prepare_generation_batch(examples, utterances)
+    assert batch.embeddings.shape[1] % wrapper.config.sequence_length_multiple == 0
+    positions = (batch.attention_mask.cumsum(-1) - 1).clamp_min(0)
+    batched = wrapper.model(
+        inputs_embeds=batch.embeddings,
+        attention_mask=batch.attention_mask,
+        position_ids=positions,
+        use_cache=False,
+        logits_to_keep=1,
+    ).logits
+    for index, (item, utterance) in enumerate(zip(examples, utterances, strict=True)):
+        prompt = wrapper._prompt(item, utterance)
+        torch.testing.assert_close(batch.embeddings[index, -prompt.shape[0] :], prompt)
+        assert int(batch.attention_mask[index].sum()) == prompt.shape[0]
+        original = wrapper.model(
+            inputs_embeds=prompt.unsqueeze(0), use_cache=False, logits_to_keep=1
+        ).logits
+        torch.testing.assert_close(batched[index], original[0])
+
+
+class BatchEosQwen(Qwen3_5ForCausalLM):
+    def generate(
+        self,
+        *,
+        inputs_embeds: Tensor,
+        attention_mask: Tensor,
+        max_new_tokens: int,
+        do_sample: bool,
+        use_cache: bool,
+        pad_token_id: int | None,
+        eos_token_id: int | None,
+    ) -> Tensor:
+        assert eos_token_id == 0
+        assert inputs_embeds.shape[0] == 2
+        assert torch.all(attention_mask[:, -1] == 1)
+        assert torch.any(attention_mask[:, 0] == 0)
+        return torch.tensor([[1, 0, 2], [2, 2, 2]], dtype=torch.long)
+
+
+def test_batch_generation_distinguishes_completed_eos_and_cap_hit(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    wrapper.tokenizer.eos_token = "[UNK]"
+    wrapper.tokenizer.pad_token = "no"
+    wrapper.model = BatchEosQwen(wrapper.model.config)
+    examples = (example, example.model_copy(update={"user_text": "yes yes yes"}))
+    results = wrapper.generate_batch(
+        examples, tuple(TranscriptInput(item.user_text) for item in examples), 3
+    )
+    assert results[0] == CompletedGeneration(text="yes", token_ids=(1, 0))
+    assert results[1] == TokenLimitedGeneration(partial_text="no no no", token_ids=(2, 2, 2))
 
 
 class TextRecordingQwen(FrozenQwen):

@@ -1,5 +1,6 @@
 """Frozen Qwen with differentiable speech embeddings and target-only logits."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import torch
@@ -8,8 +9,14 @@ from torch.nn import functional as functional
 from transformers import AutoTokenizer, PreTrainedTokenizerBase, Qwen3_5ForCausalLM
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
+from speech_projector.generation import (
+    CompletedGeneration,
+    GenerationResult,
+    TokenLimitedGeneration,
+)
 from speech_projector.inputs import SpeechInput, TranscriptInput, UtteranceInput
 from speech_projector.models import Example, RunConfig
+from speech_projector.prompts import ASSISTANT_SUFFIX, USER_PREFIX, system_prefix
 
 
 @dataclass(frozen=True)
@@ -19,6 +26,18 @@ class EmbeddedSequence:
     labels: Tensor
     target_start: int
     target_tokens: int
+
+
+@dataclass(frozen=True)
+class TargetScores:
+    target_token_ids: Tensor
+    logits: Tensor
+
+
+@dataclass(frozen=True)
+class GenerationBatch:
+    embeddings: Tensor
+    attention_mask: Tensor
 
 
 class FrozenQwen:
@@ -64,13 +83,8 @@ class FrozenQwen:
         return [token for turn in reversed(encoded_turns) for token in turn]
 
     def _prompt(self, example: Example, utterance: UtteranceInput) -> Tensor:
-        start = self._encode(
-            "<|im_start|>system\nYou are a helpful conversational assistant. "
-            "Reply naturally to the user's utterance.<|im_end|>\n"
-        )
-        prefix = self._embed(
-            start + self._history_ids(example) + self._encode("<|im_start|>user\n")
-        )
+        start = self._encode(system_prefix(self.config.prompt))
+        prefix = self._embed(start + self._history_ids(example) + self._encode(USER_PREFIX))
         match utterance:
             case TranscriptInput(text=text):
                 current = self._embed(self._encode(text))
@@ -80,9 +94,7 @@ class FrozenQwen:
                 if embeddings.shape[1] != self.model.config.hidden_size:
                     raise ValueError("Speech embedding dimension differs from Qwen")
                 current = embeddings.to(device=self.device, dtype=prefix.dtype)
-        suffix = self._embed(
-            self._encode("<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n")
-        )
+        suffix = self._embed(self._encode(ASSISTANT_SUFFIX))
         return torch.cat((prefix, current, suffix), dim=0)
 
     def _target_ids(self, example: Example) -> list[int]:
@@ -112,7 +124,7 @@ class FrozenQwen:
             target_tokens=len(target_ids),
         )
 
-    def loss(self, example: Example, utterance: UtteranceInput) -> Tensor:
+    def score_target(self, example: Example, utterance: UtteranceInput) -> TargetScores:
         sequence = self.prepare(example, utterance)
         predictor_positions = torch.arange(
             sequence.target_start - 1,
@@ -125,12 +137,88 @@ class FrozenQwen:
             use_cache=False,
             logits_to_keep=predictor_positions,
         )
-        return functional.cross_entropy(
-            output.logits[0].float(),
-            sequence.labels[
+        return TargetScores(
+            logits=output.logits[0],
+            target_token_ids=sequence.labels[
                 0, sequence.target_start : sequence.target_start + sequence.target_tokens
             ],
         )
+
+    def loss(self, example: Example, utterance: UtteranceInput) -> Tensor:
+        scores = self.score_target(example, utterance)
+        return functional.cross_entropy(scores.logits.float(), scores.target_token_ids)
+
+    def prepare_generation_batch(
+        self,
+        examples: Sequence[Example],
+        utterances: Sequence[UtteranceInput],
+    ) -> GenerationBatch:
+        if not examples or len(examples) != len(utterances):
+            raise ValueError("Generation needs equal nonempty input batches")
+        prompts = tuple(
+            self._prompt(example, utterance)
+            for example, utterance in zip(examples, utterances, strict=True)
+        )
+        longest = max(prompt.shape[0] for prompt in prompts)
+        longest += (-longest) % self.config.sequence_length_multiple
+        embeddings = torch.stack(
+            tuple(
+                functional.pad(prompt, (0, 0, longest - prompt.shape[0], 0)) for prompt in prompts
+            )
+        )
+        attention_mask = torch.stack(
+            tuple(
+                functional.pad(
+                    torch.ones(prompt.shape[0], device=self.device, dtype=torch.long),
+                    (longest - prompt.shape[0], 0),
+                )
+                for prompt in prompts
+            )
+        )
+        return GenerationBatch(embeddings=embeddings, attention_mask=attention_mask)
+
+    @torch.no_grad()
+    def generate_batch(
+        self,
+        examples: Sequence[Example],
+        utterances: Sequence[UtteranceInput],
+        max_new_tokens: int,
+    ) -> tuple[GenerationResult, ...]:
+        if max_new_tokens <= 0:
+            raise ValueError("Generation token cap must be positive")
+        self.model.eval()
+        batch = self.prepare_generation_batch(examples, utterances)
+        generated: Tensor = self.model.generate(
+            inputs_embeds=batch.embeddings,
+            attention_mask=batch.attention_mask,
+            max_new_tokens=max_new_tokens,
+            do_sample=False,
+            use_cache=True,
+            pad_token_id=self.tokenizer.pad_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
+        )
+        results: list[GenerationResult] = []
+        for row in generated:
+            token_ids = tuple(int(token) for token in row.tolist())
+            if self.tokenizer.eos_token_id in token_ids:
+                end = token_ids.index(self.tokenizer.eos_token_id) + 1
+                completed = token_ids[:end]
+                results.append(
+                    CompletedGeneration(
+                        text=self.tokenizer.decode(completed, skip_special_tokens=True).strip(),
+                        token_ids=completed,
+                    )
+                )
+            else:
+                results.append(
+                    TokenLimitedGeneration(
+                        partial_text=self.tokenizer.decode(
+                            token_ids, skip_special_tokens=True
+                        ).strip(),
+                        token_ids=token_ids,
+                    )
+                )
+        return tuple(results)
 
     @torch.no_grad()
     def generate(self, example: Example, utterance: UtteranceInput) -> str:
