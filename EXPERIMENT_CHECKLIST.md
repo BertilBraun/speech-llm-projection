@@ -9,7 +9,7 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 45.1GiB cgroup RAM limi
 - [x] Dialogue-disjoint manifests, filtering and audio quality inspection.
 - [x] Selective audio acquisition and reusable final Whisper state cache (first1k+256heldout).
 - [x] Frozen Qwen wrapper, target masking, gradient and weight invariance verification.
-- [x] CPU sanity tests, formatting and lint checks (34 tests passed; continuing checks).
+- [x] CPU sanity tests, formatting and lint checks (49 tests passed locally and in isolated node staging).
 - [x] GPU smoke test, memory and throughput profile, initial generations.
 - [x] V0 small subset training, evaluation and audio-conditioning diagnostics.
 - [x] Text and ASR baselines on fixed validation/test examples.
@@ -21,16 +21,23 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 45.1GiB cgroup RAM limi
 
 ## Experiment state
 
-Updated 2026-10-06 02:05 Europe/Berlin.
+Updated 2026-10-06 02:33 Europe/Berlin.
 Completed: V0, all four heldout baselines, training/untrained conditioning probes,
 first cache and ASR, model gradient/memory profile, 10k audio download.
 Completed V1:1k,3k and10k runs, including full validation/test and conditioning diagnostics.
-Running: V2 25 tokens/s with10k examples; 30k audio expansion download-only.
+Running: V2 25 tokens/s with10k examples; no other GPU workload.
+Completed:30k audio download,20k new clips/6.889GB in84 minutes, zero failures.
+Full30k train plus128val/128test waveform SHA256 audit found zero cross-split overlaps.
 Queued: V2 5/2.5 tokens/s and V3 linear/convolutional comparison.
 Prepared: controlled20k/30k scaling extensions, neither launched. Choose after core timing
 and full waveform leakage audit;20k is the safer same-two-epochs larger-data comparison.
-Prepared: result packaging with exact subset manifest, 16 audio clips and model revisions;
-typed input API cleanup validated in isolated staging, pending post-suite merge.
+Prepared: verified result package with original80MB Parquet, exact subset manifest,
+16 audio clips,16 raw feature tensors, model revisions and pinned dataset provenance.
+Dataset revision0495356d589c06f08253ab29ad1a1482e05d90f8 matches the original Parquet SHA256.
+Typed input API and canonical stage/condition enums validated in separate node staging,
+pending post-suite GPU parity and merge. Local candidate commit918eac3.
+An external CPU watcher will pause the suite briefly after V2 to review compression
+quality before V3; the live source and training process remain preserved.
 Canonical remote source/Git remains da16b58 until every queued training run finishes.
 Failed/repaired: causal-conv wheel C++ ABI mismatch; rebuilt compatible source successfully.
 GPU gradient check:1,881,825,088 frozen parameters fullSHA256 unchanged; projector updated.
@@ -53,7 +60,8 @@ optimization exposure are confounded by equal epochs, and semantic improvements 
 Best10k validation checkpoint is step2400, CE1.7957, retained separately from final2500.
 10k+256heldout cache:5.687GB, latest7k extraction46.79GPU-synchronized seconds,
 98.94s pipeline wall time. V0/1k/3k/10k checkpoints and baselines backed up locally.
-Package hashes verified for44 copied files, including16 audio and16 raw feature examples.
+Package hashes verified for46 copied files/118.60MB, including original metadata and audit assets.
+All-result SHA256 inventory/relocation verification is ready for the final stopped-writer backup.
 Remaining: finish V2/V3, assess optional larger-data run, evaluate promising best checkpoints,
 validate the typed API on GPU, finalize the research report, verify and back up all artifacts.
 Planned: initial V0 256–1,000 examples at factor5 (10 tokens/s); matrix adapts to measured speed.
