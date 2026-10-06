@@ -12,14 +12,22 @@ import matplotlib
 import matplotlib.pyplot as pyplot
 from pydantic import TypeAdapter
 
-from scripts.judge_teacher_suite import JudgedGenerationSet, TeacherJudgingReport
+from scripts.audit_synthesis_alignment import normalize
+from scripts.judge_teacher_suite import (
+    ControlQualityReport,
+    JudgedGenerationSet,
+    TeacherJudgingReport,
+)
 from scripts.package_results import FileArtifact
 from scripts.prepare_teacher_data import TeacherDataPreparation
-from scripts.summarize_teacher_targets import TeacherTargetAudit
+from scripts.summarize_teacher_targets import HistoryGroup, TeacherTargetAudit
+from scripts.teacher_asr_quality import AsrObservation, TeacherAsrQuality, aggregate
 from speech_projector.cache import CacheStatistics
+from speech_projector.data import DatasetReport, Distribution
 from speech_projector.evaluation import ConditioningDiagnostic
 from speech_projector.models import (
     Architecture,
+    AsrTranscript,
     ChatPromptConfig,
     EvaluationCondition,
     EvaluationMetrics,
@@ -84,6 +92,10 @@ class TeacherReportData:
     provenance: TeacherReportProvenance
     greedy_pilot_failures: tuple[TeacherFailure, ...]
     greedy_pilot_results: tuple[RunResult, ...]
+    dataset: DatasetReport
+    asr_quality: TeacherAsrQuality
+    asr_observations: tuple[AsrObservation, ...]
+    control_quality: ControlQualityReport
 
 
 def required_content(path: Path, inputs: list[FileArtifact]) -> bytes:
@@ -153,6 +165,66 @@ def validate_program(results: Sequence[RunResult]) -> None:
             raise ValueError(f"Incomplete test coverage for {result.config.name}")
 
 
+def validate_dataset_evidence(
+    dataset: DatasetReport,
+    preparation: TeacherDataPreparation,
+    examples: Sequence[Example],
+) -> None:
+    counts = (
+        (Split.TRAIN, dataset.train_examples),
+        (Split.VALIDATION, dataset.validation_examples),
+        (Split.TEST, dataset.test_examples),
+    )
+    if {item.split for item in preparation.splits} != set(Split) or len(preparation.splits) != 3:
+        raise ValueError("Dataset preparation requires exactly one record per split")
+    for split, count in counts:
+        selected = tuple(item for item in examples if item.split == split)
+        prepared = next(item for item in preparation.splits if item.split == split)
+        if (
+            len(selected) != count
+            or prepared.selected_examples != count
+            or prepared.distinct_dialogues != len({item.dialogue_id for item in selected})
+            or prepared.selected_ids != tuple(item.example_id for item in selected)
+        ):
+            raise ValueError("Dataset report/selection evidence differs from the source manifest")
+
+
+def validate_asr_evidence(
+    quality: TeacherAsrQuality,
+    observations: Sequence[AsrObservation],
+    examples: Sequence[Example],
+    transcripts: Sequence[AsrTranscript],
+) -> None:
+    heldout = {item.example_id: item for item in examples if item.split != Split.TRAIN}
+    recognized = {item.example_id: item.text for item in transcripts}
+    if len(recognized) != len(transcripts):
+        raise ValueError("ASR transcripts repeat example IDs")
+    if len({item.example_id for item in observations}) != len(observations):
+        raise ValueError("ASR observations repeat example IDs")
+    if {item.example_id for item in observations} != set(heldout):
+        raise ValueError("ASR observations do not cover the exact final heldout examples")
+    for item in observations:
+        example = heldout[item.example_id]
+        history = HistoryGroup.PRESENT if example.history else HistoryGroup.EMPTY
+        if (
+            (item.dialogue_id, item.split, item.domain, item.history)
+            != (example.dialogue_id, example.split, example.domain, history)
+            or item.reference != normalize(example.user_text)
+            or item.example_id not in recognized
+            or item.recognized != normalize(recognized[item.example_id])
+        ):
+            raise ValueError("ASR observation differs from final cleaned input or transcript")
+    if len(quality.splits) != 2 or {item.split for item in quality.splits} != {
+        Split.VALIDATION,
+        Split.TEST,
+    }:
+        raise ValueError("Final ASR quality requires one validation and one test aggregate")
+    for summary in quality.splits:
+        selected = tuple(item for item in observations if item.split == summary.split)
+        if summary.metrics.examples != 512 or aggregate(selected) != summary.metrics:
+            raise ValueError("Final ASR aggregate differs from its full512 saved observations")
+
+
 def load_teacher_report(configuration: TeacherReportConfig) -> TeacherReportData:
     inputs: list[FileArtifact] = []
     root = configuration.results_root
@@ -175,6 +247,11 @@ def load_teacher_report(configuration: TeacherReportConfig) -> TeacherReportData
         for attempt in quality.selection.attempts
     ):
         raise ValueError("Quality scores require a selected judge that passed calibration")
+    control_quality = ControlQualityReport.model_validate_json(
+        required_content(root / "response_quality/control_quality.json", inputs)
+    )
+    if control_quality.selection != quality.selection:
+        raise ValueError("Main and control judging use different calibrated model selections")
     preparation = TeacherDataPreparation.model_validate_json(
         required_content(configuration.data_root / "preparation.json", inputs)
     )
@@ -203,6 +280,10 @@ def load_teacher_report(configuration: TeacherReportConfig) -> TeacherReportData
     source_examples = tuple(
         Example.model_validate_json(line) for line in source_content.splitlines()
     )
+    dataset = DatasetReport.model_validate_json(
+        required_content(configuration.data_root / "dataset_report.json", inputs)
+    )
+    validate_dataset_evidence(dataset, preparation, source_examples)
     manifest_content = required_content(configuration.data_root / "teacher_examples.jsonl", inputs)
     examples = tuple(Example.model_validate_json(line) for line in manifest_content.splitlines())
     if len(examples) != 21024 or len({item.example_id for item in examples}) != len(examples):
@@ -215,6 +296,27 @@ def load_teacher_report(configuration: TeacherReportConfig) -> TeacherReportData
         or exported.manifest.sha256 != hashlib.sha256(manifest_content).hexdigest()
     ):
         raise ValueError("Final teacher manifest differs from its completed export provenance")
+    asr_quality = TeacherAsrQuality.model_validate_json(
+        required_content(root / "dataset/asr_quality.json", inputs)
+    )
+    transcripts_content = required_content(
+        configuration.data_root / "asr_transcripts.jsonl", inputs
+    )
+    if (
+        asr_quality.source_manifest.sha256 != hashlib.sha256(manifest_content).hexdigest()
+        or asr_quality.asr_transcripts.sha256 != hashlib.sha256(transcripts_content).hexdigest()
+    ):
+        raise ValueError("Final ASR audit manifest/transcript provenance SHA differs")
+    observations_content = required_content(root / "dataset/asr_observations.jsonl", inputs)
+    if observations_content and not observations_content.endswith(b"\n"):
+        raise ValueError("Final ASR observation journal has an incomplete suffix")
+    asr_observations = tuple(
+        AsrObservation.model_validate_json(line) for line in observations_content.splitlines()
+    )
+    transcripts = tuple(
+        AsrTranscript.model_validate_json(line) for line in transcripts_content.splitlines()
+    )
+    validate_asr_evidence(asr_quality, asr_observations, examples, transcripts)
     runs: list[RunAnalysis] = []
     samples: list[tuple[str, Split, tuple[SampleGeneration, ...]]] = []
     for result in results:
@@ -321,6 +423,10 @@ def load_teacher_report(configuration: TeacherReportConfig) -> TeacherReportData
         TeacherReportProvenance(configuration=configuration, inputs=tuple(inputs)),
         pilot_failures,
         pilot_results,
+        dataset,
+        asr_quality,
+        asr_observations,
+        control_quality,
     )
 
 
@@ -402,6 +508,216 @@ def stage_rows(data: TeacherReportData, stage: ExperimentStage) -> tuple[RunAnal
             return tuple(item for item in rows if item.result.config.stage == stage)
 
 
+def distribution_row(label: str, measured: Distribution) -> str:
+    return (
+        f"| {label} | {measured.mean:.3f} | {measured.median:.3f} | "
+        f"{measured.p10:.3f} | {measured.p90:.3f} | {measured.p99:.3f} | "
+        f"{measured.minimum:.3f}–{measured.maximum:.3f} |"
+    )
+
+
+def render_dataset_evidence(data: TeacherReportData) -> list[str]:
+    dataset = data.dataset
+    lines = [
+        "DeepDialogue XTTS is a synthetic dialogue/TTS corpus, not recorded human "
+        "conversation. LLM1 and the next alternating LLM2 supply user/assistant roles. "
+        "Dialogue identity includes model_dir/conversation_id; role conventions, repeated "
+        "templates, emotional language and roleplay limit transfer to human speech. "
+        "Emotion metadata is not a conditioning/training objective here.",
+        "",
+        f"Source corpus: {dataset.source_rows:,} turns, {dataset.dialogues:,} dialogues, "
+        f"{dataset.domains} domains, {dataset.model_pairs} model-pair directories and "
+        f"{dataset.usable_pairs:,} source-eligible pairs. These are source-corpus counts, "
+        "distinct from the selected dialogues below.",
+        "",
+        "| Selected split | Examples | Distinct selected dialogues | "
+        "Naturally empty / present history |",
+        "|---|---:|---:|---:|",
+    ]
+    for prepared in data.preparation.splits:
+        selected = tuple(item for item in data.source_examples if item.split == prepared.split)
+        empty = sum(not item.history for item in selected)
+        lines.append(
+            f"| {prepared.split.value} | {prepared.selected_examples:,} | "
+            f"{prepared.distinct_dialogues:,} | {empty:,} / {len(selected) - empty:,} |"
+        )
+    lines.extend(
+        (
+            "",
+            f"History uses up to {data.preparation.configuration.history_turns} previous turns "
+            f"and {data.teacher_audit.provenance.config.run.max_history_tokens} text tokens. "
+            "The natural history counts differ from artificial history-removal controls.",
+            "",
+            "| Distribution | Mean | Median | P10 | P90 | P99 | Min–max |",
+            "|---|---:|---:|---:|---:|---:|---:|",
+            distribution_row("Selected audio seconds", dataset.duration),
+            distribution_row("Selected cleaned user words", dataset.user_words),
+            distribution_row("Selected original-response words (provenance)", dataset.target_words),
+            distribution_row("Source-corpus turns per dialogue", dataset.dialogue_turns),
+            "",
+            "Selected audio/user distributions cover all selected train/validation/test inputs. "
+            "Source dialogue lengths cover the original corpus. Original response words are "
+            "provenance, not sampled teacher-target lengths.",
+            "",
+            dataset.split_method,
+            "",
+            "Source-stage filter counts: "
+            f"missing audio {dataset.filters.missing_audio:,}; "
+            f"invalid duration {dataset.filters.invalid_duration:,}; "
+            f"empty/too-short text {dataset.filters.empty_text:,}; "
+            f"nonalternating roles {dataset.filters.nonalternating:,}; "
+            f"cross-split duplicate pairs {dataset.filters.cross_split_duplicate_pair:,}.",
+            "",
+            "| Later candidate pool | Candidates | Material turn/audio-text mismatches | "
+            "Lexical synthesis substitutions | Missing synthesis text | "
+            "Excluded whole collision dialogues |",
+            "|---|---:|---:|---:|---:|---:|",
+        )
+    )
+    for prepared in data.preparation.splits:
+        lines.append(
+            f"| {prepared.split.value} | {prepared.candidate_examples:,} | "
+            f"{prepared.material_alignment_exclusions:,} | "
+            f"{prepared.lexical_substitution_exclusions:,} | "
+            f"{prepared.missing_synthesis_text_exclusions:,} | "
+            f"{len(prepared.collision_dialogue_exclusions):,} |"
+        )
+    lines.extend(
+        (
+            "",
+            "Material-mismatch and substitution counters can overlap. Whole-dialogue collision "
+            "counts describe candidate-pool dialogues, not that many selected examples. "
+            "Source eligibility and later cleaning are different stages; their counts must "
+            "not be summed as disjoint selected-example removals. Formatting-only cleanup "
+            "is retained. Synthesis text remains a metadata reference, not independently "
+            "verified waveform contents.",
+            "",
+        )
+    )
+    return lines
+
+
+def markdown_cell(text: str) -> str:
+    return text.replace("|", "\\|").replace("\n", " ").replace("\r", " ")
+
+
+def render_asr_evidence(data: TeacherReportData) -> list[str]:
+    lines = [
+        "## Heldout transcription quality",
+        "",
+        data.asr_quality.normalization,
+        "",
+        data.asr_quality.interpretation,
+        "",
+        "WER is pooled edit count / reference words, not mean per-clip WER. "
+        "Insertions can make an individual clip's WER exceed 100%. This measures lexical "
+        "transcription against documented synthesis input, separately from response quality.",
+        "",
+        "| Split | Examples | Reference words | Pooled WER% | "
+        "Substitutions / deletions / insertions |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for summary in data.asr_quality.splits:
+        metrics = summary.metrics
+        lines.append(
+            f"| {summary.split.value} | {metrics.examples} | {metrics.reference_words:,} | "
+            f"{100 * metrics.word_error_rate:.3f} | {metrics.edits.substitutions} / "
+            f"{metrics.edits.deletions} / {metrics.edits.insertions} |"
+        )
+    lines.extend(
+        (
+            "",
+            "Worst three saved ASR disagreements per split (ties ordered by example ID):",
+            "",
+            "| Split / example ID | Domain | Clip WER% | S / D / I | "
+            "Cleaned synthesis reference | Recognized text |",
+            "|---|---|---:|---:|---|---|",
+        )
+    )
+    for split in (Split.VALIDATION, Split.TEST):
+        worst = sorted(
+            (item for item in data.asr_observations if item.split == split),
+            key=lambda item: (-item.word_error_rate, item.example_id),
+        )[:3]
+        for item in worst:
+            lines.append(
+                f"| {item.split.value}/{item.example_id} | {markdown_cell(item.domain)} | "
+                f"{100 * item.word_error_rate:.1f} | {item.edits.substitutions} / "
+                f"{item.edits.deletions} / {item.edits.insertions} | "
+                f"{markdown_cell(item.reference)} | {markdown_cell(item.recognized)} |"
+            )
+    lines.extend(
+        (
+            "",
+            "A large disagreement can reflect transcription error, ASR hallucination or "
+            "synthesized speech that differs from metadata. This table alone cannot determine "
+            "which occurred. The fixed main heldout sets remain unchanged; any outlier "
+            "sensitivity must be labeled separately. No listening or independent waveform "
+            "transcript certification is implied.",
+            "",
+        )
+    )
+    return lines
+
+
+def render_resource_usage(data: TeacherReportData) -> list[str]:
+    runs = validation_runs(data)
+    progress = data.teacher_audit.progress[-1]
+    training_seconds = sum(item.result.runtime_seconds for item in runs)
+    evaluation_seconds = 0.0
+    for item in runs:
+        assert item.result.test is not None
+        evaluation_seconds += (
+            item.result.validation.evaluation_seconds + item.result.test.evaluation_seconds
+        )
+    baseline_seconds = sum(metrics.evaluation_seconds for _, _, metrics in data.baselines)
+    judge_seconds = data.quality.seconds + data.control_quality.seconds
+    lines = [
+        f"Teacher cumulative generation: {progress.elapsed_seconds / 3600:.2f} code wall hours, "
+        f"{progress.examples_per_second:.2f} examples/s and {progress.tokens_per_second:.1f} "
+        f"tokens/s; peak PyTorch allocated memory: {progress.peak_vram_gb:.2f} decimal GB. "
+        "This cumulative timer includes the bootstrap; it is counted once.",
+        "",
+        f"Training loops summed once per run: {training_seconds / 3600:.2f} wall hours, "
+        "including periodic validation/persistence inside the training timer; "
+        f"peak PyTorch allocated training memory: "
+        f"{max(item.result.peak_vram_gb for item in runs):.2f} decimal GB. "
+        f"Separate final validation/test evaluation: {evaluation_seconds / 3600:.2f} hours; "
+        f"baseline evaluation: {baseline_seconds / 3600:.2f} hours. Generation, controls "
+        "and semantic work are nested in evaluation timers and are not added again.",
+        "",
+        f"Selected cached inputs: {data.cache.feature_count:,} sequences, "
+        f"{data.cache.feature_bytes / 1e9:.3f} "
+        f"decimal GB; {data.cache.extracted_count:,} newly extracted and "
+        f"{data.cache.feature_count - data.cache.extracted_count:,} reused. Incremental cache "
+        f"pipeline: {data.cache.cache_wall_seconds:.1f} s; encoder calls "
+        f"{data.cache.extraction_seconds:.1f} s and ASR {data.cache.asr_seconds:.1f} s are "
+        "nested/component timings, not additional whole-dataset extraction costs. "
+        f"Peak PyTorch allocated cache memory: {data.cache.peak_vram_gb:.2f} decimal GB.",
+        "",
+        f"Main response judging: {data.quality.seconds / 3600:.3f} hours; subsequent small "
+        f"control judging: {data.control_quality.seconds / 3600:.3f} hours; additive total "
+        f"{judge_seconds / 3600:.3f} hours. Per-set judgment timers overlap these enclosing "
+        "timers and are not added again. Main judge peak PyTorch allocated memory: "
+        f"{data.quality.peak_vram_gb:.2f} decimal GB. Calibration/challenge attempts and "
+        "model startup/downloads are additional costs outside these judgment timers.",
+        "",
+        "Teacher-prefix fidelity/KL rescoring has no elapsed-duration field and remains "
+        "unmeasured here. These phase measurements exclude additional startup, probes, "
+        "debugging and some gaps; they are not complete GPU-busy hours or provider billing. "
+        "PyTorch allocated decimal GB is not NVIDIA-observed physical device usage or free "
+        "memory: allocator reservations, CUDA contexts and library workspaces can differ. "
+        "Point observations belong to the separately scoped operational addendum.",
+    ]
+    if data.greedy_pilot_results:
+        lines.append(
+            f"Archived greedy pilot training: {len(data.greedy_pilot_results)} run(s), "
+            f"{sum(item.runtime_seconds for item in data.greedy_pilot_results):.1f} seconds; "
+            "excluded from the sampled program's training total and comparisons."
+        )
+    return lines
+
+
 def render_teacher_report(data: TeacherReportData) -> str:
     best = best_run(data)
     lengths = data.teacher_audit.teacher_response.target_tokens_with_eos
@@ -440,6 +756,7 @@ def render_teacher_report(data: TeacherReportData) -> str:
         "",
         data.preparation.transcript_reference,
         "",
+        *render_dataset_evidence(data),
     ]
     for stage in ExperimentStage:
         lines.extend((f"## {stage.value}", "", *run_table(stage_rows(data, stage)), ""))
@@ -484,30 +801,12 @@ def render_teacher_report(data: TeacherReportData) -> str:
             "",
             *run_table(tuple(item for item in data.runs if item.split == Split.TEST)),
             "",
+            *render_asr_evidence(data),
             "## Resource usage",
             "",
+            *render_resource_usage(data),
         )
     )
-    progress = data.teacher_audit.progress[-1]
-    training_hours = sum(item.result.runtime_seconds for item in validation_runs(data)) / 3600
-    training_peak = max(item.result.peak_vram_gb for item in validation_runs(data))
-    lines.append(
-        f"Teacher generation: {progress.elapsed_seconds / 3600:.2f} hours, "
-        f"{progress.examples_per_second:.2f} examples/s, {progress.tokens_per_second:.1f} "
-        f"tokens/s, peak {progress.peak_vram_gb:.2f} GB. Training summed across runs: "
-        f"{training_hours:.2f} hours; peak training VRAM: {training_peak:.2f} GB. "
-        f"Cache: {data.cache.feature_bytes / 1e9:.3f} GB, {data.cache.extracted_count} new "
-        f"extractions, {data.cache.extraction_seconds:.1f} s encoder GPU time. "
-        f"Judge: {data.quality.seconds / 3600:.2f} hours, "
-        f"peak {data.quality.peak_vram_gb:.2f} GB. These measured stage times exclude some "
-        "startup and evaluation overhead; they are not exact GPU utilization or billing."
-    )
-    if data.greedy_pilot_results:
-        lines.append(
-            f"Archived greedy pilot training: {len(data.greedy_pilot_results)} run(s), "
-            f"{sum(item.runtime_seconds for item in data.greedy_pilot_results):.1f} seconds; "
-            "excluded from the sampled program's training total and comparisons."
-        )
     lines.extend(
         (
             "",
@@ -520,7 +819,7 @@ def render_teacher_report(data: TeacherReportData) -> str:
             "dependence on the gold response prefix. Training averages examples within "
             "accumulation groups, whereas heldout CE weights target tokens. Fixed "
             "train-set reductions establish learning; paired heldout shuffled/zero-audio "
-            "controls establish conditioning.",
+            "controls assess whether the current audio changes predictions.",
             "",
             "Quality uses independent candidate-only judging by "
             f"{data.quality.selection.selected.model_name}, after calibration. "

@@ -7,6 +7,7 @@ from pydantic import TypeAdapter
 
 from scripts.challenge_judge import JudgeChallengeReport
 from scripts.judge_teacher_suite import (
+    ControlQualityReport,
     GenerationCapSummary,
     JudgedGenerationSet,
     JudgeSelection,
@@ -15,18 +16,29 @@ from scripts.judge_teacher_suite import (
     TeacherJudgingReport,
 )
 from scripts.package_results import FileArtifact, ModelRevision
-from scripts.prepare_teacher_data import TeacherDataConfig, TeacherDataPreparation
+from scripts.prepare_teacher_data import (
+    TeacherDataConfig,
+    TeacherDataPreparation,
+    TeacherSplitPreparation,
+)
 from scripts.run_judge import CalibrationSummary
 from scripts.summarize_teacher_targets import (
     HistoryLengths,
     ResponseLengths,
     TeacherTargetAudit,
 )
+from scripts.teacher_asr_quality import (
+    SplitAsrQuality,
+    TeacherAsrQuality,
+    aggregate,
+    observations,
+)
 from speech_projector.cache import CacheStatistics
-from speech_projector.data import distribution
+from speech_projector.data import DatasetReport, FilterCounts, distribution
 from speech_projector.generation import TokenLimitedGeneration
 from speech_projector.judge import JudgeConfig, JudgeJournalProvenance, JudgeSummary
 from speech_projector.models import (
+    AsrTranscript,
     EvaluationCondition,
     EvaluationMetrics,
     Example,
@@ -61,6 +73,8 @@ from speech_projector.teacher_report import (
     render_qualitative,
     render_teacher_report,
     save_plots,
+    validate_asr_evidence,
+    validate_dataset_evidence,
     validate_program,
 )
 
@@ -215,7 +229,7 @@ def data(tmp_path: Path) -> TeacherReportData:
             dialogue_id=f"dialogue-{split.value}-{index}",
             split=split,
             history=(),
-            user_text="True user input",
+            user_text="The Road" if split == Split.TEST and index == 0 else "True user input",
             target_text="Native teacher answer",
             audio_path=Path("audio.wav"),
             feature_path=Path("feature.pt"),
@@ -312,7 +326,24 @@ def data(tmp_path: Path) -> TeacherReportData:
         metadata_sha256="test-metadata",
         source_manifest_sha256="test-local",
         provenance_sha256="test",
-        splits=(),
+        splits=tuple(
+            TeacherSplitPreparation(
+                split=split,
+                selected_examples=sum(item.split == split for item in examples),
+                distinct_dialogues=len(
+                    {item.dialogue_id for item in examples if item.split == split}
+                ),
+                candidate_examples=100,
+                material_alignment_exclusions=10,
+                lexical_substitution_exclusions=5,
+                missing_synthesis_text_exclusions=1,
+                collision_dialogue_exclusions=("excluded-dialogue",),
+                missing_audio=0,
+                missing_features=0,
+                selected_ids=tuple(item.example_id for item in examples if item.split == split),
+            )
+            for split in Split
+        ),
         subset_definition="Clean, nested teacher inputs.",
         transcript_reference="Actual cleaned synthesis text.",
         target_status="Teacher targets complete",
@@ -336,6 +367,56 @@ def data(tmp_path: Path) -> TeacherReportData:
         asr_seconds=20,
         peak_vram_gb=2,
         masking="valid frames only",
+    )
+    dataset = DatasetReport(
+        source_rows=1000,
+        dialogues=200,
+        domains=5,
+        model_pairs=2,
+        usable_pairs=400,
+        filters=FilterCounts(
+            missing_audio=7,
+            invalid_duration=2,
+            empty_text=3,
+            nonalternating=0,
+            cross_split_duplicate_pair=4,
+        ),
+        train_examples=0,
+        validation_examples=9,
+        test_examples=9,
+        duration=distribution([item.duration for item in examples]),
+        user_words=distribution([float(len(item.user_text.split())) for item in examples]),
+        target_words=distribution([float(len(item.target_text.split())) for item in examples]),
+        dialogue_turns=distribution([3.0, 6.0, 10.0]),
+        domains_selected=(("science", 18),),
+        random_dialogues=(),
+        source_columns=("conversation_id", "speaker", "text"),
+        split_method="Fixture complete-dialogue selection",
+    )
+    transcripts = tuple(
+        AsrTranscript(
+            example_id=item.example_id,
+            text="many unrelated recognized words here"
+            if item.user_text == "The Road"
+            else item.user_text,
+        )
+        for item in examples
+    )
+    asr_observations = observations(examples, transcripts)
+    asr_quality = TeacherAsrQuality(
+        source_manifest=artifact(tmp_path / "teacher_examples.jsonl"),
+        asr_transcripts=artifact(tmp_path / "asr_transcripts.jsonl"),
+        splits=tuple(
+            SplitAsrQuality(
+                split=split,
+                metrics=aggregate(tuple(item for item in asr_observations if item.split == split)),
+            )
+            for split in (Split.VALIDATION, Split.TEST)
+        ),
+        histories=(),
+        domains=(),
+        normalization="Normalize Unicode lowercase punctuation and whitespace",
+        interpretation="Pooled lexical WER against cleaned synthesis text",
     )
     return TeacherReportData(
         config,
@@ -364,6 +445,10 @@ def data(tmp_path: Path) -> TeacherReportData:
         TeacherReportProvenance(configuration=config, inputs=()),
         (),
         (),
+        dataset,
+        asr_quality,
+        asr_observations,
+        ControlQualityReport(selection=quality.selection, sets=(), comparisons=(), seconds=3600),
     )
 
 
@@ -436,6 +521,111 @@ def test_report_exposes_fidelity_quality_baselines_and_real_denominators(
     assert "data scaling changes update count" in report
     assert "by construction" in report
     assert "candidate-only" in report
+
+
+def test_source_counts_and_selection_order_are_validated(data: TeacherReportData) -> None:
+    validate_dataset_evidence(data.dataset, data.preparation, data.source_examples)
+    validation = next(item for item in data.preparation.splits if item.split == Split.VALIDATION)
+    changed = data.preparation.model_copy(
+        update={
+            "splits": tuple(
+                item.model_copy(update={"selected_ids": tuple(reversed(item.selected_ids))})
+                if item == validation
+                else item
+                for item in data.preparation.splits
+            )
+        }
+    )
+    with pytest.raises(ValueError, match="selection evidence differs"):
+        validate_dataset_evidence(data.dataset, changed, data.source_examples)
+
+
+def test_final_asr_validates_512_coverage_and_aggregate_math(data: TeacherReportData) -> None:
+    examples = tuple(
+        data.source_examples[0].model_copy(
+            update={
+                "example_id": f"{split.value}-{index}",
+                "dialogue_id": f"dialogue-{split.value}-{index}",
+                "split": split,
+            }
+        )
+        for split in (Split.VALIDATION, Split.TEST)
+        for index in range(512)
+    )
+    transcripts = tuple(
+        AsrTranscript(example_id=item.example_id, text=item.user_text) for item in examples
+    )
+    records = observations(examples, transcripts)
+    quality = data.asr_quality.model_copy(
+        update={
+            "splits": tuple(
+                SplitAsrQuality(
+                    split=split,
+                    metrics=aggregate(tuple(item for item in records if item.split == split)),
+                )
+                for split in (Split.VALIDATION, Split.TEST)
+            )
+        }
+    )
+    validate_asr_evidence(quality, records, examples, transcripts)
+    with pytest.raises(ValueError, match="exact final heldout"):
+        validate_asr_evidence(quality, records[:-1], examples, transcripts)
+    changed = quality.model_copy(
+        update={
+            "splits": (
+                quality.splits[0].model_copy(
+                    update={
+                        "metrics": quality.splits[0].metrics.model_copy(
+                            update={"word_error_rate": 0.5}
+                        )
+                    }
+                ),
+                quality.splits[1],
+            )
+        }
+    )
+    with pytest.raises(ValueError, match="aggregate differs"):
+        validate_asr_evidence(changed, records, examples, transcripts)
+    changed_transcripts = (
+        transcripts[0].model_copy(update={"text": "wrong words"}),
+        *transcripts[1:],
+    )
+    with pytest.raises(ValueError, match="cleaned input or transcript"):
+        validate_asr_evidence(quality, records, examples, changed_transcripts)
+
+
+def test_report_exposes_actual_asr_outlier_without_filtering_main_cases(
+    data: TeacherReportData,
+) -> None:
+    report = render_teacher_report(data)
+    assert "synthetic dialogue/TTS corpus" in report
+    assert "Source-corpus turns per dialogue" in report
+    assert "Naturally empty / present history" in report
+    assert "counters can overlap" in report
+    assert "must not be summed" in report
+    worst = report.split("Worst three saved ASR disagreements per split", 1)[1]
+    assert "test/test-0" in worst
+    assert "the road" in worst
+    assert "many unrelated recognized words here" in worst
+    assert "fixed main heldout sets remain unchanged" in report
+    assert data.asr_quality.splits[1].metrics.examples == 9
+
+
+def test_resource_totals_exclude_nested_judge_timers_and_untimed_fidelity(
+    data: TeacherReportData,
+) -> None:
+    quality = data.quality.model_copy(
+        update={
+            "sets": tuple(item.model_copy(update={"seconds": 99999}) for item in data.quality.sets)
+        }
+    )
+    report = render_teacher_report(replace(data, quality=quality))
+    assert "additive total 1.001 hours" in report
+    assert "rescoring has no elapsed-duration field" in report
+    assert "not complete GPU-busy hours or provider billing" in report
+    assert report.count("peak PyTorch allocated") + report.count("Peak PyTorch allocated") == 4
+    assert "decimal GB" in report
+    assert "not NVIDIA-observed physical device usage or free memory" in report
 
 
 def test_fixed_paired_set_uses_exact_first_eight_per_split(data: TeacherReportData) -> None:
