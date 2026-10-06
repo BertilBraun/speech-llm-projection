@@ -9,7 +9,16 @@ from pydantic import TypeAdapter, ValidationError
 
 from scripts.judge_overnight import ToneCalibrationResult, calibrate, calibration_cases
 from speech_projector.emotion_preview import Delivery
-from speech_projector.judge import JUDGE_SYSTEM, JudgeConfig, JudgeRequest, LocalJudge, judge_prompt
+from speech_projector.judge import (
+    JUDGE_SYSTEM,
+    JudgeConfig,
+    JudgeFailure,
+    JudgeRequest,
+    JudgeSuccess,
+    JudgeVerdict,
+    LocalJudge,
+    judge_prompt,
+)
 from speech_projector.models import EvaluationCondition, FileArtifact, SampleGeneration
 from speech_projector.overnight_data import (
     NeuEmotionalExampleSource,
@@ -33,6 +42,7 @@ from speech_projector.overnight_judge import (
     build_final_judging_set,
     judge_pair_batch,
     judge_tone_batch,
+    paired_acceptability_difference,
     paired_response_requests,
     run_pair_judgments,
     run_tone_judgments,
@@ -339,3 +349,72 @@ def test_identical_replies_are_ties_even_if_judge_selects_slot(tmp_path: Path) -
     changed = pair.model_copy(update={"alternative_response": "Another candidate."})
     with pytest.raises(ValueError, match="candidate replies"):
         run_pair_judgments(judge, (changed, other_family), tmp_path)
+
+
+@pytest.mark.parametrize("emotional", (False, True))
+def test_paired_acceptability_uses_shared_valid_ids_and_whole_family_clusters(
+    emotional: bool,
+) -> None:
+    def accepted(
+        condition: EvaluationCondition, index: int, family: str, acceptable: bool
+    ) -> JudgeSuccess | ToneJudgeSuccess:
+        utterance = request().utterance.model_copy(
+            update={"example_id": f"{condition.value}:example_{index}", "dialogue_id": family}
+        )
+        if emotional:
+            return ToneJudgeSuccess(
+                request=NeuToneJudgeRequest(utterance=utterance, intended_tone=PilotEmotion.HAPPY),
+                verdict=ToneJudgeVerdict(
+                    relevance=3,
+                    grounded_detail=3 if acceptable else 0,
+                    naturalness=3,
+                    tone_appropriateness=3,
+                    evidence="test evidence",
+                ),
+                raw_responses=("test",),
+            )
+        return JudgeSuccess(
+            request=utterance,
+            verdict=JudgeVerdict(
+                relevance=3,
+                grounded_detail=3 if acceptable else 0,
+                naturalness=3,
+                evidence="test evidence",
+            ),
+            raw_responses=("test",),
+        )
+
+    primary = tuple(
+        accepted(EvaluationCondition.SPEECH, index, family, index != 2)
+        for index, family in enumerate(("paired_family", "paired_family", "other", "failed"))
+    )
+    reference = tuple(
+        accepted(EvaluationCondition.ASR, index, family, False)
+        for index, family in enumerate(("paired_family", "paired_family", "other"))
+    ) + (
+        JudgeFailure(
+            request=request().utterance.model_copy(
+                update={"example_id": "asr:example_3", "dialogue_id": "failed"}
+            ),
+            raw_responses=("invalid",),
+            validation_errors=("invalid",),
+        ),
+    )
+    interval = paired_acceptability_difference(
+        EvaluationCondition.SPEECH, EvaluationCondition.ASR, primary, reference
+    )
+    assert interval.examples == 3 and interval.dialogues == 2
+    assert interval.estimate == pytest.approx(2 / 3)
+    assert interval.lower == 0 and interval.upper == 1
+    with pytest.raises(ValueError, match="two jointly valid"):
+        paired_acceptability_difference(
+            EvaluationCondition.SPEECH, EvaluationCondition.ASR, primary[:2], reference[:2]
+        )
+    with pytest.raises(ValueError, match="declared input condition"):
+        paired_acceptability_difference(
+            EvaluationCondition.TEXT, EvaluationCondition.ASR, primary, reference
+        )
+    with pytest.raises(ValueError, match="unique example IDs"):
+        paired_acceptability_difference(
+            EvaluationCondition.SPEECH, EvaluationCondition.ASR, primary + primary[:1], reference
+        )

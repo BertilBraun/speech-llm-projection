@@ -3,6 +3,9 @@
 from collections.abc import Sequence
 from pathlib import Path
 
+from pydantic import TypeAdapter
+
+from speech_projector.judge import JudgeOutcome
 from speech_projector.models import (
     EvaluationCondition,
     EvaluationMetrics,
@@ -15,13 +18,19 @@ from speech_projector.overnight_conversation_execution import (
     ConversationEvaluationSummary,
 )
 from speech_projector.overnight_data import (
+    Cohort,
     NeuEmotionalExampleSource,
     OrdinaryExampleSource,
     QwenEmotionalExampleSource,
     SourceSidecar,
 )
 from speech_projector.overnight_evaluation import SweepDecision
-from speech_projector.overnight_judge import FinalJudgingSummary, ToneCalibrationResult
+from speech_projector.overnight_judge import (
+    FinalJudgingSummary,
+    ToneCalibrationResult,
+    ToneJudgeOutcome,
+    paired_acceptability_difference,
+)
 from speech_projector.overnight_preparation import CombinedPreparation
 
 
@@ -448,6 +457,57 @@ def render_final_judging(directory: Path, calibration: ToneCalibrationResult | N
     lines.extend(
         ["", "These clocks exclude model loading and calibration; they are not GPU-busy hours."]
     )
+    lines.extend(["", render_paired_quality(directory)])
+    return "\n".join(lines)
+
+
+def _load_quality_journal(
+    path: Path, cohort: Cohort
+) -> tuple[JudgeOutcome | ToneJudgeOutcome, ...]:
+    contents = path.read_bytes()
+    if contents and not contents.endswith(b"\n"):
+        raise ValueError("Final quality reporting requires a complete immutable judgment journal")
+    if cohort == Cohort.ORDINARY:
+        ordinary_adapter = TypeAdapter(JudgeOutcome)
+        return tuple(ordinary_adapter.validate_json(line) for line in contents.splitlines())
+    tone_adapter = TypeAdapter(ToneJudgeOutcome)
+    return tuple(tone_adapter.validate_json(line) for line in contents.splitlines())
+
+
+def render_paired_quality(directory: Path) -> str:
+    lines = [
+        "### Paired acceptable-rate differences",
+        "",
+        "Speech minus words-only reference, using only cases with valid judgments in both "
+        "conditions. This conditional matched-valid denominator differs from the requested-case "
+        "acceptance rates above. Whole dialogue/family resampling retains paired recordings; "
+        "95% intervals do not capture judge calibration uncertainty or systematic bias.",
+        "",
+        "| Reference | Cohort | Jointly valid / speech requested / reference requested | "
+        "Dialogue or family clusters | Difference [95% CI] |",
+        "| --- | --- | --- | ---: | --- |",
+    ]
+    speech = directory / "judge" / EvaluationCondition.SPEECH.value
+    for condition in (EvaluationCondition.TEXT, EvaluationCondition.ASR):
+        reference = directory / "judge" / condition.value
+        if not (speech / "summary.json").exists() or not (reference / "summary.json").exists():
+            lines.append(f"| {condition.value} | All | Not measured | — | — |")
+            continue
+        for cohort, subdirectory in (
+            (Cohort.ORDINARY, "ordinary"),
+            (Cohort.QWEN_EMOTIONAL, "old_emotional"),
+            (Cohort.NEU_EMOTIONAL, "new_emotional"),
+        ):
+            primary = _load_quality_journal(speech / subdirectory / "judgments.jsonl", cohort)
+            other = _load_quality_journal(reference / subdirectory / "judgments.jsonl", cohort)
+            interval = paired_acceptability_difference(
+                EvaluationCondition.SPEECH, condition, primary, other
+            )
+            lines.append(
+                f"| {condition.value} | {cohort.value} | {interval.examples} / {len(primary)} / "
+                f"{len(other)} | {interval.dialogues} | {interval.estimate:+.1%} "
+                f"[{interval.lower:+.1%}, {interval.upper:+.1%}] |"
+            )
     return "\n".join(lines)
 
 

@@ -17,7 +17,10 @@ from speech_projector.journal import append_record, read_journal
 from speech_projector.judge import (
     BootstrapInterval,
     JudgeConfig,
+    JudgeFailure,
+    JudgeOutcome,
     JudgeRequest,
+    JudgeSuccess,
     JudgeSummary,
     JudgeVerdict,
     LocalJudge,
@@ -691,6 +694,64 @@ def summarize_pair_judgments(outcomes: Sequence[TonePairOutcome]) -> JudgedToneP
             )
         ),
     )
+
+
+def _accepted_observations(
+    condition: EvaluationCondition, outcomes: Sequence[JudgeOutcome | ToneJudgeOutcome]
+) -> tuple[PairedMetricObservation, ...]:
+    observations: list[PairedMetricObservation] = []
+    for outcome in outcomes:
+        match outcome:
+            case JudgeSuccess():
+                utterance = outcome.request
+            case ToneJudgeSuccess():
+                utterance = outcome.request.utterance
+            case JudgeFailure() | ToneJudgeFailure():
+                continue
+        prefix = condition.value + ":"
+        if not utterance.example_id.startswith(prefix):
+            raise ValueError("Paired judgment IDs must identify their declared input condition")
+        observations.append(
+            PairedMetricObservation(
+                example_id=utterance.example_id.removeprefix(prefix),
+                dialogue_id=utterance.dialogue_id,
+                difference=float(outcome.verdict.acceptable),
+            )
+        )
+    if len({item.example_id for item in observations}) != len(observations):
+        raise ValueError("Paired quality comparison requires unique example IDs")
+    return tuple(observations)
+
+
+def paired_acceptability_difference(
+    primary_condition: EvaluationCondition,
+    reference_condition: EvaluationCondition,
+    primary: Sequence[JudgeOutcome | ToneJudgeOutcome],
+    reference: Sequence[JudgeOutcome | ToneJudgeOutcome],
+) -> BootstrapInterval:
+    primary_scores = _accepted_observations(primary_condition, primary)
+    reference_scores = {
+        item.example_id: item for item in _accepted_observations(reference_condition, reference)
+    }
+    observations: list[PairedMetricObservation] = []
+    for item in primary_scores:
+        if item.example_id not in reference_scores:
+            continue
+        other = reference_scores[item.example_id]
+        if item.dialogue_id != other.dialogue_id:
+            raise ValueError("Matched quality judgments have different dialogue/family identities")
+        observations.append(
+            PairedMetricObservation(
+                example_id=item.example_id,
+                dialogue_id=item.dialogue_id,
+                difference=item.difference - other.difference,
+            )
+        )
+    if len({item.dialogue_id for item in observations}) < 2:
+        raise ValueError(
+            "Paired quality intervals require two jointly valid dialogue/family clusters"
+        )
+    return paired_dialogue_bootstrap(observations)
 
 
 def run_final_judging_set(
