@@ -1,11 +1,11 @@
 """Controlled experiment matrix, updated using measured runtime."""
 
-from speech_projector.models import Architecture, ProjectorConfig, RunConfig
+from speech_projector.models import Architecture, ExperimentStage, ProjectorConfig, RunConfig
 
 
 def make_run(
     name: str,
-    stage: str,
+    stage: ExperimentStage,
     train_examples: int,
     epochs: int,
     compression_factor: int,
@@ -25,12 +25,12 @@ def make_run(
 
 
 def feasibility_run() -> RunConfig:
-    return make_run("v0_256_mlp_10hz", "V0", 256, 5, 5, Architecture.MLP)
+    return make_run("v0_256_mlp_10hz", ExperimentStage.V0, 256, 5, 5, Architecture.MLP)
 
 
 def scaling_runs() -> list[RunConfig]:
     return [
-        make_run(f"v1_{count}_mlp_10hz", "V1", count, 2, 5, Architecture.MLP)
+        make_run(f"v1_{count}_mlp_10hz", ExperimentStage.V1, count, 2, 5, Architecture.MLP)
         for count in (1000, 3000, 10000)
     ]
 
@@ -39,7 +39,7 @@ def compression_runs(train_examples: int) -> list[RunConfig]:
     return [
         make_run(
             f"v2_{train_examples}_mlp_{factor}x",
-            "V2",
+            ExperimentStage.V2,
             train_examples,
             2,
             factor,
@@ -53,7 +53,7 @@ def architecture_runs(train_examples: int, factor: int) -> list[RunConfig]:
     return [
         make_run(
             f"v3_{train_examples}_{architecture.value}_{factor}x",
-            "V3",
+            ExperimentStage.V3,
             train_examples,
             2,
             factor,

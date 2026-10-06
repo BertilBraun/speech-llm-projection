@@ -21,6 +21,23 @@ class Split(str, Enum):
     TEST = "test"
 
 
+class ExperimentStage(str, Enum):
+    V0 = "V0"
+    V1 = "V1"
+    V2 = "V2"
+    V3 = "V3"
+
+
+class EvaluationCondition(str, Enum):
+    TEXT = "text"
+    ASR = "asr"
+    SPEECH = "speech"
+    SHUFFLED_SPEECH = "shuffled_speech"
+    ZERO_SPEECH = "zero_speech"
+    SPEECH_NO_HISTORY = "speech_no_history"
+    SHUFFLED_SPEECH_NO_HISTORY = "shuffled_speech_no_history"
+
+
 class Turn(Record):
     role: Role
     text: str
@@ -57,7 +74,7 @@ class ProjectorConfig(Record):
 
 class RunConfig(Record):
     name: str
-    stage: str
+    stage: ExperimentStage
     seed: int = 42
     train_examples: int = Field(gt=0)
     validation_examples: int = 128
@@ -105,7 +122,7 @@ class AsrTranscript(Record):
 class SampleGeneration(Record):
     example_id: str
     dialogue_id: str
-    condition: str
+    condition: EvaluationCondition
     history: tuple[Turn, ...]
     user_transcript: str
     asr_transcript: str | None = None

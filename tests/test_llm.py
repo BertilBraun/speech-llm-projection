@@ -13,7 +13,14 @@ from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
 from speech_projector.inputs import SpeechInput, TranscriptInput
 from speech_projector.llm import FrozenQwen
-from speech_projector.models import Architecture, Example, ProjectorConfig, RunConfig, Split
+from speech_projector.models import (
+    Architecture,
+    Example,
+    ExperimentStage,
+    ProjectorConfig,
+    RunConfig,
+    Split,
+)
 from speech_projector.projectors import Projector
 from speech_projector.training import (
     TrainingResourceRecord,
@@ -53,7 +60,7 @@ def wrapper() -> FrozenQwen:
     result = FrozenQwen.__new__(FrozenQwen)
     result.config = RunConfig(
         name="tiny",
-        stage="test",
+        stage=ExperimentStage.V0,
         train_examples=2,
         epochs=1,
         learning_rate=0.001,

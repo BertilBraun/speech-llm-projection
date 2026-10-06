@@ -17,6 +17,7 @@ from speech_projector.evaluation import ConditioningDiagnostic
 from speech_projector.models import (
     EvaluationMetrics,
     ExperimentFailure,
+    ExperimentStage,
     RunResult,
     SampleGeneration,
     SuiteState,
@@ -55,9 +56,9 @@ def _run_table(results: Sequence[RunResult]) -> list[str]:
     return lines
 
 
-def _stage_results(results: Sequence[RunResult], stage: str) -> list[RunResult]:
-    selected = [result for result in results if result.config.stage.lower() == stage]
-    if not selected or stage not in ("v2", "v3"):
+def _stage_results(results: Sequence[RunResult], stage: ExperimentStage) -> list[RunResult]:
+    selected = [result for result in results if result.config.stage == stage]
+    if not selected or stage not in (ExperimentStage.V2, ExperimentStage.V3):
         return selected
     reference = selected[0]
     baseline_candidates = [
@@ -68,7 +69,7 @@ def _stage_results(results: Sequence[RunResult], stage: str) -> list[RunResult]:
         and result.config.epochs == reference.config.epochs
         and result.config.learning_rate == reference.config.learning_rate
     ]
-    if stage == "v3":
+    if stage == ExperimentStage.V3:
         baseline_candidates = [
             result
             for result in baseline_candidates
@@ -77,7 +78,7 @@ def _stage_results(results: Sequence[RunResult], stage: str) -> list[RunResult]:
         ]
     else:
         baseline_candidates = [
-            result for result in baseline_candidates if result.config.stage.lower() == "v1"
+            result for result in baseline_candidates if result.config.stage == ExperimentStage.V1
         ]
     names = {result.config.name for result in selected}
     return selected + [result for result in baseline_candidates if result.config.name not in names]
@@ -116,7 +117,7 @@ def _save_csv(results: Sequence[RunResult], path: Path) -> None:
             writer.writerow(
                 [
                     result.config.name,
-                    result.config.stage,
+                    result.config.stage.value,
                     result.train_examples,
                     result.config.projector.architecture.value,
                     result.projector_parameters,
@@ -144,19 +145,23 @@ def _save_csv(results: Sequence[RunResult], path: Path) -> None:
 
 def _save_plots(results: Sequence[RunResult], root: Path) -> None:
     for stage, xlabel, filename in (
-        ("v1", "Training examples", "data_scaling.png"),
-        ("v2", "Speech pseudo-tokens per audio second", "compression_quality.png"),
+        (ExperimentStage.V1, "Training examples", "data_scaling.png"),
+        (ExperimentStage.V2, "Speech pseudo-tokens per audio second", "compression_quality.png"),
     ):
         selected = _stage_results(results, stage)
         if not selected:
             continue
         selected.sort(
             key=lambda result: (
-                result.train_examples if stage == "v1" else result.pseudo_tokens_per_second
+                result.train_examples
+                if stage == ExperimentStage.V1
+                else result.pseudo_tokens_per_second
             )
         )
         horizontal = [
-            result.train_examples if stage == "v1" else result.pseudo_tokens_per_second
+            result.train_examples
+            if stage == ExperimentStage.V1
+            else result.pseudo_tokens_per_second
             for result in selected
         ]
         figure, axes = pyplot.subplots(1, 2, figsize=(10, 4), constrained_layout=True)
@@ -169,7 +174,9 @@ def _save_plots(results: Sequence[RunResult], root: Path) -> None:
         ]
         axes[1].plot(
             [
-                result.train_examples if stage == "v1" else result.pseudo_tokens_per_second
+                result.train_examples
+                if stage == ExperimentStage.V1
+                else result.pseudo_tokens_per_second
                 for result in semantic
             ],
             [result.validation.semantic_similarity for result in semantic],
@@ -228,7 +235,9 @@ def _qualitative(root: Path, results: Sequence[RunResult]) -> None:
             ]
         )
         for name, sample in matching:
-            lines.extend([f"**{name} / {sample.condition}**: {sample.generated_response}", ""])
+            lines.extend(
+                [f"**{name} / {sample.condition.value}**: {sample.generated_response}", ""]
+            )
             if sample.asr_transcript is not None:
                 lines.extend([f"ASR transcript: {sample.asr_transcript}", ""])
     (root / "qualitative_comparison.md").write_text("\n".join(lines), encoding="utf-8")
@@ -280,10 +289,10 @@ def aggregate_report(root: Path, data_report: Path | None = None) -> Path:
             ]
         )
     for stage, title in (
-        ("v0", "V0 feasibility"),
-        ("v1", "V1 data scaling"),
-        ("v2", "V2 temporal compression"),
-        ("v3", "V3 projector architecture"),
+        (ExperimentStage.V0, "V0 feasibility"),
+        (ExperimentStage.V1, "V1 data scaling"),
+        (ExperimentStage.V2, "V2 temporal compression"),
+        (ExperimentStage.V3, "V3 projector architecture"),
     ):
         selected = _stage_results(results, stage)
         lines.extend([f"## {title}", ""])
@@ -291,7 +300,7 @@ def aggregate_report(root: Path, data_report: Path | None = None) -> Path:
             _run_table(selected) if selected else ["No completed result is available yet."]
         )
         lines.append("")
-        if stage == "v0":
+        if stage == ExperimentStage.V0:
             for result in selected:
                 lines.extend(
                     [

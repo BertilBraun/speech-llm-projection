@@ -17,7 +17,6 @@ from speech_projector.configuration import (
 )
 from speech_projector.data import download_audio, load_examples
 from speech_projector.evaluation import (
-    EvaluationCondition,
     SemanticEvaluator,
     evaluate,
     load_asr_transcripts,
@@ -26,6 +25,7 @@ from speech_projector.evaluation import (
 from speech_projector.inputs import SpeechInput, TranscriptInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
+    EvaluationCondition,
     Example,
     ExperimentDecision,
     ExperimentFailure,

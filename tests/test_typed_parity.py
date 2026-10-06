@@ -9,8 +9,7 @@ from scripts.validate_typed_api import (
     ParityReport,
     assert_parity,
 )
-from speech_projector.evaluation import EvaluationCondition
-from speech_projector.models import GradientCheck
+from speech_projector.models import EvaluationCondition, GradientCheck
 
 
 def parity_report(candidate_loss: float, candidate_tokens: int, response: str) -> ParityReport:

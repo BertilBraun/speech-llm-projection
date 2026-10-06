@@ -13,13 +13,19 @@ from safetensors.torch import load_file
 
 from speech_projector.data import load_examples
 from speech_projector.evaluation import (
-    EvaluationCondition,
     SemanticEvaluator,
     evaluate,
     save_evaluation,
 )
 from speech_projector.llm import FrozenQwen
-from speech_projector.models import EvaluationMetrics, Record, RunConfig, RunResult, Split
+from speech_projector.models import (
+    EvaluationCondition,
+    EvaluationMetrics,
+    Record,
+    RunConfig,
+    RunResult,
+    Split,
+)
 from speech_projector.projectors import Projector
 from speech_projector.training import ValidationCheckpointRecord
 

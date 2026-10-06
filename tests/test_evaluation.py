@@ -4,7 +4,6 @@ import pytest
 import torch
 
 from speech_projector.evaluation import (
-    EvaluationCondition,
     ExampleLoss,
     LossObservation,
     conditioning_diagnostic,
@@ -12,6 +11,7 @@ from speech_projector.evaluation import (
     match_feature_length,
     summarize_losses,
 )
+from speech_projector.models import EvaluationCondition
 
 
 def test_loss_weights_assistant_tokens() -> None:

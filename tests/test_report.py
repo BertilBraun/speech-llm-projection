@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from speech_projector.models import SampleGeneration
+from speech_projector.models import EvaluationCondition, SampleGeneration
 from speech_projector.report import aggregate_report
 
 
@@ -22,7 +22,7 @@ def test_qualitative_report_excludes_archived_wrong_eos_outputs(tmp_path: Path) 
     sample = SampleGeneration(
         example_id="example",
         dialogue_id="dialogue",
-        condition="speech",
+        condition=EvaluationCondition.SPEECH,
         history=(),
         user_transcript="hello",
         gold_response="hello there",

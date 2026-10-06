@@ -6,7 +6,6 @@ import math
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 from statistics import mean, stdev
 from typing import TYPE_CHECKING
@@ -20,6 +19,7 @@ from torch.nn import functional
 from speech_projector.inputs import SpeechInput, TranscriptInput, UtteranceInput
 from speech_projector.models import (
     AsrTranscript,
+    EvaluationCondition,
     EvaluationMetrics,
     Example,
     Record,
@@ -30,16 +30,6 @@ from speech_projector.models import (
 if TYPE_CHECKING:
     from speech_projector.llm import FrozenQwen
     from speech_projector.projectors import Projector
-
-
-class EvaluationCondition(str, Enum):
-    TEXT = "text"
-    ASR = "asr"
-    SPEECH = "speech"
-    SHUFFLED_SPEECH = "shuffled_speech"
-    ZERO_SPEECH = "zero_speech"
-    SPEECH_NO_HISTORY = "speech_no_history"
-    SHUFFLED_SPEECH_NO_HISTORY = "shuffled_speech_no_history"
 
 
 class ExampleLoss(Record):
@@ -290,7 +280,7 @@ def evaluate(
                             SampleGeneration(
                                 example_id=example.example_id,
                                 dialogue_id=example.dialogue_id,
-                                condition=control_condition.value,
+                                condition=control_condition,
                                 history=control_example.history,
                                 user_transcript=example.user_text,
                                 gold_response=example.target_text,
@@ -317,7 +307,7 @@ def evaluate(
                 SampleGeneration(
                     example_id=example.example_id,
                     dialogue_id=example.dialogue_id,
-                    condition=condition.value,
+                    condition=condition,
                     history=example.history,
                     user_transcript=example.user_text,
                     asr_transcript=recognized_transcript,
@@ -428,7 +418,7 @@ def save_evaluation(
                 "",
                 f"Gold response: {sample.gold_response}",
                 "",
-                f"**{sample.condition}**: {sample.generated_response}",
+                f"**{sample.condition.value}**: {sample.generated_response}",
                 "",
             ]
         )
