@@ -18,6 +18,7 @@ from speech_projector.overnight_launcher import (
     OvernightSuiteConfig,
     continuation_fits_budget,
     final_evaluation_config,
+    minimum_final_pass_reserve,
     select_final_evaluation,
 )
 from speech_projector.tts_pilot import PilotEmotion
@@ -163,3 +164,29 @@ def test_optional_compact_continuation_cannot_consume_minimum_winner_pass_budget
     assert continuation_fits_budget(configuration, winner_full_pass, 10000)
     assert continuation_fits_budget(configuration, winner_full_pass, 12730)
     assert not continuation_fits_budget(configuration, winner_full_pass, 12731)
+
+
+def test_projected_finalists_reserve_full_pass_for_any_shortlist_winner() -> None:
+    assert minimum_final_pass_reserve(4775, (4000, 2000), 2) == 2775 * 2 + 120
+    assert minimum_final_pass_reserve(4775, (2000, 4000), 2) == 2775 * 2 + 120
+    assert minimum_final_pass_reserve(4775, (4000, 4000), 2) == 775 * 2 + 120
+    assert minimum_final_pass_reserve(4775, (4000,), 2) == 775 * 2 + 120
+
+    configuration = OvernightSuiteConfig(
+        data_root=Path("data"),
+        output_root=Path("results"),
+        deadline_unix_time=20000,
+        finalization_reserve_seconds=3600,
+    )
+    optional_leader = ContinuationBudget(
+        remaining_updates=2000,
+        seconds_per_update=2,
+        minimum_final_pass_reserve_seconds=minimum_final_pass_reserve(4775, (4000, 2000), 2),
+    )
+    possible_compact_winner = ContinuationBudget(
+        remaining_updates=2775,
+        seconds_per_update=2,
+        minimum_final_pass_reserve_seconds=0,
+    )
+    assert not continuation_fits_budget(configuration, optional_leader, 10000)
+    assert continuation_fits_budget(configuration, possible_compact_winner, 10000)

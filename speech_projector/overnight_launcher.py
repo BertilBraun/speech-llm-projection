@@ -4,6 +4,7 @@ import argparse
 import math
 import time
 import traceback
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -103,6 +104,12 @@ def continuation_fits_budget(
         + configuration.finalization_reserve_seconds
         <= configuration.deadline_unix_time
     )
+
+
+def minimum_final_pass_reserve(
+    updates_per_epoch: int, projected_finalist_steps: Sequence[int], seconds_per_update: float
+) -> float:
+    return max(updates_per_epoch - min(projected_finalist_steps), 0) * seconds_per_update + 120
 
 
 class OvernightCompletion(Record):
@@ -510,12 +517,21 @@ def execute_sweep(
         )
         return execute(continuation_config)
 
-    minimum_final_pass_reserve_seconds = (
-        max(updates_per_epoch - 4000, 0)
-        * max(candidate.training_seconds_per_update for candidate in candidates)
-        + 120
+    conservative_seconds_per_update = max(
+        candidate.training_seconds_per_update for candidate in candidates
     )
     for name in selected_names:
+        projected_finalist_steps = tuple(
+            4000
+            if finalist_name == name
+            else RunResult.model_validate_json(
+                (config.output_root / finalist.configuration.name / "result.json").read_bytes()
+            ).steps
+            for finalist_name, finalist in latest.items()
+        )
+        minimum_final_pass_reserve_seconds = minimum_final_pass_reserve(
+            updates_per_epoch, projected_finalist_steps, conservative_seconds_per_update
+        )
         continued = continue_to(
             latest[name], f"{name}_updates4000", 4000, minimum_final_pass_reserve_seconds
         )
