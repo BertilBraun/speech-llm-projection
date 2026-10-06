@@ -24,6 +24,7 @@ from scripts.summarize_teacher_targets import (
 )
 from speech_projector.cache import CacheStatistics
 from speech_projector.data import distribution
+from speech_projector.generation import TokenLimitedGeneration
 from speech_projector.judge import JudgeConfig, JudgeJournalProvenance, JudgeSummary
 from speech_projector.models import (
     EvaluationCondition,
@@ -35,7 +36,13 @@ from speech_projector.models import (
     Split,
     SuiteState,
 )
-from speech_projector.teacher import TeacherConfig, TeacherProgress, TeacherProvenance
+from speech_projector.teacher import (
+    TeacherConfig,
+    TeacherFailure,
+    TeacherFailureReason,
+    TeacherProgress,
+    TeacherProvenance,
+)
 from speech_projector.teacher_configuration import (
     teacher_compression_runs,
     teacher_feasibility_run,
@@ -355,7 +362,54 @@ def data(tmp_path: Path) -> TeacherReportData:
         ),
         (),
         TeacherReportProvenance(configuration=config, inputs=()),
+        (),
+        (),
     )
+
+
+def test_report_discloses_observed_pilot_failures_and_judge_attempts(
+    data: TeacherReportData,
+) -> None:
+    failure = TeacherFailure(
+        example=data.source_examples[0].model_copy(
+            update={"user_text": "What is on your playlist?"}
+        ),
+        reason=TeacherFailureReason.TOKEN_LIMIT,
+        attempts=(
+            TokenLimitedGeneration(partial_text="Repeated playlist", token_ids=(1,) * 2048),
+            TokenLimitedGeneration(partial_text="Repeated playlist", token_ids=(1,) * 4096),
+        ),
+    )
+    failed_challenge = data.quality.selection.attempts[0].model_copy(
+        update={
+            "independent_challenge": data.quality.selection.attempts[
+                0
+            ].independent_challenge.model_copy(update={"passed": False})
+        }
+    )
+    quality = data.quality.model_copy(
+        update={
+            "selection": data.quality.selection.model_copy(
+                update={"attempts": (failed_challenge, *data.quality.selection.attempts)}
+            )
+        }
+    )
+    report = render_teacher_report(
+        replace(
+            data,
+            quality=quality,
+            greedy_pilot_failures=(failure,),
+            greedy_pilot_results=(data.runs[0].result,),
+        )
+    )
+    assert "1 raw records" in report
+    assert "2048 tokens" in report and "4096 tokens" in report
+    assert "What is on your playlist?" in report
+    assert "pilot_greedy/teacher_targets/failures.jsonl" in report
+    assert "independent passed=False" in report
+    assert "original passed=True" in report
+    assert "3600.0 seconds" in report
+    assert "excluded from the sampled program" in report
 
 
 def test_complete_program_and_missing_stage_validation() -> None:

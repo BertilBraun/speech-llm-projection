@@ -33,7 +33,7 @@ from speech_projector.models import (
     Split,
     SuiteState,
 )
-from speech_projector.teacher import TeacherExport
+from speech_projector.teacher import TeacherExport, TeacherFailure
 from speech_projector.teacher_evaluation import FidelitySummary
 
 matplotlib.use("Agg")
@@ -82,6 +82,8 @@ class TeacherReportData:
     baselines: tuple[tuple[str, Split, EvaluationMetrics], ...]
     failures: tuple[ExperimentFailure, ...]
     provenance: TeacherReportProvenance
+    greedy_pilot_failures: tuple[TeacherFailure, ...]
+    greedy_pilot_results: tuple[RunResult, ...]
 
 
 def required_content(path: Path, inputs: list[FileArtifact]) -> bytes:
@@ -289,6 +291,21 @@ def load_teacher_report(configuration: TeacherReportConfig) -> TeacherReportData
         if failures_path.is_file()
         else ()
     )
+    pilot_failure_path = root / "pilot_greedy/teacher_targets/failures.jsonl"
+    pilot_failures = (
+        tuple(
+            TeacherFailure.model_validate_json(line)
+            for line in required_content(pilot_failure_path, inputs).splitlines()
+        )
+        if pilot_failure_path.is_file()
+        else ()
+    )
+    pilot_result_path = root / "pilot_greedy/teacher_v0_256_mlp_10hz/result.json"
+    pilot_results = (
+        (RunResult.model_validate_json(required_content(pilot_result_path, inputs)),)
+        if pilot_result_path.is_file()
+        else ()
+    )
     return TeacherReportData(
         configuration,
         tuple(runs),
@@ -302,6 +319,8 @@ def load_teacher_report(configuration: TeacherReportConfig) -> TeacherReportData
         tuple(baselines),
         failures,
         TeacherReportProvenance(configuration=configuration, inputs=tuple(inputs)),
+        pilot_failures,
+        pilot_results,
     )
 
 
@@ -483,6 +502,12 @@ def render_teacher_report(data: TeacherReportData) -> str:
         f"peak {data.quality.peak_vram_gb:.2f} GB. These measured stage times exclude some "
         "startup and evaluation overhead; they are not exact GPU utilization or billing."
     )
+    if data.greedy_pilot_results:
+        lines.append(
+            f"Archived greedy pilot training: {len(data.greedy_pilot_results)} run(s), "
+            f"{sum(item.runtime_seconds for item in data.greedy_pilot_results):.1f} seconds; "
+            "excluded from the sampled program's training total and comparisons."
+        )
     lines.extend(
         (
             "",
@@ -524,11 +549,34 @@ def render_teacher_report(data: TeacherReportData) -> str:
             for item in data.failures
         )
     else:
-        lines.append(
-            "No failed suite training attempts were recorded. Earlier preparation/generation "
-            "failures and prototype artifacts are retained separately; this does not imply "
-            "they never occurred."
+        lines.append("No failed sampled suite training attempts were recorded.")
+    lines.append("")
+    lines.append("Judge candidate attempts (both original calibration and independent challenge):")
+    lines.extend(
+        f"- {attempt.calibration.config.model_name}: "
+        f"original passed={attempt.calibration.passed}; "
+        f"independent passed={attempt.independent_challenge.passed}."
+        for attempt in data.quality.selection.attempts
+    )
+    if data.greedy_pilot_failures:
+        lines.extend(
+            (
+                "",
+                f"Archived greedy teacher failures: {len(data.greedy_pilot_failures)} raw "
+                "records in pilot_greedy/teacher_targets/failures.jsonl. "
+                "These attempts are excluded from the completed sampled target journal.",
+            )
         )
+        for failure in data.greedy_pilot_failures:
+            attempt_counts = ", ".join(
+                f"{attempt.kind.value}: {len(attempt.token_ids)} tokens"
+                for attempt in failure.attempts
+            )
+            lines.append(
+                f"- {failure.example.example_id}: {failure.reason.value}; "
+                f"attempts [{attempt_counts}]. User: "
+                f"{failure.example.user_text.replace(chr(10), ' ')}"
+            )
     lines.extend(
         (
             "",
