@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pydantic import Field, model_validator
 
-from scripts.inventory_results import stable_digest
+from scripts.inventory_results import stable_digest, write_record
 from speech_projector.emotion_preview import PreviewClip, PreviewPlan
 from speech_projector.models import Record
 
@@ -24,8 +24,11 @@ class EmotionalAudioConfig(Record):
 
 
 class AudioBatchTiming(Record):
+    """Ordered SDK batch seed; individual case seeds apply only to fallback/retry calls."""
+
     case_ids: tuple[str, ...]
-    seed: int
+    batch_seed: int
+    used_individual_fallback: bool = False
     runtime_seconds: float = Field(ge=0)
     peak_vram_gb: float = Field(ge=0)
     completed: int = Field(ge=0)
@@ -39,6 +42,46 @@ class AudioGenerationSummary(Record):
     session_audio_seconds: float = Field(ge=0)
     session_completed: int = Field(ge=0)
     peak_vram_gb: float = Field(ge=0)
+
+
+class UncommittedAudioRecovery(Record):
+    source_path: Path
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    bytes: int = Field(ge=0)
+    destination: Path
+
+
+def archive_uncommitted_audio(
+    config: EmotionalAudioConfig,
+) -> tuple[UncommittedAudioRecovery, ...]:
+    recoveries: list[UncommittedAudioRecovery] = []
+    for case in config.plan.cases:
+        record = config.output / "clips" / f"{case.case_id}.json"
+        source = config.output / "audio" / f"{case.case_id}.wav"
+        if record.exists() or not source.exists():
+            continue
+        size, digest = stable_digest(source)
+        destination = config.output / "orphaned_audio" / f"{case.case_id}_{digest}.wav"
+        recovery = UncommittedAudioRecovery(
+            source_path=source.resolve(),
+            sha256=digest,
+            bytes=size,
+            destination=destination.resolve(),
+        )
+        recovery_path = destination.with_suffix(".json")
+        if recovery_path.exists():
+            if UncommittedAudioRecovery.model_validate_json(recovery_path.read_bytes()) != recovery:
+                raise ValueError(f"Uncommitted audio recovery metadata changed: {recovery_path}")
+        else:
+            write_record(recovery_path, recovery)
+        if destination.exists():
+            if stable_digest(destination) != (size, digest):
+                raise ValueError(f"Uncommitted audio archive bytes changed: {destination}")
+            source.unlink()
+        else:
+            source.replace(destination)
+        recoveries.append(recovery)
+    return tuple(recoveries)
 
 
 def completed_audio(config: EmotionalAudioConfig) -> tuple[PreviewClip, ...]:

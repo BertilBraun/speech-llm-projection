@@ -33,6 +33,7 @@ from speech_projector.emotional_audio import (
     AudioBatchTiming,
     AudioGenerationSummary,
     EmotionalAudioConfig,
+    archive_uncommitted_audio,
     completed_audio,
 )
 
@@ -145,6 +146,22 @@ def generate_audio(config: EmotionalAudioConfig) -> AudioGenerationSummary:
     else:
         write_record(configuration_path, config)
         write_record(config.output / "plan.json", config.plan)
+    (config.output / "synthesis_protocol.md").write_text(
+        "# Audio randomness and resumption\n\n"
+        "Normal SDK batches share the first case's planned seed. Exact ordered case IDs and "
+        "the actual batch_seed are saved in batches.jsonl; per-case RNG streams are not "
+        "independent. PreviewCase.seed is the planned seed for individual OOM fallback and "
+        "capped-generation retries. used_individual_fallback records OOM fallback batches. "
+        "Resuming changes pending batch membership, so reproduce calls using the logged "
+        "batch order rather than assuming each clip used its own case seed.\n\n"
+        "Clip metadata is committed atomically after WAV persistence. WAVs without final "
+        "clip metadata are preserved in orphaned_audio with SHA256 recovery records before "
+        "regeneration. Committed clips are never rewritten; hash mismatches fail.\n",
+        encoding="utf-8",
+    )
+    recoveries = archive_uncommitted_audio(config)
+    if recoveries:
+        print(f"Archived {len(recoveries)} uncommitted WAV files before resume", flush=True)
     existing = completed_audio(config)
     existing_ids = {clip.case.case_id for clip in existing}
     pending = tuple(case for case in config.plan.cases if case.case_id not in existing_ids)
@@ -191,12 +208,14 @@ def generate_audio(config: EmotionalAudioConfig) -> AudioGenerationSummary:
         cases = pending[offset : offset + config.batch_size]
         batch_started = perf_counter()
         seed = cases[0].seed
+        used_individual_fallback = False
         try:
             outcomes = synthesize_batch(model, config.plan, cases, seed)
         except RuntimeError as error:
             if "out of memory" not in str(error).lower():
                 raise
             torch.cuda.empty_cache()
+            used_individual_fallback = True
             outcomes = tuple(synthesize(model, config.plan, case) for case in cases)
         batch_completed = 0
         for case, outcome in zip(cases, outcomes, strict=True):
@@ -218,7 +237,8 @@ def generate_audio(config: EmotionalAudioConfig) -> AudioGenerationSummary:
             batch_completed += 1
         timing = AudioBatchTiming(
             case_ids=tuple(case.case_id for case in cases),
-            seed=seed,
+            batch_seed=seed,
+            used_individual_fallback=used_individual_fallback,
             runtime_seconds=perf_counter() - batch_started,
             peak_vram_gb=torch.cuda.max_memory_allocated() / 1e9,
             completed=batch_completed,
