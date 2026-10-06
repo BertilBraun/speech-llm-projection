@@ -45,6 +45,26 @@ def manifest(emotions: tuple[PilotEmotion, ...]) -> TtsPilotManifest:
     )
 
 
+def throughput_manifest(copies: int) -> TtsPilotManifest:
+    if not 1 <= copies <= 4:
+        raise ValueError("Throughput pilot allows one to four copies of each emotion")
+    return TtsPilotManifest(
+        cases=tuple(
+            TtsPilotCase(
+                case_id=f"appointment_copy{copy}_{emotion.value}",
+                utterance_id=f"appointment_copy{copy}",
+                text=TEXT,
+                emotion=emotion,
+                seed=42,
+            )
+            for copy in range(copies)
+            for emotion in NEU_EMOTIONS
+        ),
+        warmup_text=TEXT,
+        warmup_seed=41,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
@@ -55,6 +75,7 @@ def main() -> None:
     arguments.output.mkdir(parents=True, exist_ok=False)
     write_record(arguments.output / "index_cases.json", manifest(INDEX_EMOTIONS))
     write_record(arguments.output / "neu_cases.json", manifest(NEU_EMOTIONS))
+    write_record(arguments.output / "neu_throughput_cases.json", throughput_manifest(4))
     previous = IndexPilotConfig.model_validate_json(arguments.previous_index_config.read_bytes())
     for beams in (3, 1):
         configuration = IndexPilotConfig(
