@@ -87,3 +87,16 @@ def teacher_linear_run(compression_factor: int) -> RunConfig:
         2,
         LinearProjectorConfig(compression_factor=compression_factor),
     )
+
+
+def teacher_scaling_runs() -> tuple[RunConfig, ...]:
+    return tuple(
+        teacher_run(
+            f"teacher_{count}_mlp_10hz",
+            ExperimentStage.V1,
+            count,
+            2,
+            MlpProjectorConfig(compression_factor=5),
+        )
+        for count in (1000, 3000, 10000)
+    )

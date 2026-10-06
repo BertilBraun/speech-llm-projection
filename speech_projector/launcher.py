@@ -88,6 +88,7 @@ def run_experiment(
     result_path = directory / "result.json"
     if result_path.exists():
         return RunResult.model_validate_json(result_path.read_text(encoding="utf-8"))
+    source_revision = git_revision()
     wrapper.config = config
     projector = initialize_projector(config, wrapper.device)
     outcome = train_run(
@@ -122,7 +123,7 @@ def run_experiment(
     ) / len(validation)
     result = RunResult(
         config=config,
-        git_commit=git_revision(),
+        git_commit=source_revision,
         train_examples=config.train_examples,
         validation_examples=len(validation),
         test_examples=len(test),
