@@ -1,7 +1,9 @@
+import hashlib
 from pathlib import Path
 
 import pytest
 import torch
+from jinja2 import TemplateError
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.pre_tokenizers import Whitespace
@@ -20,6 +22,7 @@ from speech_projector.generation import CompletedGeneration, TokenLimitedGenerat
 from speech_projector.models import SamplingDecodingConfig
 from speech_projector.preview_responses import (
     PREVIEW_SYSTEM,
+    ChatMessage,
     DeliveryPreviewRequest,
     PreviewRequest,
     PreviewResponse,
@@ -36,6 +39,17 @@ from speech_projector.preview_responses import (
     request_id,
     run_preview_requests,
 )
+
+
+def pinned_chat_template() -> str:
+    content = (
+        Path(__file__).parent / "fixtures" / "qwen35_2b_15852e8_chat_template.jinja"
+    ).read_bytes()
+    assert (
+        hashlib.sha256(content).hexdigest()
+        == "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    )
+    return content.decode("utf-8")
 
 
 def configuration(directory: Path) -> PreviewResponseConfig:
@@ -90,16 +104,48 @@ def test_literal_user_text_and_system_metadata_do_not_leak_tts_instructions(
     control = preview_messages(
         TranscriptPreviewRequest(text_id="control", text=case.text), PREVIEW_SYSTEM
     )
-    assert aware[0] == control[0]
-    assert tuple(message.role for message in aware) == ("system", "system", "user")
+    assert aware[0].content.startswith(control[0].content + "\n\n")
+    assert control[0].content == PREVIEW_SYSTEM
+    assert tuple(message.role for message in aware) == ("system", "user")
     assert tuple(message.role for message in control) == ("system", "user")
     assert aware[-1] == control[-1]
     assert aware[-1].content == case.text
-    assert f"USER delivered this utterance with a {case.delivery.value} tone" in aware[1].content
-    assert "not an instruction to imitate their tone" in aware[1].content
+    assert f"USER delivered this utterance with a {case.delivery.value} tone" in aware[0].content
+    assert "not an instruction to imitate their tone" in aware[0].content
     assert all(case.instruct not in message.content for message in aware + control)
     assert "do not assume sarcasm means sadness" in aware[0].content
     assert plan == default_preview_plan()
+
+
+def test_actual_pinned_template_renders_all_cases_and_rejects_second_system() -> None:
+    tokenizer = PreTrainedTokenizerFast(
+        tokenizer_object=Tokenizer(WordLevel({"[UNK]": 0}, unk_token="[UNK]")), unk_token="[UNK]"
+    )
+    tokenizer.chat_template = pinned_chat_template()
+    for request in preview_requests(default_preview_plan()):
+        messages = preview_messages(request, PREVIEW_SYSTEM)
+        rendered = tokenizer.apply_chat_template(
+            [message.model_dump() for message in messages],
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
+        assert isinstance(rendered, str)
+        assert rendered.count("<|im_start|>system\n") == 1
+        assert f"<|im_start|>user\n{messages[-1].content}<|im_end|>\n" in rendered
+        assert rendered.endswith("<|im_start|>assistant\n<think>\n\n</think>\n\n")
+    invalid = (
+        ChatMessage(role="system", content=PREVIEW_SYSTEM),
+        ChatMessage(role="system", content="User delivery metadata"),
+        ChatMessage(role="user", content="I'm good."),
+    )
+    with pytest.raises(TemplateError, match="System message must be at the beginning"):
+        tokenizer.apply_chat_template(
+            [message.model_dump() for message in invalid],
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
 
 
 @pytest.mark.parametrize("completed", (True, False))
@@ -248,11 +294,7 @@ def test_pinned_inference_freezes_weights_uses_native_chat_and_restores_rng(
     tokenizer = PreTrainedTokenizerFast(
         tokenizer_object=vocabulary, unk_token="[UNK]", eos_token="[EOS]", pad_token="[UNK]"
     )
-    tokenizer.chat_template = (
-        "{% for message in messages %}{{message.role}}:{{message.content}}\n{% endfor %}"
-        "{% if add_generation_prompt %}assistant:{% endif %}"
-        "{% if not enable_thinking %}<think></think>{% endif %}"
-    )
+    tokenizer.chat_template = pinned_chat_template()
     text_config = Qwen3_5TextConfig(
         vocab_size=8,
         hidden_size=32,
@@ -297,7 +339,7 @@ def test_pinned_inference_freezes_weights_uses_native_chat_and_restores_rng(
     before = tuple(parameter.detach().clone() for parameter in model.parameters())
     random_state = torch.random.get_rng_state().clone()
     response = teacher.respond(preview_requests(default_preview_plan())[0])
-    assert "<think></think>" in response.prompt_text
+    assert response.prompt_text.endswith("<think>\n\n</think>\n\n")
     assert response.prompt_token_ids == tuple(
         tokenizer.encode(response.prompt_text, add_special_tokens=False)
     )

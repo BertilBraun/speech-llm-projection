@@ -122,19 +122,22 @@ def preview_requests(plan: PreviewPlan) -> tuple[PreviewRequest, ...]:
 
 
 def preview_messages(request: PreviewRequest, system_text: str) -> tuple[ChatMessage, ...]:
-    base = ChatMessage(role="system", content=system_text)
     match request:
         case DeliveryPreviewRequest(case=case):
-            metadata = ChatMessage(
+            system = ChatMessage(
                 role="system",
                 content=(
-                    f"The USER delivered this utterance with a {case.delivery.value} tone. "
+                    f"{system_text}\n\nThe USER delivered this utterance "
+                    f"with a {case.delivery.value} tone. "
                     "This is metadata about the user, not an instruction to imitate their tone."
                 ),
             )
-            return (base, metadata, ChatMessage(role="user", content=case.text))
+            return (system, ChatMessage(role="user", content=case.text))
         case TranscriptPreviewRequest(text=text):
-            return (base, ChatMessage(role="user", content=text))
+            return (
+                ChatMessage(role="system", content=system_text),
+                ChatMessage(role="user", content=text),
+            )
 
 
 def decode_preview_tokens(
