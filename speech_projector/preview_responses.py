@@ -297,8 +297,8 @@ def render_preview_responses(records: Sequence[PreviewResponse]) -> str:
         "Qwen did not hear the audio. Listening must establish whether synthesis conveys "
         "the intended delivery; these replies are not emotion-recognition measurements.",
         "",
-        "All cases and transcript-only controls share the same concise system prompt "
-        "and sampled decoding settings. One sample per case is illustrative, not a quality rate.",
+        "All cases and any transcript-only controls share the same system prompt "
+        "and saved decoding settings. One reply per case is illustrative, not a quality rate.",
     ]
     for record in records:
         match record.request:
