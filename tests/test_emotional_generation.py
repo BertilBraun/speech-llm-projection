@@ -16,12 +16,14 @@ from speech_projector.emotional_generation import (
     DraftSyntaxFailure,
     EmotionalGenerationConfig,
     EmotionalTeacherRequest,
+    GenerationBackend,
     TextGenerationBatch,
     TextGenerationOutcome,
     TextGenerationRequest,
     completed_outcomes,
     generate_drafts,
     generate_teacher_targets,
+    generation_from_finish_reason,
     summarize_generation,
     teacher_generation_request,
 )
@@ -254,3 +256,47 @@ def test_invalid_draft_json_gets_a_distinct_corrective_prompt_and_saved_failure(
     failures = read_journal(tmp_path / "draft_syntax_failures.jsonl", DraftSyntaxFailure)
     assert len(failures) == 1
     assert failures[0].response.text == "not JSON"
+
+
+@pytest.mark.parametrize("finish_reason", ("stop", "length"))
+def test_provider_stop_status_does_not_require_a_returned_eos_token(finish_reason: str) -> None:
+    response = generation_from_finish_reason("  Reply  ", (10, 11), finish_reason)
+    assert response.token_ids == (10, 11)
+    assert isinstance(response, CompletedGeneration) == (finish_reason == "stop")
+
+
+@pytest.mark.parametrize("finish_reason", (None, "abort", "tool_calls"))
+def test_unrecognized_provider_stop_never_becomes_completed(finish_reason: str | None) -> None:
+    with pytest.raises(ValueError, match="Unexpected provider termination"):
+        generation_from_finish_reason("Reply", (10, 11), finish_reason)
+
+
+def test_provider_trace_directories_preserve_independent_provenance_for_shared_dataset(
+    tmp_path: Path,
+) -> None:
+    first = configuration(tmp_path)
+    backend = FixtureBackend(first)
+    requests = (
+        TextGenerationRequest(
+            request_id="teacher:test", messages=(ChatMessage(role="user", content="Hello"),)
+        ),
+    )
+    CachedGeneration(first, backend.generate).generate(requests, 256)
+    original = (tmp_path / "generation_provenance.json").read_bytes()
+    second = first.model_copy(
+        update={
+            "backend": GenerationBackend.VLLM,
+            "trace_subdirectory": Path("vllm"),
+            "source_git_commit": "c" * 40,
+        }
+    )
+    CachedGeneration(second, backend.generate).generate(requests, 256)
+    assert (tmp_path / "generation_provenance.json").read_bytes() == original
+    assert (
+        len(read_journal(tmp_path / "vllm" / "generation_batches.jsonl", TextGenerationBatch)) == 1
+    )
+    assert summarize_generation(second).generation_batches == 1
+    with pytest.raises(ValueError, match="within the dataset"):
+        EmotionalGenerationConfig.model_validate_json(
+            first.model_copy(update={"trace_subdirectory": Path("../outside")}).model_dump_json()
+        )

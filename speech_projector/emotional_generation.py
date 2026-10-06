@@ -45,6 +45,7 @@ class GenerationBackend(str, Enum):
 
 class EmotionalGenerationConfig(Record):
     output_directory: Path
+    trace_subdirectory: Path = Path(".")
     revision: str = Field(pattern=r"^[0-9a-f]{40}$")
     source_git_commit: str = Field(pattern=r"^[0-9a-f]{40}$")
     model_name: str = "Qwen/Qwen3.5-2B"
@@ -64,6 +65,8 @@ class EmotionalGenerationConfig(Record):
 
     @model_validator(mode="after")
     def validate_retry_caps(self) -> "EmotionalGenerationConfig":
+        if self.trace_subdirectory.is_absolute() or ".." in self.trace_subdirectory.parts:
+            raise ValueError("Trace subdirectory must remain within the dataset output directory")
         if self.draft_retry_token_cap <= self.draft_token_cap:
             raise ValueError("Draft retry budget must exceed the initial budget")
         if self.teacher_retry_token_cap <= self.teacher_token_cap:
@@ -122,6 +125,18 @@ class EmotionalGenerationSummary(Record):
 
 
 GenerateBatch = Callable[[Sequence[TextGenerationRequest], int], TextGenerationBatch]
+
+
+def generation_from_finish_reason(
+    text: str, token_ids: Sequence[int], finish_reason: str | None
+) -> GenerationResult:
+    match finish_reason:
+        case "stop":
+            return CompletedGeneration(text=text.strip(), token_ids=tuple(token_ids))
+        case "length":
+            return TokenLimitedGeneration(partial_text=text.strip(), token_ids=tuple(token_ids))
+        case reason:
+            raise ValueError(f"Unexpected provider termination: {reason}")
 
 
 class FrozenTextGenerator:
@@ -218,15 +233,16 @@ class CachedGeneration:
     def __init__(self, config: EmotionalGenerationConfig, generate: GenerateBatch) -> None:
         self.configuration = config
         self.generate_batch = generate
-        config.output_directory.mkdir(parents=True, exist_ok=True)
+        directory = config.output_directory / config.trace_subdirectory
+        directory.mkdir(parents=True, exist_ok=True)
         provenance = EmotionalGenerationProvenance(configuration=config)
-        path = config.output_directory / "generation_provenance.json"
+        path = directory / "generation_provenance.json"
         if path.exists():
             if EmotionalGenerationProvenance.model_validate_json(path.read_bytes()) != provenance:
                 raise ValueError("Generation resume configuration/source/model provenance differs")
         else:
             path.write_text(provenance.model_dump_json(indent=2), encoding="utf-8")
-        self.path = config.output_directory / "generation_batches.jsonl"
+        self.path = directory / "generation_batches.jsonl"
         self.outcomes: dict[tuple[str, int], TextGenerationOutcome] = {}
         for batch in read_journal(self.path, TextGenerationBatch):
             for outcome in batch.outcomes:
@@ -432,7 +448,8 @@ def generate_teacher_targets(
 
 def summarize_generation(config: EmotionalGenerationConfig) -> EmotionalGenerationSummary:
     batches = read_journal(
-        config.output_directory / "generation_batches.jsonl", TextGenerationBatch
+        config.output_directory / config.trace_subdirectory / "generation_batches.jsonl",
+        TextGenerationBatch,
     )
     summary = EmotionalGenerationSummary(
         configuration=config,
@@ -448,7 +465,7 @@ def summarize_generation(config: EmotionalGenerationConfig) -> EmotionalGenerati
             len(outcome.generation.token_ids) for batch in batches for outcome in batch.outcomes
         ),
     )
-    (config.output_directory / "generation_summary.json").write_text(
+    (config.output_directory / config.trace_subdirectory / "generation_summary.json").write_text(
         summary.model_dump_json(indent=2), encoding="utf-8"
     )
     return summary
