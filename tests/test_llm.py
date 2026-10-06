@@ -207,7 +207,7 @@ def test_selected_text_reaches_loss_and_generation_without_mutating_example(
     assert recording.loss_inputs == [TranscriptInput("yes yes")]
     assert recording.generation_inputs == [TranscriptInput("yes yes")]
     assert example.model_dump_json() == original
-    assert outcome.samples[0].user_transcript == example.user_text
+    assert outcome.samples[0].user_transcript == "yes yes"
     assert outcome.metrics.cross_entropy == pytest.approx(
         wrapper.loss(example, TranscriptInput("yes yes")).item()
     )

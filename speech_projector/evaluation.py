@@ -306,16 +306,20 @@ def evaluate(
                 case SpeechInput(embeddings=embeddings):
                     pseudo_tokens = embeddings.shape[0]
                     recognized_transcript = None
+                    user_transcript = example.user_text
                 case TranscriptInput(text=text):
                     pseudo_tokens = None
                     recognized_transcript = text if condition == EvaluationCondition.ASR else None
+                    user_transcript = (
+                        text if condition == EvaluationCondition.TEXT else example.user_text
+                    )
             samples.append(
                 SampleGeneration(
                     example_id=example.example_id,
                     dialogue_id=example.dialogue_id,
                     condition=condition,
                     history=example.history,
-                    user_transcript=example.user_text,
+                    user_transcript=user_transcript,
                     asr_transcript=recognized_transcript,
                     gold_response=example.target_text,
                     generated_response=response,
