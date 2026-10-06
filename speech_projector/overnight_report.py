@@ -109,6 +109,12 @@ def render_overnight_report(
             f"features missing at that snapshot: {preparation.missing_features}. "
             "These preparation counts are not final cache-storage or extraction-time measurements.",
             "",
+            f"Copied ordinary TRAIN prompt-overlap exclusions: "
+            f"{len(preparation.ordinary_prompt_exclusions)} whole dialogues / "
+            f"{preparation.ordinary_prompt_excluded_examples} examples. "
+            "Original source records remain preserved; held-out examples are unchanged. "
+            "The preparation receipt records protected validation/test identities.",
+            "",
             "Synthetic role/content and intended-tone limitations remain. There is no independent "
             "natural-speaker holdout. Family grouping prevents exact paired-family leakage, "
             "but does not establish broad paraphrase or synthesizer generalization.",

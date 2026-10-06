@@ -79,6 +79,8 @@ def preparation() -> CombinedPreparation:
         cached_features_reused=1,
         missing_features=2,
         ordinary_asr_reused=1,
+        ordinary_prompt_exclusions=(),
+        ordinary_prompt_excluded_examples=0,
         generation_example_ids=("a",),
         boundary_checks=("Passed source family split check",),
     )
