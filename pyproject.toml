@@ -6,7 +6,8 @@ dependencies = [
   "torch>=2.6", "torchaudio>=2.6", "transformers>=5.13", "accelerate>=1.10",
   "huggingface-hub>=1.0", "pydantic>=2.10", "numpy>=2.0", "pyarrow>=19",
   "soundfile>=0.13", "scipy>=1.15", "sentence-transformers>=5.0", "matplotlib>=3.10",
-  "safetensors>=0.5", "tqdm>=4.67", "jiwer>=4.0", "tensorboard>=2.19"
+  "safetensors>=0.5", "tqdm>=4.67", "jiwer>=4.0", "tensorboard>=2.19",
+  "scikit-learn>=1.6", "threadpoolctl>=3.5"
 ]
 
 [dependency-groups]
