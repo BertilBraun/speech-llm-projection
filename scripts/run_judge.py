@@ -112,9 +112,18 @@ def calibration_cases() -> tuple[CalibrationCase, ...]:
     return tuple(cases)
 
 
-def calibrate(judge: LocalJudge, output: Path) -> CalibrationSummary:
+DEFAULT_CALIBRATION_CASES = calibration_cases()
+
+
+def calibrate(
+    judge: LocalJudge,
+    output: Path,
+    *,
+    cases: tuple[CalibrationCase, ...] = DEFAULT_CALIBRATION_CASES,
+) -> CalibrationSummary:
+    if {item.category for item in cases} != set(CalibrationCategory):
+        raise ValueError("Calibration cases must cover every declared quality category")
     output.mkdir(parents=True, exist_ok=True)
-    cases = calibration_cases()
     summary_path = output / "calibration_summary.json"
     if summary_path.exists():
         existing = CalibrationSummary.model_validate_json(summary_path.read_bytes())

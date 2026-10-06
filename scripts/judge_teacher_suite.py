@@ -10,9 +10,10 @@ from pathlib import Path
 import torch
 from pydantic import Field, TypeAdapter
 
+from scripts.challenge_judge import JudgeChallengeReport, run_challenge
 from scripts.compare_judgments import JudgmentComparison, compare_journals
 from scripts.package_results import FileArtifact, file_digest
-from scripts.run_judge import CalibrationSummary, calibrate, requests_from_generations
+from scripts.run_judge import requests_from_generations
 from speech_projector.judge import (
     JudgeConfig,
     JudgeJournalProvenance,
@@ -42,7 +43,7 @@ class TeacherJudgingConfig(Record):
 
 
 class JudgeSelection(Record):
-    attempts: tuple[CalibrationSummary, ...]
+    attempts: tuple[JudgeChallengeReport, ...]
     selected: JudgeConfig
 
 
@@ -106,13 +107,13 @@ def artifact(path: Path) -> FileArtifact:
 def select_judge(
     config: TeacherJudgingConfig,
     load: Callable[[JudgeConfig], LocalJudge],
-    calibrate_model: Callable[[LocalJudge, Path], CalibrationSummary] = calibrate,
+    challenge_model: Callable[[LocalJudge, Path], JudgeChallengeReport] = run_challenge,
 ) -> CalibratedJudge:
-    attempts: list[CalibrationSummary] = []
+    attempts: list[JudgeChallengeReport] = []
     for index, candidate in enumerate(config.candidates):
         judge = load(candidate)
         directory = config.calibration_root / f"candidate_only_{index}"
-        summary = calibrate_model(judge, directory)
+        summary = challenge_model(judge, directory)
         attempts.append(summary)
         print(summary.model_dump_json(), flush=True)
         if summary.passed:
@@ -127,7 +128,7 @@ def select_judge(
         torch.cuda.empty_cache()
     config.output_directory.mkdir(parents=True, exist_ok=True)
     (config.output_directory / "failed_calibrations.json").write_bytes(
-        TypeAdapter(tuple[CalibrationSummary, ...]).dump_json(tuple(attempts), indent=2)
+        TypeAdapter(tuple[JudgeChallengeReport, ...]).dump_json(tuple(attempts), indent=2)
     )
     raise ValueError("All candidate-only judges failed calibration; no quality scores produced")
 
@@ -277,7 +278,7 @@ def render_report(report: TeacherJudgingReport) -> str:
         "answers are excluded from the judging prompt. The actual cleaned user transcript "
         "and history are provided. Acceptance requires each rubric dimension to be >=2/3.",
         "",
-        "The 13-case calibration is a minimal diagnostic gate, not a certification. "
+        "The 13-case calibration and 30 independent cases are minimal gates, not a certification. "
         "A compact automated judge may miss subtle errors; inspect qualitative outputs. "
         "Failed JSON judgments are excluded from valid-rate and paired estimates; requested "
         "acceptance conservatively treats those cases as unaccepted. "
@@ -371,6 +372,11 @@ def main() -> None:
             JudgeConfig(
                 model_name="Qwen/Qwen3-4B",
                 revision="1cfa9a7208912126459214e8b04321603b3df60c",
+                batch_size=arguments.batch_size,
+            ),
+            JudgeConfig(
+                model_name="Qwen/Qwen3-4B-Instruct-2507",
+                revision="cdbee75f17c01a7cc42f958dc650907174af0554",
                 batch_size=arguments.batch_size,
             ),
         ),

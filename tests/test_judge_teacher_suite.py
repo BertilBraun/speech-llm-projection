@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts.challenge_judge import JudgeChallengeReport
 from scripts.judge_teacher_suite import (
     GenerationJob,
     TeacherJudgingConfig,
@@ -73,9 +74,10 @@ def test_fallback_requires_its_own_passing_calibration(tmp_path: Path) -> None:
         loaded.append(candidate)
         return CountingJudge(candidate)
 
-    def calibrate_model(judge: LocalJudge, directory: Path) -> CalibrationSummary:
+    def calibrate_model(judge: LocalJudge, directory: Path) -> JudgeChallengeReport:
         folders.append(directory)
-        return calibration(judge, judge.config == config.candidates[1])
+        summary = calibration(judge, judge.config == config.candidates[1])
+        return JudgeChallengeReport(calibration=summary, independent_challenge=summary)
 
     selected = select_judge(config, load, calibrate_model)
     assert loaded == list(config.candidates)
@@ -88,8 +90,9 @@ def test_fallback_requires_its_own_passing_calibration(tmp_path: Path) -> None:
 def test_all_failed_calibrations_prohibit_quality_scoring(tmp_path: Path) -> None:
     config = configuration(tmp_path)
 
-    def fail(judge: LocalJudge, directory: Path) -> CalibrationSummary:
-        return calibration(judge, False)
+    def fail(judge: LocalJudge, directory: Path) -> JudgeChallengeReport:
+        summary = calibration(judge, False)
+        return JudgeChallengeReport(calibration=summary, independent_challenge=summary)
 
     with pytest.raises(ValueError, match="All candidate-only judges failed"):
         select_judge(config, CountingJudge, fail)
