@@ -1,4 +1,4 @@
-"""Fixed ten-case emotional speech preview and audio persistence boundaries."""
+"""Emotional speech preview plans and audio persistence boundaries."""
 
 from __future__ import annotations
 
@@ -55,16 +55,14 @@ class PreviewPlan(Record):
     top_k: int = Field(default=50, gt=0)
     top_p: float = Field(default=1.0, gt=0, le=1)
     repetition_penalty: float = Field(default=1.05, gt=0)
-    cases: tuple[PreviewCase, ...]
+    cases: tuple[PreviewCase, ...] = Field(min_length=1)
 
     @model_validator(mode="after")
-    def validate_matrix(self) -> PreviewPlan:
-        expected = tuple((text, delivery) for text in PREVIEW_TEXTS for delivery in Delivery)
-        actual = tuple((case.text, case.delivery) for case in self.cases)
-        if actual != expected or len({case.case_id for case in self.cases}) != 10:
-            raise ValueError("Preview requires the ordered two-text, five-delivery matrix")
-        if tuple(case.seed for case in self.cases) != tuple(self.seed + i for i in range(10)):
-            raise ValueError("Preview case seeds must be plan seed plus case index")
+    def validate_cases(self) -> PreviewPlan:
+        if len({case.case_id for case in self.cases}) != len(self.cases):
+            raise ValueError("Preview case identifiers must be unique")
+        if any(not case.text.strip() or not case.instruct.strip() for case in self.cases):
+            raise ValueError("Preview text and delivery instructions must be nonempty")
         return self
 
 
@@ -126,7 +124,7 @@ class PreviewManifest(Record):
     @model_validator(mode="after")
     def validate_complete(self) -> PreviewManifest:
         if tuple(clip.case for clip in self.clips) != self.plan.cases:
-            raise ValueError("A completed preview manifest must cover its exact ten cases")
+            raise ValueError("A completed preview manifest must cover its exact planned cases")
         if self.provenance.input_sha256 != plan_digest(self.plan):
             raise ValueError("Preview plan SHA256 differs from the manifest")
         if any(
@@ -248,7 +246,7 @@ def persist_clip(
 
 def render_preview(manifest: PreviewManifest) -> str:
     lines = [
-        "# Ten emotional delivery previews",
+        f"# {len(manifest.clips)} emotional delivery previews",
         "",
         f"Model: {manifest.plan.model_name}; voice: {manifest.plan.speaker}; "
         f"language: {manifest.plan.language}.",

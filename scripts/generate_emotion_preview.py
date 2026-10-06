@@ -1,4 +1,4 @@
-"""Generate only the fixed ten CustomVoice previews in the isolated Qwen-TTS environment."""
+"""Generate a supplied CustomVoice preview plan in the isolated Qwen-TTS environment."""
 
 import argparse
 from datetime import datetime, timezone
@@ -28,7 +28,6 @@ from speech_projector.emotion_preview import (
     PreviewTermination,
     SynthesizedAudio,
     codec_termination,
-    default_preview_plan,
     persist_clip,
     plan_digest,
     render_preview,
@@ -169,13 +168,12 @@ def generate_preview(output: Path, plan: PreviewPlan, source_commit: str) -> Pre
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--max-new-tokens", type=int, default=256)
-    parser.add_argument("--revision", required=True)
+    parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--source-commit", required=True)
     arguments = parser.parse_args()
     generate_preview(
         arguments.output,
-        default_preview_plan(arguments.max_new_tokens, revision=arguments.revision),
+        PreviewPlan.model_validate_json(arguments.plan.read_bytes()),
         arguments.source_commit,
     )
 

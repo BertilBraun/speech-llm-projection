@@ -51,14 +51,21 @@ def test_exact_matrix_and_seeded_separate_instructions() -> None:
     assert plan_digest(plan) == plan_digest(default_preview_plan())
 
 
-@pytest.mark.parametrize("remove_case,wrong_seed", [(True, False), (False, True)])
-def test_invalid_matrix_rejected(remove_case: bool, wrong_seed: bool) -> None:
+@pytest.mark.parametrize("invalid_text", ["", "   "])
+def test_invalid_preview_text_rejected(invalid_text: str) -> None:
     plan = default_preview_plan()
-    cases = plan.cases[:-1] if remove_case else plan.cases
-    if wrong_seed:
-        cases = (cases[0].model_copy(update={"seed": 7}), *cases[1:])
+    cases = (plan.cases[0].model_copy(update={"text": invalid_text}), *plan.cases[1:])
     with pytest.raises(ValidationError):
         PreviewPlan(cases=cases)
+
+
+def test_preview_accepts_custom_subset_and_rejects_duplicate_identifiers() -> None:
+    case = default_preview_plan().cases[0]
+    assert PreviewPlan(cases=(case,)).cases == (case,)
+    with pytest.raises(ValidationError, match="unique"):
+        PreviewPlan(cases=(case, case))
+    with pytest.raises(ValidationError):
+        PreviewPlan(cases=())
 
 
 @pytest.mark.parametrize(
@@ -150,7 +157,7 @@ def test_complete_manifest_and_readable_index(tmp_path: Path) -> None:
     assert all(case.case_id in index for case in plan.cases)
     assert index.count("[Listen]") == 10
     assert "raw EOS was not observed" in index
-    with pytest.raises(ValidationError, match="ten cases"):
+    with pytest.raises(ValidationError, match="planned cases"):
         PreviewManifest(
             plan=plan,
             clips=clips[:-1],
