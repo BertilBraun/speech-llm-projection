@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import time
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -22,9 +23,11 @@ from scripts.leakage_audit import LeakageAudit, SplitOverlap, file_digest, norma
 from speech_projector.cache import CacheConfig, load_asr
 from speech_projector.data import (
     DataConfig,
+    DatasetReport,
     DownloadResult,
     SourceTurn,
     build_examples,
+    distribution,
     download_audio,
     load_examples,
     load_source,
@@ -41,12 +44,6 @@ class TeacherDataConfig(Record):
     seed: int = 42
     history_turns: int = Field(default=2, ge=0)
     workers: int = Field(default=4, gt=0)
-
-
-class TeacherSource(Record):
-    """Original dialogue supervision and synthesis evidence, before teacher replacement."""
-
-    alignment: SynthesisAlignment
 
 
 class TeacherSplitPreparation(Record):
@@ -273,11 +270,84 @@ def preserve_asr(examples: Sequence[Example], configuration: TeacherDataConfig) 
             stream.writelines(record.model_dump_json() + "\n" for record in retained)
 
 
+def write_dataset_report(
+    source_report: DatasetReport,
+    examples: Sequence[Example],
+    columns: tuple[str, ...],
+    output_root: Path,
+) -> None:
+    report = source_report.model_copy(
+        update={
+            "train_examples": sum(example.split == Split.TRAIN for example in examples),
+            "validation_examples": sum(example.split == Split.VALIDATION for example in examples),
+            "test_examples": sum(example.split == Split.TEST for example in examples),
+            "duration": distribution([example.duration for example in examples]),
+            "user_words": distribution(
+                [float(len(example.user_text.split())) for example in examples]
+            ),
+            "target_words": distribution(
+                [float(len(example.target_text.split())) for example in examples]
+            ),
+            "domains_selected": tuple(
+                Counter(example.domain for example in examples).most_common()
+            ),
+            "source_columns": columns,
+            "split_method": (
+                source_report.split_method
+                + "; selected teacher inputs remove lexical synthesis mismatch/substitution "
+                "and complete heldout dialogues with cleaned-user/source-target collisions. "
+                "Filters/usable_pairs describe source eligibility; "
+                "additional cleaning is in preparation.json."
+            ),
+        }
+    )
+    (output_root / "dataset_report.json").write_text(
+        report.model_dump_json(indent=2), encoding="utf-8"
+    )
+    lines = [
+        "# Teacher source-corpus summary",
+        "",
+        f"Selected: {report.train_examples} train, {report.validation_examples} validation, "
+        f"{report.test_examples} test. Seed 42; split by complete model_dir/conversation_id.",
+        "",
+        "User words describe audio_cleaned_text, the documented synthesis input. Target words "
+        "describe original dialogue responses preserved as provenance, "
+        "not generated teacher targets.",
+        "",
+        "| Selected distribution | Mean | Median | P10 | P90 | P99 | Min | Max |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for name, measured in (
+        ("Audio seconds", report.duration),
+        ("Cleaned user words", report.user_words),
+        ("Original target words", report.target_words),
+    ):
+        lines.append(
+            f"| {name} | {measured.mean:.3f} | {measured.median:.3f} | {measured.p10:.3f} "
+            f"| {measured.p90:.3f} | {measured.p99:.3f} | {measured.minimum:.3f} "
+            f"| {measured.maximum:.3f} |"
+        )
+    lines.extend(
+        [
+            "",
+            "The original metadata source-stage filter counts and dialogue distributions remain "
+            "in dataset_report.json. Additional alignment/substitution exclusions and selected "
+            "dialogue counts are in preparation.json; byte-hash leakage coverage is in "
+            "dataset_leakage.json. Source targets must be replaced before projector training.",
+        ]
+    )
+    (output_root / "dataset_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def prepare(configuration: TeacherDataConfig) -> tuple[Example, ...]:
-    turns, _ = load_source(configuration.original_root / "metadata.parquet")
+    if configuration.original_root.resolve() == configuration.output_root.resolve():
+        raise ValueError(
+            "Teacher output must use a separate root from the original experiment data"
+        )
+    turns, columns = load_source(configuration.original_root / "metadata.parquet")
     sources = {source_example_id(turn): turn for turn in turns}
     original = load_examples(configuration.original_root / "examples.jsonl", Split.TRAIN)
-    candidates, _ = build_examples(
+    candidates, source_report = build_examples(
         turns,
         DataConfig(
             root=configuration.original_root,
@@ -292,7 +362,7 @@ def prepare(configuration: TeacherDataConfig) -> tuple[Example, ...]:
     if regenerated_train != original:
         raise ValueError("Original training manifest differs from regenerated seeded candidates")
     retained: list[Example] = []
-    provenance: list[TeacherSource] = []
+    provenance: list[SynthesisAlignment] = []
     summaries: list[TeacherSplitPreparation] = []
     for split in Split:
         split_candidates = (
@@ -319,7 +389,7 @@ def prepare(configuration: TeacherDataConfig) -> tuple[Example, ...]:
             prepared_example(alignment, configuration.output_root) for alignment in selected
         )
         retained.extend(examples)
-        provenance.extend(TeacherSource(alignment=alignment) for alignment in selected)
+        provenance.extend(selected)
         summaries.append(
             TeacherSplitPreparation(
                 split=split,
@@ -371,6 +441,7 @@ def prepare(configuration: TeacherDataConfig) -> tuple[Example, ...]:
     (root / "preparation.json").write_text(summary.model_dump_json(indent=2), encoding="utf-8")
     write_feature_plan(retained, configuration, source_manifest)
     preserve_asr(retained, configuration)
+    write_dataset_report(source_report, retained, columns, root)
     (root / "input_readiness.json").write_text(
         input_readiness(retained, source_manifest).model_dump_json(indent=2), encoding="utf-8"
     )
