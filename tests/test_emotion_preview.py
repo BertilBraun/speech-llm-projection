@@ -12,9 +12,9 @@ from pydantic import TypeAdapter, ValidationError
 
 from scripts.package_results import ModelRevision
 from speech_projector.emotion_preview import (
+    INITIAL_DELIVERIES,
     TTS_MODEL,
     TTS_REVISION,
-    Delivery,
     PreviewCapFailure,
     PreviewFailure,
     PreviewManifest,
@@ -42,7 +42,7 @@ def test_exact_matrix_and_seeded_separate_instructions() -> None:
     assert plan.speaker == "Ryan" and plan.language == "English"
     assert len(plan.cases) == 10
     assert tuple(case.seed for case in plan.cases) == tuple(range(42, 52))
-    assert tuple(case.delivery for case in plan.cases[:5]) == tuple(Delivery)
+    assert tuple(case.delivery for case in plan.cases[:5]) == INITIAL_DELIVERIES
     assert {case.text for case in plan.cases} == {"I'm good.", "That went really well."}
     assert len({case.instruct for case in plan.cases}) == 5
     assert "sarcastic" not in plan.cases[-1].text.lower()

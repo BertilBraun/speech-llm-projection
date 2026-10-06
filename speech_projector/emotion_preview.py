@@ -29,6 +29,16 @@ class Delivery(str, Enum):
     SAD = "sad"
     FRUSTRATED = "frustrated"
     SARCASTIC = "sarcastic"
+    WORRIED = "worried"
+
+
+INITIAL_DELIVERIES = (
+    Delivery.NEUTRAL,
+    Delivery.HAPPY,
+    Delivery.SAD,
+    Delivery.FRUSTRATED,
+    Delivery.SARCASTIC,
+)
 
 
 class PreviewTermination(str, Enum):
@@ -164,6 +174,8 @@ def delivery_instruction(delivery: Delivery) -> str:
             return (
                 "Use dry, understated sarcasm, with subtle ironic emphasis rather than enthusiasm."
             )
+        case Delivery.WORRIED:
+            return "Sound anxious and worried, with a tense, uncertain voice."
 
 
 def default_preview_plan(max_new_tokens: int = 256, *, revision: str = TTS_REVISION) -> PreviewPlan:
@@ -173,12 +185,12 @@ def default_preview_plan(max_new_tokens: int = 256, *, revision: str = TTS_REVIS
             text=text,
             delivery=delivery,
             instruct=delivery_instruction(delivery),
-            seed=42 + text_index * len(Delivery) + delivery_index,
+            seed=42 + text_index * len(INITIAL_DELIVERIES) + delivery_index,
         )
         for text_index, (prefix, text) in enumerate(
             zip(("good", "well"), PREVIEW_TEXTS, strict=True)
         )
-        for delivery_index, delivery in enumerate(Delivery)
+        for delivery_index, delivery in enumerate(INITIAL_DELIVERIES)
     )
     return PreviewPlan(max_new_tokens=max_new_tokens, revision=revision, cases=cases)
 
