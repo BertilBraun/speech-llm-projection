@@ -75,7 +75,7 @@ class DataConfig(Record):
     minimum_duration: float = 0.4
     maximum_duration: float = 30.0
     minimum_words: int = 2
-    download_workers: int = 12
+    download_workers: int = 4
 
 
 class Distribution(Record):
@@ -415,7 +415,7 @@ def main() -> None:
     parser.add_argument("--download-train", type=int, default=1000)
     parser.add_argument("--max-train", type=int, default=30000)
     parser.add_argument("--history-turns", type=int, default=2)
-    parser.add_argument("--workers", type=int, default=12)
+    parser.add_argument("--workers", type=int, default=4)
     arguments = parser.parse_args()
     prepare(
         DataConfig(
