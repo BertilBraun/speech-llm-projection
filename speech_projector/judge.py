@@ -146,21 +146,34 @@ class LocalJudge:
     ) -> tuple[str, ...]:
         if len(requests) != len(corrections) or not requests:
             raise ValueError("Judge batching requires matching nonempty requests/corrections")
-        prompts: list[str] = []
-        for request, correction in zip(requests, corrections, strict=True):
+        return self.generate_prompts(
+            JUDGE_SYSTEM,
+            tuple(
+                judge_prompt(request) + correction
+                for request, correction in zip(requests, corrections, strict=True)
+            ),
+        )
+
+    @torch.no_grad()
+    def generate_prompts(self, system_text: str, prompts: Sequence[str]) -> tuple[str, ...]:
+        """Use the same frozen judge for explicit content and emotional rubrics."""
+        if not prompts:
+            raise ValueError("Judge generation requires nonempty prompts")
+        rendered: list[str] = []
+        for content in prompts:
             prompt = self.tokenizer.apply_chat_template(
                 [
-                    {"role": "system", "content": JUDGE_SYSTEM},
-                    {"role": "user", "content": judge_prompt(request) + correction},
+                    {"role": "system", "content": system_text},
+                    {"role": "user", "content": content},
                 ],
                 tokenize=False,
                 add_generation_prompt=True,
                 enable_thinking=False,
             )
             assert isinstance(prompt, str)
-            prompts.append(prompt)
+            rendered.append(prompt)
         encoded = self.tokenizer(
-            prompts, add_special_tokens=False, padding=True, return_tensors="pt"
+            rendered, add_special_tokens=False, padding=True, return_tensors="pt"
         ).to(self.device)
         inputs: torch.Tensor = encoded["input_ids"]
         attention_mask: torch.Tensor = encoded["attention_mask"]
