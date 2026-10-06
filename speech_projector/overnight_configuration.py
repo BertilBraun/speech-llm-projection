@@ -3,9 +3,9 @@
 from speech_projector.models import (
     ChatPromptConfig,
     ExperimentStage,
+    GreedyDecodingConfig,
     MlpProjectorConfig,
     RunConfig,
-    SamplingDecodingConfig,
     StackedMlpProjectorConfig,
 )
 
@@ -14,12 +14,12 @@ def sweep_runs(training_examples: int, microbatch_size: int) -> tuple[RunConfig,
     if microbatch_size not in (1, 2, 4):
         raise ValueError("Controlled microbatch size must be1,2or4")
     settings = (
-        ("overnight_mean_25hz", MlpProjectorConfig(compression_factor=2)),
         ("overnight_mean_10hz", MlpProjectorConfig(compression_factor=5)),
         ("overnight_mean_5hz", MlpProjectorConfig(compression_factor=10)),
-        ("overnight_mean_2p5hz", MlpProjectorConfig(compression_factor=20)),
-        ("overnight_stack_10hz", StackedMlpProjectorConfig(compression_factor=5)),
         ("overnight_stack_5hz", StackedMlpProjectorConfig(compression_factor=10)),
+        ("overnight_stack_10hz", StackedMlpProjectorConfig(compression_factor=5)),
+        ("overnight_mean_2p5hz", MlpProjectorConfig(compression_factor=20)),
+        ("overnight_mean_25hz", MlpProjectorConfig(compression_factor=2)),
     )
     return tuple(
         RunConfig(
@@ -42,7 +42,7 @@ def sweep_runs(training_examples: int, microbatch_size: int) -> tuple[RunConfig,
             generation_batch_size=8,
             conditioning_examples=24,
             prompt=ChatPromptConfig(),
-            decoding=SamplingDecodingConfig(),
+            decoding=GreedyDecodingConfig(),
             projector=projector,
         )
         for name, projector in settings

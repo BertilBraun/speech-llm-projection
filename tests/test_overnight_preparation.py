@@ -18,12 +18,20 @@ from speech_projector.emotional_generation import (
     EmotionalTeacherTarget,
 )
 from speech_projector.generation import CompletedGeneration
-from speech_projector.models import ChatPromptConfig, Example, Split, SystemPromptConfig
+from speech_projector.models import (
+    AsrTranscript,
+    ChatPromptConfig,
+    Example,
+    Split,
+    SystemPromptConfig,
+)
+from speech_projector.overnight_data import OrdinaryExampleSource
 from speech_projector.overnight_preparation import (
     QwenSourceConfig,
     artifact,
     load_records,
     qwen_rows,
+    reuse_ordinary_asr,
     validate_boundaries,
     write_immutable,
     write_records,
@@ -174,3 +182,24 @@ def test_source_journal_and_derived_manifest_are_immutable(tmp_path: Path) -> No
     with pytest.raises(ValueError, match="incomplete"):
         load_records(path, Example)
     assert path.read_bytes() == before[:-1]
+
+
+def test_ordinary_asr_reuses_recognized_text_under_namespaced_ids(tmp_path: Path) -> None:
+    path = tmp_path / "asr.jsonl"
+    rows = (
+        AsrTranscript(example_id="first", text="Recognized original words."),
+        AsrTranscript(example_id="unused", text="Outside chosen source."),
+    )
+    write_records(path, rows)
+    before = path.read_bytes()
+    sources = (
+        OrdinaryExampleSource(
+            example_id="ordinary:first",
+            source_manifest=tmp_path / "source.jsonl",
+            source_example_id="first",
+        ),
+    )
+    assert reuse_ordinary_asr(path, sources) == (
+        AsrTranscript(example_id="ordinary:first", text=rows[0].text),
+    )
+    assert path.read_bytes() == before

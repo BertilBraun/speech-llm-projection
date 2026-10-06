@@ -18,7 +18,7 @@ def test_controlled_sweep_has_six_rates_and_identical_effective_budget() -> None
     assert [
         config.projector.native_rate / config.projector.compression_factor
         for config in configurations
-    ] == [25, 10, 5, 2.5, 10, 5]
+    ] == [10, 5, 5, 10, 2.5, 25]
     assert (
         sum(isinstance(config.projector, StackedMlpProjectorConfig) for config in configurations)
         == 2

@@ -16,7 +16,14 @@ from scripts.package_results import FileArtifact
 from speech_projector.data import Distribution, distribution
 from speech_projector.emotion_preview import PreviewClip
 from speech_projector.emotional_generation import EmotionalGenerationConfig, EmotionalTeacherTarget
-from speech_projector.models import ChatPromptConfig, Example, Record, Split, SystemPromptConfig
+from speech_projector.models import (
+    AsrTranscript,
+    ChatPromptConfig,
+    Example,
+    Record,
+    Split,
+    SystemPromptConfig,
+)
 from speech_projector.neu_dataset import NeuUtterance
 from speech_projector.neu_generation import NeuGenerationConfig, NeuTeacherTarget
 from speech_projector.neutts_batch_benchmark import BatchClipEvidence
@@ -47,11 +54,15 @@ class NeuSourceConfig(QwenSourceConfig):
 
 class OvernightPreparationConfig(Record):
     ordinary_manifest: Path
+    ordinary_asr_manifest: Path
     qwen: QwenSourceConfig
     neu: NeuSourceConfig
     output_directory: Path
     ordinary_training_examples: int = Field(default=20000, gt=0)
     validation: FixedValidationConfig = FixedValidationConfig()
+    final_test: FixedValidationConfig = FixedValidationConfig(
+        ordinary_examples=96, pairs_per_emotional_cohort=40
+    )
 
 
 class ExclusionReason(str, Enum):
@@ -83,10 +94,12 @@ class CombinedPreparation(Record):
     sidecar: FileArtifact
     audio_inventory: FileArtifact
     fixed_validation: FileArtifact
+    fixed_test: FileArtifact
     coverage: tuple[CohortCoverage, ...]
     exclusions: tuple[PairExclusion, ...]
     cached_features_reused: int
     missing_features: int
+    ordinary_asr_reused: int
     generation_example_ids: tuple[str, ...]
     boundary_checks: tuple[str, ...]
 
@@ -141,6 +154,20 @@ def verify_audio(path: Path, sha256: str, duration: float) -> FileArtifact:
 
 def feature_path(directory: Path, cohort: Cohort, audio: FileArtifact) -> Path:
     return directory / "features" / cohort.value / f"{audio.sha256}.pt"
+
+
+def reuse_ordinary_asr(
+    path: Path, sources: Sequence[OrdinaryExampleSource]
+) -> tuple[AsrTranscript, ...]:
+    identifiers = {source.source_example_id: source.example_id for source in sources}
+    records = load_records(path, AsrTranscript)
+    if len({row.example_id for row in records}) != len(records):
+        raise ValueError("Original ASR transcript identifiers must be unique")
+    return tuple(
+        row.model_copy(update={"example_id": identifiers[row.example_id]})
+        for row in records
+        if row.example_id in identifiers
+    )
 
 
 def qwen_rows(config: QwenSourceConfig, output: Path) -> PreparedRows:
@@ -369,6 +396,7 @@ def prepare_combined(config: OvernightPreparationConfig, source_commit: str) -> 
             existing.sidecar,
             existing.audio_inventory,
             existing.fixed_validation,
+            existing.fixed_test,
         ):
             if stable_digest(saved.path) != (saved.bytes, saved.sha256):
                 raise ValueError(f"Immutable preparation artifact changed: {saved.path}")
@@ -402,12 +430,17 @@ def prepare_combined(config: OvernightPreparationConfig, source_commit: str) -> 
     audio = ordinary_audio + qwen.audio + neu.audio
     validate_boundaries(examples, audio)
     selected = select_fixed_validation(examples, sources, config.validation)
+    selected_test = select_fixed_validation(examples, sources, config.final_test, split=Split.TEST)
+    reused_asr = reuse_ordinary_asr(config.ordinary_asr_manifest, ordinary_sources)
     root = config.output_directory
     write_records(root / "examples.jsonl", examples)
     write_records(root / "sources.jsonl", sources)
     write_records(root / "audio_inventory.jsonl", audio)
     write_records(root / "fixed_validation.jsonl", selected.examples)
     write_records(root / "fixed_validation_sources.jsonl", selected.sources)
+    write_records(root / "fixed_test.jsonl", selected_test.examples)
+    write_records(root / "fixed_test_sources.jsonl", selected_test.sources)
+    write_records(root / "asr_transcripts.jsonl", reused_asr)
     write_immutable(root / "validation_selection.json", selected.model_dump_json(indent=2).encode())
     source_map = {row.example_id: row for row in sources}
     coverage = tuple(
@@ -429,6 +462,7 @@ def prepare_combined(config: OvernightPreparationConfig, source_commit: str) -> 
     )
     inputs = (
         config.ordinary_manifest,
+        config.ordinary_asr_manifest,
         config.qwen.targets,
         config.qwen.generation_configuration,
         config.neu.targets,
@@ -444,10 +478,12 @@ def prepare_combined(config: OvernightPreparationConfig, source_commit: str) -> 
         sidecar=artifact(root / "sources.jsonl"),
         audio_inventory=artifact(root / "audio_inventory.jsonl"),
         fixed_validation=artifact(root / "fixed_validation.jsonl"),
+        fixed_test=artifact(root / "fixed_test.jsonl"),
         coverage=coverage,
         exclusions=qwen.exclusions + neu.exclusions,
         cached_features_reused=sum(row.feature_path.exists() for row in examples),
         missing_features=sum(not row.feature_path.exists() for row in examples),
+        ordinary_asr_reused=len(reused_asr),
         generation_example_ids=selected.generation_example_ids,
         boundary_checks=(
             "Conversation and scenario family split identity",
