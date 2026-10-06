@@ -201,7 +201,7 @@ def render_report(
             "",
         ]
     )
-    for result in benchmarks:
+    for directory, result in zip(configuration.benchmark_directories, benchmarks, strict=True):
         lines.extend(
             [
                 "## Neu backbone batch benchmark",
@@ -226,6 +226,50 @@ def render_report(
                 "",
             ]
         )
+        batch_gallery = tuple(
+            item
+            for item in result.measurements
+            if item.requested_batch_size == 7 and item.repetition == 0
+        )
+        if batch_gallery:
+            lines.extend(
+                [
+                    "### Actual batch-seven samples, first measured pass",
+                    "",
+                    "These are the faster configuration's actual sampled outputs. "
+                    "The shared whole-batch completion time below is not each clip's "
+                    "individual generation time. Throughput RTF is reported separately above; "
+                    "listen to these samples before drawing quality conclusions.",
+                    "",
+                ]
+            )
+            for measurement in batch_gallery:
+                lines.extend(
+                    [
+                        f"Batch {measurement.batch_index}: shared completion "
+                        f"{measurement.end_to_end_seconds:.3f}s; "
+                        f"{measurement.audio_seconds:.3f}s total audio; "
+                        f"throughput RTF {measurement.aggregate_real_time_factor:.3f}.",
+                        "",
+                    ]
+                )
+                for evidence in measurement.clips:
+                    clip = evidence.clip
+                    audio = (directory / clip.audio_path).resolve().as_posix()
+                    lines.extend(
+                        [
+                            f"**{clip.case.emotion.value}** — {clip.case.case_id}",
+                            "",
+                            f"> {clip.case.text}",
+                            "",
+                            f"![Neu batch seven {clip.case.emotion.value}](<{audio}>)",
+                            "",
+                            f"Audio {clip.audio_seconds:.3f}s; termination "
+                            f"{clip.termination.value}; batch seed "
+                            f"{measurement.shared_batch_seed}.",
+                            "",
+                        ]
+                    )
     if not benchmarks:
         lines.extend(
             [

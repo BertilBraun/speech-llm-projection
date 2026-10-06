@@ -8,7 +8,13 @@ import soundfile
 
 from scripts.neutts_pilot_state import NeuTtsPilotConfig, PilotDevice, digest, write_record
 from scripts.prepare_neutts_models import NeuTtsPreparation, PinnedRepository
-from scripts.report_full_emotion_pilot import benchmark_table, load_run, verify_benchmark
+from scripts.report_full_emotion_pilot import (
+    FullEmotionReportConfig,
+    benchmark_table,
+    load_run,
+    render_report,
+    verify_benchmark,
+)
 from speech_projector.neutts_batch_benchmark import (
     BatchClipEvidence,
     BatchMeasurement,
@@ -125,6 +131,34 @@ def test_report_counts_batch_time_once(
         benchmark_table(result)[2] == "| 2 | 1 | 2 | 2.000 | 8.000 | 0.250 | 1.000 | 2.000–2.000 |"
     )
     assert sum(item.clip.generation_seconds for item in result.measurements[0].clips) == 4
+
+
+def test_faster_setting_gallery_uses_actual_batch_outputs_and_shared_latency(
+    tmp_path: Path, benchmark: tuple[NeuTtsBenchmarkResult, TtsPilotManifest]
+) -> None:
+    result, _ = benchmark
+    configuration = result.configuration.model_copy(update={"batch_sizes": (7,)})
+    measurement = result.measurements[0].model_copy(update={"requested_batch_size": 7})
+    result = result.model_copy(
+        update={"configuration": configuration, "measurements": (measurement,)}
+    )
+    report_configuration = FullEmotionReportConfig(
+        index_beams3_directory=tmp_path,
+        index_beams1_directory=tmp_path,
+        neu_directory=tmp_path,
+        index_manifest=tmp_path / "cases.json",
+        neu_manifest=tmp_path / "cases.json",
+        actual_index_source_commit="a" * 40,
+        benchmark_directories=(tmp_path,),
+        output=tmp_path / "report",
+    )
+    report = render_report(report_configuration, (), (result,))
+    assert "Actual batch-seven samples, first measured pass" in report
+    assert "shared completion 2.000s; 8.000s total audio; throughput RTF 0.250" in report
+    for evidence in measurement.clips:
+        assert (tmp_path / evidence.clip.audio_path).resolve().as_posix() in report
+    assert "not each clip's individual generation time" in report
+    assert "generation /" not in report
 
 
 @pytest.mark.parametrize("failure", ("duplicate", "cap", "corrupt"))
