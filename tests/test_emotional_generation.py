@@ -25,12 +25,14 @@ from speech_projector.emotional_generation import (
     generate_drafts,
     generate_teacher_targets,
     generation_from_finish_reason,
+    request_decoding,
+    request_seed,
     summarize_generation,
     teacher_generation_request,
 )
 from speech_projector.generation import CompletedGeneration, TokenLimitedGeneration
 from speech_projector.journal import read_journal
-from speech_projector.models import GreedyDecodingConfig
+from speech_projector.models import GreedyDecodingConfig, SamplingDecodingConfig
 from speech_projector.preview_responses import ChatMessage
 
 
@@ -42,6 +44,20 @@ def configuration(directory: Path) -> EmotionalGenerationConfig:
         dataset=EmotionalDatasetConfig(utterance_count=20, batch_size=5),
         inference_batch_size=2,
     )
+
+
+def test_draft_sampling_and_repair_seeds_leave_teacher_greedy(tmp_path: Path) -> None:
+    config = configuration(tmp_path)
+    messages = (ChatMessage(role="user", content="Generate text."),)
+    draft = TextGenerationRequest(request_id="draft:batch_0", messages=messages)
+    repair = TextGenerationRequest(request_id="draft:batch_0_repair_1", messages=messages)
+    teacher = TextGenerationRequest(request_id="teacher:base:happy", messages=messages)
+    assert request_decoding(draft, config) == SamplingDecodingConfig(
+        temperature=0.8, top_p=0.95, top_k=50, presence_penalty=0, repetition_penalty=1
+    )
+    assert request_decoding(teacher, config) == GreedyDecodingConfig()
+    assert request_seed(draft, config) == request_seed(draft, config)
+    assert request_seed(draft, config) != request_seed(repair, config)
 
 
 class FixtureBackend:

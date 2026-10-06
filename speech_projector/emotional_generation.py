@@ -1,5 +1,6 @@
 """Batched frozen-model drafting and paired teacher targets with durable traces."""
 
+import hashlib
 import time
 from collections.abc import Callable, Sequence
 from enum import Enum
@@ -27,7 +28,12 @@ from speech_projector.generation import (
     TokenLimitedGeneration,
 )
 from speech_projector.journal import append_record, read_journal
-from speech_projector.models import GreedyDecodingConfig, Record
+from speech_projector.models import (
+    DecodingConfig,
+    GreedyDecodingConfig,
+    Record,
+    SamplingDecodingConfig,
+)
 from speech_projector.preview_responses import ChatMessage, decode_preview_tokens
 
 DRAFT_SYSTEM = "Write the requested conversational utterances. Return only the requested JSON."
@@ -67,6 +73,9 @@ class EmotionalGenerationConfig(Record):
     draft_system: str = DRAFT_SYSTEM
     teacher_system: str = TEACHER_SYSTEM
     decoding: GreedyDecodingConfig = GreedyDecodingConfig()
+    draft_decoding: SamplingDecodingConfig = SamplingDecodingConfig(
+        temperature=0.8, top_p=0.95, top_k=50, presence_penalty=0, repetition_penalty=1
+    )
 
     @model_validator(mode="after")
     def validate_retry_caps(self) -> "EmotionalGenerationConfig":
@@ -132,6 +141,17 @@ class EmotionalGenerationSummary(Record):
 GenerateBatch = Callable[[Sequence[TextGenerationRequest], int], TextGenerationBatch]
 
 
+def request_decoding(
+    request: TextGenerationRequest, config: EmotionalGenerationConfig
+) -> DecodingConfig:
+    return config.draft_decoding if request.request_id.startswith("draft:") else config.decoding
+
+
+def request_seed(request: TextGenerationRequest, config: EmotionalGenerationConfig) -> int:
+    digest = hashlib.sha256(f"{config.seed}:{request.request_id}".encode()).digest()
+    return int.from_bytes(digest[:4], "big")
+
+
 def generation_from_finish_reason(
     text: str, token_ids: Sequence[int], finish_reason: str | None
 ) -> GenerationResult:
@@ -168,6 +188,9 @@ class FrozenTextGenerator:
     ) -> TextGenerationBatch:
         if not requests:
             raise ValueError("Text generation requires a nonempty batch")
+        decoding = request_decoding(requests[0], self.config)
+        if any(request_decoding(request, self.config) != decoding for request in requests):
+            raise ValueError("HF generation batches must use homogeneous decoding settings")
         started = time.perf_counter()
         prompts: list[str] = []
         token_ids: list[tuple[int, ...]] = []
@@ -208,10 +231,8 @@ class FrozenTextGenerator:
             generated: torch.Tensor = self.model.generate(
                 inputs_embeds=embeddings,
                 attention_mask=attention_mask,
-                generation_config=generation_parameters(
-                    self.config.decoding, token_cap, self.tokenizer
-                ),
-                logits_processor=generation_processors(self.config.decoding),
+                generation_config=generation_parameters(decoding, token_cap, self.tokenizer),
+                logits_processor=generation_processors(decoding),
             )
         outcomes = tuple(
             TextGenerationOutcome(

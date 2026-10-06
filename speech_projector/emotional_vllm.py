@@ -18,9 +18,16 @@ from speech_projector.emotional_generation import (
     TextGenerationRequest,
     VllmRuntimeConfig,
     generation_from_finish_reason,
+    request_decoding,
+    request_seed,
 )
 from speech_projector.journal import append_record
-from speech_projector.models import Record
+from speech_projector.models import (
+    DecodingConfig,
+    GreedyDecodingConfig,
+    Record,
+    SamplingDecodingConfig,
+)
 
 
 class VllmTerminationEvidence(Record):
@@ -30,6 +37,8 @@ class VllmTerminationEvidence(Record):
     finish_reason: Literal["stop", "length"]
     stop_reason: int | str | None
     eos_present_in_returned_ids: bool
+    seed: int
+    decoding: DecodingConfig
 
 
 class VllmTextGenerator:
@@ -84,14 +93,29 @@ class VllmTextGenerator:
                 raise ValueError("Prompt plus output budget exceeds configured model token budget")
             prompts.append(prompt)
             native_inputs.append(TokensPrompt(prompt_token_ids=tokens))
+            decoding = request_decoding(request, self.configuration)
+            match decoding:
+                case GreedyDecodingConfig():
+                    temperature, top_p, top_k, min_p = 0.0, 1.0, -1, 0.0
+                    presence_penalty, repetition_penalty = 0.0, 1.0
+                case SamplingDecodingConfig():
+                    temperature = decoding.temperature
+                    top_p = decoding.top_p
+                    top_k = decoding.top_k or -1
+                    min_p = decoding.min_p
+                    presence_penalty = decoding.presence_penalty
+                    repetition_penalty = decoding.repetition_penalty
             parameters.append(
                 SamplingParams(
-                    temperature=0,
-                    presence_penalty=0,
+                    temperature=temperature,
+                    top_p=top_p,
+                    top_k=top_k,
+                    min_p=min_p,
+                    presence_penalty=presence_penalty,
                     frequency_penalty=0,
-                    repetition_penalty=1,
+                    repetition_penalty=repetition_penalty,
                     max_tokens=token_cap,
-                    seed=self.configuration.seed,
+                    seed=request_seed(request, self.configuration),
                     structured_outputs=StructuredOutputsParams(
                         json=GeneratedDraftBatch.model_json_schema()
                     )
@@ -129,6 +153,8 @@ class VllmTextGenerator:
                     finish_reason=completion.finish_reason,
                     stop_reason=completion.stop_reason,
                     eos_present_in_returned_ids=self.tokenizer.eos_token_id in tokens,
+                    seed=request_seed(request, self.configuration),
+                    decoding=request_decoding(request, self.configuration),
                 ),
             )
             outcomes.append(
