@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import torch
 from torch import Tensor
 from torch.nn import functional as functional
+from torch.utils.checkpoint import checkpoint
 from transformers import AutoTokenizer, PreTrainedTokenizerBase, Qwen3_5ForCausalLM
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
@@ -47,6 +48,13 @@ class TargetScores:
 class GenerationBatch:
     embeddings: Tensor
     attention_mask: Tensor
+
+
+@dataclass(frozen=True)
+class TrainingBatch:
+    embeddings: Tensor
+    attention_mask: Tensor
+    sequences: tuple[EmbeddedSequence, ...]
 
 
 def generation_seed(config: RunConfig, examples: Sequence[Example], max_new_tokens: int) -> int:
@@ -173,6 +181,70 @@ class FrozenQwen:
     def loss(self, example: Example, utterance: UtteranceInput) -> Tensor:
         scores = self.score_target(example, utterance)
         return functional.cross_entropy(scores.logits.float(), scores.target_token_ids)
+
+    def prepare_training_batch(
+        self, examples: Sequence[Example], utterances: Sequence[UtteranceInput]
+    ) -> TrainingBatch:
+        if not examples or len(examples) != len(utterances):
+            raise ValueError("Training needs equal nonempty input batches")
+        sequences = tuple(
+            self.prepare(example, utterance)
+            for example, utterance in zip(examples, utterances, strict=True)
+        )
+        longest = max(sequence.embeddings.shape[1] for sequence in sequences)
+        embeddings = torch.cat(
+            tuple(
+                functional.pad(
+                    sequence.embeddings, (0, 0, 0, longest - sequence.embeddings.shape[1])
+                )
+                for sequence in sequences
+            )
+        )
+        attention_mask = torch.cat(
+            tuple(
+                functional.pad(
+                    sequence.attention_mask, (0, longest - sequence.attention_mask.shape[1])
+                )
+                for sequence in sequences
+            )
+        )
+        return TrainingBatch(
+            embeddings=embeddings, attention_mask=attention_mask, sequences=sequences
+        )
+
+    def _target_cross_entropy_sum(self, hidden_states: Tensor, target_ids: Tensor) -> Tensor:
+        logits = self.model.lm_head(hidden_states)
+        return functional.cross_entropy(logits.float(), target_ids, reduction="sum")
+
+    def loss_batch(
+        self, examples: Sequence[Example], utterances: Sequence[UtteranceInput]
+    ) -> Tensor:
+        """Per-example CE mean, avoiding a full-sequence vocabulary projection."""
+        batch = self.prepare_training_batch(examples, utterances)
+        output = self.model.model(
+            inputs_embeds=batch.embeddings,
+            attention_mask=batch.attention_mask,
+            use_cache=False,
+        )
+        example_losses: list[Tensor] = []
+        for row, sequence in enumerate(batch.sequences):
+            hidden_states = output.last_hidden_state[
+                row, sequence.target_start - 1 : sequence.target_start + sequence.target_tokens - 1
+            ]
+            target_ids = sequence.labels[
+                0, sequence.target_start : sequence.target_start + sequence.target_tokens
+            ]
+            chunks = tuple(
+                checkpoint(
+                    self._target_cross_entropy_sum,
+                    hidden_states[start : start + 256],
+                    target_ids[start : start + 256],
+                    use_reentrant=False,
+                )
+                for start in range(0, sequence.target_tokens, 256)
+            )
+            example_losses.append(torch.stack(chunks).sum() / sequence.target_tokens)
+        return torch.stack(example_losses).mean()
 
     def prepare_generation_batch(
         self,

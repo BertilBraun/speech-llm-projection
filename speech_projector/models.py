@@ -164,9 +164,10 @@ class RunConfig(Record):
     test_examples: int = 128
     training_validation_examples: int | None = Field(default=None, gt=0)
     epochs: int = Field(gt=0)
+    max_optimizer_updates: int | None = Field(default=None, gt=0)
     learning_rate: float = Field(gt=0)
-    microbatch_size: int = 1
-    gradient_accumulation: int = 8
+    microbatch_size: int = Field(default=1, gt=0)
+    gradient_accumulation: int = Field(default=8, gt=0)
     history_turns: int = 2
     max_history_tokens: int = 256
     max_target_tokens: int = 128

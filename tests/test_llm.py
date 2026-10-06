@@ -590,3 +590,53 @@ def test_explicit_example_prompt_overrides_run_prompt_for_both_inputs(
     changed_label = copied.model_copy(update={"emotion": "unspoken privileged delivery"})
     speech = SpeechInput(torch.randn(3, 32))
     assert torch.equal(wrapper._prompt(copied, speech), wrapper._prompt(changed_label, speech))
+
+
+def test_batched_target_chunk_loss_and_gradient_match_individual_example_average(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    other = example.model_copy(update={"example_id": "two", "target_text": "yes no yes"})
+    first = torch.randn(3, 32, requires_grad=True)
+    second = torch.randn(7, 32, requires_grad=True)
+    separate = (
+        wrapper.loss(example, SpeechInput(first)) + wrapper.loss(other, SpeechInput(second))
+    ) / 2
+    separate.backward()
+    expected_first = first.grad.clone()
+    expected_second = second.grad.clone()
+    first.grad = None
+    second.grad = None
+    batched = wrapper.loss_batch((example, other), (SpeechInput(first), SpeechInput(second)))
+    assert torch.allclose(batched, separate, atol=1e-6)
+    batched.backward()
+    assert torch.allclose(first.grad, expected_first, atol=1e-6)
+    assert torch.allclose(second.grad, expected_second, atol=1e-6)
+    assert all(parameter.grad is None for parameter in wrapper.model.parameters())
+
+
+def test_fixed_update_budget_preserves_mid_epoch_offset_and_finished_resume(
+    wrapper: FrozenQwen, example: Example, tmp_path: Path
+) -> None:
+    config = wrapper.config.model_copy(
+        update={
+            "train_examples": 6,
+            "epochs": 3,
+            "max_optimizer_updates": 1,
+            "microbatch_size": 2,
+            "gradient_accumulation": 2,
+        }
+    )
+    wrapper.config = config
+    examples = [example.model_copy(update={"example_id": str(index)}) for index in range(6)]
+    projector = Projector(config.projector)
+    directory = tmp_path / "fixed"
+    outcome = train_run(config, examples, [example], directory, wrapper, projector)
+    state = TrainingState.model_validate_json(
+        (directory / "checkpoint" / "state.json").read_bytes()
+    )
+    assert (state.step, state.epoch, state.offset, state.examples_seen) == (1, 0, 4, 4)
+    before = weights_digest(projector)
+    resumed = train_run(config, examples, [example], directory, wrapper, projector)
+    assert resumed.steps == outcome.steps == 1
+    assert weights_digest(projector) == before
+    assert len((directory / "train.jsonl").read_text().splitlines()) == 1

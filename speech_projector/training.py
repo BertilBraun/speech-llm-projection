@@ -187,8 +187,6 @@ def train_run(
     wrapper: FrozenQwen,
     projector: Projector,
 ) -> TrainingOutcome:
-    if config.microbatch_size != 1:
-        raise ValueError("This single-example pipeline requires microbatch_size=1")
     if len(examples) != config.train_examples:
         raise ValueError("Training subset length differs from run configuration")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -256,27 +254,41 @@ def train_run(
     start = time.monotonic()
     prior_elapsed = state.elapsed_seconds
     recent_losses: list[float] = []
+    effective_batch = config.microbatch_size * config.gradient_accumulation
     for epoch in range(state.epoch, config.epochs):
+        if config.max_optimizer_updates is not None and state.step >= config.max_optimizer_updates:
+            break
         order = list(range(len(examples)))
         random.Random(config.seed + epoch).shuffle(order)
         offset = state.offset if epoch == state.epoch else 0
-        for group_start in range(offset, len(order), config.gradient_accumulation):
-            selected = order[group_start : group_start + config.gradient_accumulation]
+        for group_start in range(offset, len(order), effective_batch):
+            selected = order[group_start : group_start + effective_batch]
             wrapper.model.train(config.gradient_checkpointing)
             projector.train()
             optimizer.zero_grad(set_to_none=True)
             group_loss = 0.0
             group_tokens = 0
-            for index in selected:
-                example = examples[index]
-                loss = wrapper.loss(
-                    example, SpeechInput(projector(load_features(example, wrapper.device)))
+            for start_index in range(0, len(selected), config.microbatch_size):
+                microbatch = [
+                    examples[index]
+                    for index in selected[start_index : start_index + config.microbatch_size]
+                ]
+                speech = tuple(
+                    SpeechInput(projector(load_features(example, wrapper.device)))
+                    for example in microbatch
+                )
+                loss = (
+                    wrapper.loss(microbatch[0], speech[0])
+                    if config.microbatch_size == 1
+                    else wrapper.loss_batch(microbatch, speech)
                 )
                 if not torch.isfinite(loss):
-                    raise FloatingPointError(f"Non-finite loss at example {example.example_id}")
-                (loss / len(selected)).backward()
-                group_loss += loss.item()
-                group_tokens += wrapper.target_token_count(example)
+                    raise FloatingPointError(
+                        f"Non-finite loss at example {microbatch[0].example_id}"
+                    )
+                (loss * (len(microbatch) / len(selected))).backward()
+                group_loss += loss.item() * len(microbatch)
+                group_tokens += sum(wrapper.target_token_count(example) for example in microbatch)
             torch.nn.utils.clip_grad_norm_(projector.parameters(), 1.0)
             optimizer.step()
             step = state.step + 1
@@ -315,6 +327,12 @@ def train_run(
             if step % config.checkpoint_interval == 0:
                 _save_checkpoint(checkpoint_dir, projector, optimizer, state)
                 resources = _save_training_resources(output_dir, wrapper.device, resources)
+            if config.max_optimizer_updates is not None and step >= config.max_optimizer_updates:
+                break
+        if state.offset < len(order):
+            _save_checkpoint(checkpoint_dir, projector, optimizer, state)
+            resources = _save_training_resources(output_dir, wrapper.device, resources)
+            break
         state = state.model_copy(update={"epoch": epoch + 1, "offset": 0})
         _save_checkpoint(checkpoint_dir, projector, optimizer, state)
         resources = _save_training_resources(output_dir, wrapper.device, resources)
