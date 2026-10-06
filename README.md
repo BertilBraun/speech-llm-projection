@@ -15,6 +15,13 @@ also be copied locally because the node has no persistent volume.
 See [EXPERIMENT_CHECKLIST.md](EXPERIMENT_CHECKLIST.md) for live progress. Exact
 commands and results will be added as the pipeline is validated.
 
+The late synthesis-alignment audit found material turn/audio mismatches in about
+1.9% of the measured training prefixes, often with assistant-target speech in
+place of the user utterance. The original matrix is preserved for comparisons.
+A separate clean V0 control removes the known mismatches, and held-out sensitivity
+analysis reports the aligned examples separately. Read these limitations before
+treating the data-scaling results as clean-data requirements.
+
 ## Reproducing the node environment
 
 The validated environment is Python 3.12, PyTorch 2.6.0+cu124,
@@ -63,6 +70,20 @@ best-validation projector. Its `validation` and `test` directories contain
 metrics, per-example losses, paired audio controls and readable generations.
 Supplementary best-checkpoint and matched-budget evaluations live in separate
 subdirectories and leave the main final-checkpoint result unchanged.
+
+The late clean V0 control has its own `inputs/examples.jsonl`, configuration and
+SHA256 provenance. It replaces the six known mismatches in the original 256-pair
+prefix with the next retained examples, and uses 125 aligned examples per held-out
+split. Preparation requires the existing cache and never extracts new features:
+
+```text
+python -m scripts.prepare_clean_v0 --manifest data/examples.jsonl --metadata data/metadata.parquet --audit-directory results/analysis --original-configuration results/v0_256_mlp_10hz/config.json --results results
+python -m speech_projector.launcher --manifest results/v0_clean_256_mlp_10hz/inputs/examples.jsonl --config results/v0_clean_256_mlp_10hz/inputs/config.json --output results
+python -m scripts.evaluate_training_probe --run-dir results/v0_clean_256_mlp_10hz --manifest results/v0_clean_256_mlp_10hz/inputs/examples.jsonl
+```
+
+This is a separate feasibility check; it does not replace or silently clean the
+original V1–V3 experiments.
 
 `results/dataset` preserves the original metadata and quality/leakage audits.
 `results/audio` and `results/features` contain matching representative waveforms
