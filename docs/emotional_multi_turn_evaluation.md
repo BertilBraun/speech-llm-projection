@@ -5,6 +5,11 @@ not a completed experiment. Projector training, LoRA, additional synthesis and s
 deployment remain paused. The completed 5,000-utterance / 10,000-clip dataset and its
 sealed backup are unchanged.
 
+The user subsequently reported weak emotional influence in the teacher replies and poor
+sad/sarcastic synthesis, with sadness possibly usable. File completion and checksum
+verification are not quality approval. Training remains gated on listening feedback and
+useful teacher contrasts; single-turn examples remain the intended training scope.
+
 ## Research questions
 
 1. Does hearing emotional delivery improve the appropriateness of the response beyond
@@ -85,6 +90,39 @@ proposed fixtures; no new clips or targets have been generated for them.
 
 ## Isolate current-tone sensitivity, then test full rollouts
 
+### Delayed acoustic-context test
+
+Include a three-user-turn diagnostic where the only difference between branches is the
+first recording's delivery. All spoken words are identical across branches and avoid
+explicit emotion labels. The later user audio is identical and neutral. For example:
+
+1. User: "I got another message about the appointment today." Record neutral and
+   frustrated deliveries of these same words. Fixed assistant: "What did the message say?"
+2. User: "It says the time will be confirmed tomorrow." Fixed assistant: "Okay, the time
+   is still unconfirmed."
+3. User: "How should I respond to them?" Generate and judge the response here.
+
+Use identical fixed assistant messages for the controlled diagnostic. Otherwise an
+earlier generated reply such as "That sounds frustrating" reveals the tone in text,
+and later success could reflect text-history use rather than retained acoustic context.
+Keep the initial speech embeddings in the speech-history condition, replace them with
+the exact neutral wording in the text-history control, and additionally compare omitting
+the first turn. Include a privileged annotated-history reference as a separate control.
+No current or historical emotion labels enter the speech student.
+
+Judge whether the final reply appropriately accounts for the earlier delivery while
+preserving the appointment facts and avoiding invented causes. Both branches can have
+the same appropriate answer; do not require an emotional acknowledgement or assume
+frustration must remain unchanged. Add separate scenarios with an explicit resolution
+to test that the model updates context instead of mechanically preserving an old mood.
+
+Then repeat with generated assistant histories as realistic rollouts. Report those
+separately: earlier assistant text can carry an emotional interpretation, so they test
+practical conversation continuity rather than isolated acoustic memory. Keeping audio
+embeddings available demonstrates use of earlier acoustic context, not persistent memory
+after that context has been removed. These fixtures are evaluation only; do not add
+multi-turn training in response to a failed diagnostic without a separate user decision.
+
 First evaluate each critical turn with an identical, fixed preceding history. Swap only
 its same-text audio pair and score the response. This isolates the effect of current
 delivery; a difference between full trajectories could otherwise come from different
@@ -140,3 +178,24 @@ plus retained facts and constraints across turns. Select tolerable content degra
 judge thresholds before inspecting student results. If speech-history performance fails
 while text history succeeds, document that limitation; do not claim general multi-turn
 success or automatically start multi-turn training or LoRA.
+
+## Listening and target-quality gate before training
+
+Treat delivery quality and teacher quality as separate requirements. An unmistakable
+tone paired with essentially tone-insensitive targets offers little supervision for
+useful adaptation. Conversely, distinct targets do not help if the recordings fail to
+convey the intended distinction. Word differences alone establish neither requirement.
+
+The next proposed review should focus on a small same-text pilot with plausible contrasts,
+starting with neutral/frustrated and neutral/happy where appropriate. Sarcasm should not
+anchor the first training test given the user's listening rejection; sadness requires
+further listening. This is a proposed pilot priority, not permission to remove canonical
+examples or regenerate the corpus. Preserve all current clips and targets unchanged.
+
+Review short teacher replies before synthesizing any replacement pilot. Useful differences
+can include acknowledging difficulty, offering practical support or recognizing a request
+for space while retaining the actual request. Do not force emotional wording, invented
+facts or different answers when one answer is appropriate for both deliveries. Any revised
+prompt, target or audio belongs to a separately versioned pilot approved before production
+use. Start single-turn projector training only after the user accepts the listening
+examples and the teacher contrasts are judged useful; multi-turn testing follows training.
