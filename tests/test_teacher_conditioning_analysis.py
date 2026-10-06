@@ -6,17 +6,23 @@ import pytest
 from scripts.analyze_teacher_conditioning import (
     EstimatedMargin,
     FidelityMetric,
+    HistoryStratum,
     InsufficientDialogues,
     SerializedExample,
+    SplitDiagnostics,
+    TeacherConditioningReport,
     analyze_split,
     analyze_suite,
     fidelity_margin,
     interval,
     loss_margin,
     read_records,
+    render_report,
     summarize_stratum,
     validate_records,
 )
+from scripts.package_results import FileArtifact
+from scripts.summarize_teacher_targets import HistoryGroup
 from speech_projector.evaluation import ExampleLoss
 from speech_projector.models import (
     EvaluationCondition,
@@ -25,6 +31,7 @@ from speech_projector.models import (
     MlpProjectorConfig,
     Role,
     RunConfig,
+    RunResult,
     Split,
     SuiteState,
     Turn,
@@ -120,6 +127,88 @@ def test_natural_history_strata_do_not_remove_or_reassign_context() -> None:
     assert all(item.examples == 2 for item in empty.fidelity + present.fidelity)
     assert all(item.metrics.target_tokens == 10 for item in empty.losses + present.losses)
     assert isinstance(interval(()), InsufficientDialogues)
+
+
+def test_report_uses_condition_counts_for_partial_controls_in_each_history_stratum() -> None:
+    selected_losses = losses()[:4] + (losses()[4], losses()[6])
+    selected_fidelity = fidelity()[:4] + (fidelity()[4], fidelity()[6])
+    overall = summarize_stratum(examples(), selected_losses, selected_fidelity)
+    config = RunConfig(
+        name="partial-controls",
+        stage=ExperimentStage.V0,
+        train_examples=4,
+        validation_examples=4,
+        test_examples=4,
+        conditioning_examples=2,
+        epochs=1,
+        learning_rate=0.001,
+        projector=MlpProjectorConfig(compression_factor=5),
+    )
+    run = RunResult(
+        config=config,
+        git_commit="test-source",
+        train_examples=4,
+        validation_examples=4,
+        test_examples=4,
+        projector_parameters=100,
+        pseudo_tokens_per_second=10,
+        mean_pseudo_tokens=10,
+        steps=1,
+        runtime_seconds=1,
+        peak_vram_gb=1,
+        examples_per_second=4,
+        target_tokens_per_second=20,
+        initial_validation_loss=2,
+        initial_training_loss=2,
+        final_fixed_training_loss=1,
+        final_training_loss=1,
+        validation=overall.losses[0].metrics,
+        checkpoint_path=Path("projector.safetensors"),
+    )
+    split = SplitDiagnostics(
+        split=Split.VALIDATION,
+        provenance=FidelityProvenance(
+            config=config, projector_weights_sha256="test-weights", examples_sha256="test-examples"
+        ),
+        inputs=(),
+        overall=overall,
+        history=tuple(
+            HistoryStratum(
+                history=group,
+                diagnostics=summarize_stratum(selected, selected_losses, selected_fidelity),
+            )
+            for group, selected in (
+                (HistoryGroup.EMPTY, examples()[:2]),
+                (HistoryGroup.PRESENT, examples()[2:]),
+            )
+        ),
+    )
+    report = render_report(
+        TeacherConditioningReport(
+            run=run,
+            manifest=FileArtifact(
+                path=Path("manifest"), source_path=Path("manifest"), bytes=0, sha256="test-manifest"
+            ),
+            splits=(split,),
+        )
+    )
+    level_table = report.split("| Split | Natural history | Correct / control |")[0]
+    rows = tuple(line for line in level_table.splitlines() if line.startswith("| validation |"))
+    assert len(rows) == 6
+    for history, primary_count, control_count in (
+        ("all", 4, 2),
+        ("empty", 2, 1),
+        ("present", 2, 1),
+    ):
+        assert any(
+            line.startswith(f"| validation | {history} | {primary_count} | speech |")
+            for line in rows
+        )
+        assert any(
+            line.startswith(f"| validation | {history} | {control_count} | shuffled_speech |")
+            for line in rows
+        )
+    assert overall.loss_margins[0].diagnostic.paired_examples == 2
 
 
 def test_read_only_journal_does_not_repair_incomplete_suffix(tmp_path: Path) -> None:

@@ -376,6 +376,9 @@ def render_report(report: TeacherConditioningReport) -> str:
         "Teacher-forced agreement compares speech and transcript argmax under the same saved "
         "sampled teacher prefix; target accuracy need not equal one for the transcript branch.",
         "",
+        "Examples are condition-specific. Control rows cover a fixed subset; full-cohort "
+        "and control levels are not directly paired. Gains below use matched example IDs.",
+        "",
         "Positive margins favor correct audio. Intervals are 95% dialogue-cluster percentile "
         "bootstrap intervals (2,000 draws), covering sampling but not seed or judge uncertainty. "
         "Wrong-audio states were linearly resized before projection, altering their statistics. "
@@ -393,7 +396,7 @@ def render_report(report: TeacherConditioningReport) -> str:
         for name, stratum in strata:
             for fidelity in stratum.fidelity:
                 lines.append(
-                    f"| {split.split.value} | {name} | {stratum.examples} | "
+                    f"| {split.split.value} | {name} | {fidelity.examples} | "
                     f"{fidelity.condition.value} | {fidelity.input_cross_entropy:.4f} | "
                     f"{fidelity.excess_cross_entropy:.4f} | {fidelity.top1_agreement:.3f} | "
                     f"{fidelity.first_token_agreement:.3f} | "

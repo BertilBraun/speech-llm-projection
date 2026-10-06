@@ -821,6 +821,11 @@ def render_teacher_report(data: TeacherReportData) -> str:
             "train-set reductions establish learning; paired heldout shuffled/zero-audio "
             "controls assess whether the current audio changes predictions.",
             "",
+            "Wrong-audio encoder states are linearly resized to the correct native state "
+            "length before projection, holding the pseudo-token count fixed. This alters "
+            "feature statistics; measured input sensitivity is not a standalone proof "
+            "of semantic understanding.",
+            "",
             "Quality uses independent candidate-only judging by "
             f"{data.quality.selection.selected.model_name}, after calibration. "
             "Appropriate% uses all requested examples as denominator; failed verdicts "

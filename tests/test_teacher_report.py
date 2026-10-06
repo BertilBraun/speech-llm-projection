@@ -521,6 +521,9 @@ def test_report_exposes_fidelity_quality_baselines_and_real_denominators(
     assert "data scaling changes update count" in report
     assert "by construction" in report
     assert "candidate-only" in report
+    assert "linearly resized to the correct native state length" in report
+    assert "holding the pseudo-token count fixed" in report
+    assert "not a standalone proof of semantic understanding" in report
 
 
 def test_source_counts_and_selection_order_are_validated(data: TeacherReportData) -> None:
