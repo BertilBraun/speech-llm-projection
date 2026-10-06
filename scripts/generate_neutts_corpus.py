@@ -1,6 +1,7 @@
 """Resume only missing paired NeuTTS audio using genuine native batch generation."""
 
 import argparse
+from datetime import datetime, timezone
 from importlib.metadata import version
 from pathlib import Path
 from time import perf_counter
@@ -17,6 +18,7 @@ from speech_projector.neutts_corpus import (
     NeuCorpusFailure,
     NeuCorpusResult,
     NeuCorpusSession,
+    NeuCorpusStart,
     persist_completed,
     restore_evidence,
     validate_paired_manifest,
@@ -57,7 +59,19 @@ def run(configuration: NeuCorpusConfig, limit: int) -> NeuCorpusResult:
     if limit:
         pending = pending[:limit]
     sessions = read_journal(directory / "sessions.jsonl", NeuCorpusSession)
-    session_index = len(sessions)
+    starts_directory = directory / "session_starts"
+    starts_directory.mkdir(exist_ok=True)
+    session_index = len(tuple(starts_directory.glob("*.json")))
+    write_record(
+        starts_directory / f"{session_index:06d}.json",
+        NeuCorpusStart(
+            session_index=session_index,
+            started_at=datetime.now(timezone.utc),
+            resumed_clips=len(restored),
+            pending_clips=len(pending),
+            helper_sha256=digest(Path(__file__)),
+        ),
+    )
     started = perf_counter()
     torch.set_num_threads(pilot.cpu_threads)
     backbone, codec = pilot.preparation.repositories
@@ -187,6 +201,11 @@ def run(configuration: NeuCorpusConfig, limit: int) -> NeuCorpusResult:
         generation_token_cap=model.backbone.generation_config.max_new_tokens,
         speech_end_token_id=end_token,
         sessions=tuple(sessions) + (session,),
+        interrupted_sessions=tuple(
+            index
+            for index in range(session_index)
+            if index not in {entry.session_index for entry in sessions}
+        ),
     )
     write_record(directory / "result.json", result)
     if pending:

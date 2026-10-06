@@ -2,6 +2,7 @@
 
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -33,6 +34,14 @@ class NeuCorpusSession(Record):
     measured_batch_seconds: float = Field(ge=0)
     generated_audio_seconds: float = Field(ge=0)
     peak_allocated_gb: float = Field(ge=0)
+
+
+class NeuCorpusStart(Record):
+    session_index: int = Field(ge=0)
+    started_at: datetime
+    resumed_clips: int = Field(ge=0)
+    pending_clips: int = Field(ge=0)
+    helper_sha256: str
 
 
 class NeuCorpusFailure(Record):
@@ -76,6 +85,7 @@ class NeuCorpusResult(Record):
     generation_token_cap: int = Field(gt=0)
     speech_end_token_id: int = Field(ge=0)
     sessions: tuple[NeuCorpusSession, ...]
+    interrupted_sessions: tuple[int, ...]
 
     @model_validator(mode="after")
     def validate_coverage(self) -> "NeuCorpusResult":
