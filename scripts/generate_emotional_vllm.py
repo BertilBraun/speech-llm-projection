@@ -8,6 +8,7 @@ from speech_projector.emotional_generation import (
     CachedGeneration,
     EmotionalGenerationConfig,
     GenerationBackend,
+    VllmRuntimeConfig,
     generate_drafts,
     generate_teacher_targets,
     summarize_generation,
@@ -25,7 +26,7 @@ def main() -> None:
     config = EmotionalGenerationConfig.model_validate_json(arguments.config.read_bytes())
     if config.backend != GenerationBackend.VLLM:
         raise ValueError("This entry point requires the vLLM backend")
-    generator = VllmTextGenerator(config)
+    generator = VllmTextGenerator(config, VllmRuntimeConfig())
     cached = CachedGeneration(config, generator.generate)
     if arguments.stage in (Stage.DRAFTS, Stage.BOTH):
         generate_drafts(config, cached)

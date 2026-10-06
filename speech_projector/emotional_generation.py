@@ -43,6 +43,11 @@ class GenerationBackend(str, Enum):
     VLLM = "vllm"
 
 
+class VllmRuntimeConfig(Record):
+    max_num_seqs: int = Field(default=32, gt=0)
+    gpu_memory_utilization: float = Field(default=0.75, gt=0, le=1)
+
+
 class EmotionalGenerationConfig(Record):
     output_directory: Path
     trace_subdirectory: Path = Path(".")

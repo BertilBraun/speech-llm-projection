@@ -20,6 +20,7 @@ from speech_projector.emotional_generation import (
     TextGenerationBatch,
     TextGenerationOutcome,
     TextGenerationRequest,
+    VllmRuntimeConfig,
     completed_outcomes,
     generate_drafts,
     generate_teacher_targets,
@@ -300,3 +301,14 @@ def test_provider_trace_directories_preserve_independent_provenance_for_shared_d
         EmotionalGenerationConfig.model_validate_json(
             first.model_copy(update={"trace_subdirectory": Path("../outside")}).model_dump_json()
         )
+
+
+def test_vllm_runtime_has_bounded_node_defaults_and_validates_resource_limits() -> None:
+    runtime = VllmRuntimeConfig()
+    assert runtime.max_num_seqs == 32
+    assert runtime.gpu_memory_utilization == 0.75
+    assert VllmRuntimeConfig.model_validate_json(runtime.model_dump_json()) == runtime
+    with pytest.raises(ValueError):
+        VllmRuntimeConfig(max_num_seqs=0)
+    with pytest.raises(ValueError):
+        VllmRuntimeConfig(gpu_memory_utilization=1.1)

@@ -16,6 +16,7 @@ from speech_projector.emotional_generation import (
     TextGenerationBatch,
     TextGenerationOutcome,
     TextGenerationRequest,
+    VllmRuntimeConfig,
     generation_from_finish_reason,
 )
 from speech_projector.journal import append_record
@@ -32,8 +33,16 @@ class VllmTerminationEvidence(Record):
 
 
 class VllmTextGenerator:
-    def __init__(self, config: EmotionalGenerationConfig) -> None:
+    def __init__(self, config: EmotionalGenerationConfig, runtime: VllmRuntimeConfig) -> None:
         self.configuration = config
+        directory = config.output_directory / config.trace_subdirectory
+        directory.mkdir(parents=True, exist_ok=True)
+        runtime_path = directory / "vllm_runtime.json"
+        if runtime_path.exists():
+            if VllmRuntimeConfig.model_validate_json(runtime_path.read_bytes()) != runtime:
+                raise ValueError("vLLM runtime resume configuration differs")
+        else:
+            runtime_path.write_text(runtime.model_dump_json(indent=2), encoding="utf-8")
         self.tokenizer: PreTrainedTokenizerBase = AutoTokenizer.from_pretrained(
             config.model_name, revision=config.revision
         )
@@ -44,7 +53,8 @@ class VllmTextGenerator:
             dtype="bfloat16",
             tensor_parallel_size=1,
             max_model_len=config.max_model_tokens,
-            gpu_memory_utilization=0.85,
+            max_num_seqs=runtime.max_num_seqs,
+            gpu_memory_utilization=runtime.gpu_memory_utilization,
             language_model_only=True,
             enable_prefix_caching=True,
             mamba_cache_mode="align",
