@@ -144,7 +144,7 @@ def synthesize_batch(
 
 
 def persist_batch(
-    configuration: NeuTtsBenchmarkConfig,
+    configuration: NeuTtsPilotConfig,
     cases: tuple[TtsPilotCase, ...],
     generated: GeneratedBatch,
     batch_size: int,
@@ -153,7 +153,7 @@ def persist_batch(
     end_token: int,
     sample_rate: int,
 ) -> BatchMeasurement:
-    directory = configuration.pilot.output_directory
+    directory = configuration.output_directory
     clips: list[BatchClipEvidence] = []
     for case, audio in zip(cases, generated.audio, strict=True):
         relative = Path("audio") / f"batch{batch_size}/repeat{repetition}" / f"{case.case_id}.wav"
@@ -280,7 +280,7 @@ def benchmark(configuration: NeuTtsBenchmarkConfig) -> NeuTtsBenchmarkResult:
                 cases = manifest.cases[offset : offset + batch_size]
                 generated = synthesize_batch(model, pilot, cases, reference_codes, reference_text)
                 measurement = persist_batch(
-                    configuration,
+                    pilot,
                     cases,
                     generated,
                     batch_size,
