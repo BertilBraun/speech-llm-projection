@@ -8,9 +8,11 @@ import torch
 from torch import Tensor, nn
 
 from speech_projector.emotion_preview import Delivery
+from speech_projector.evaluation import EvaluationOutcome, ExampleLoss
 from speech_projector.inputs import SpeechInput, UtteranceInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
+    EvaluationCondition,
     EvaluationMetrics,
     Example,
     ExperimentStage,
@@ -36,6 +38,7 @@ from speech_projector.overnight_evaluation import (
     evaluate_emotion_pairs,
     select_fixed_validation,
     select_sweep,
+    summarize_cohort_validation,
     summarize_preferences,
 )
 from speech_projector.projectors import Projector
@@ -111,18 +114,31 @@ def test_matching_margin_cancels_target_priors_and_clusters_by_family() -> None:
 
 
 def test_selection_preserves_content_then_new_tone_and_compact_guard() -> None:
+    duration_only = candidate("duration_only", 1, 1.01, 10, 25)
+    resized = duration_only.new_neu_preference.resized_matching_margin.model_copy(
+        update={"estimate": 0.0, "lower": 0.0, "upper": 0.0}
+    )
+    duration_only = duration_only.model_copy(
+        update={
+            "new_neu_preference": duration_only.new_neu_preference.model_copy(
+                update={"resized_matching_margin": resized}
+            )
+        }
+    )
     candidates = (
         candidate("lowest_ce", 1, 1, 0.1, 25),
         candidate("new_tone_leader", 1, 1.02, 0.2, 25),
         candidate("compact", 1, 1.06, 0.05, 10),
         candidate("too_weak", 1, 1.12, 0.5, 2.5),
         candidate("content_regression", 1.11, 0.8, 10, 25),
+        duration_only,
     )
     decision = select_sweep(candidates, SweepSelectionPolicy())
     assert decision.quality_leader == "new_tone_leader"
     assert decision.compact_winners == ("compact",)
     assert "content_regression" not in decision.ordinary_guard_eligible
     assert "no test metric" in decision.rationale.lower()
+    assert "minimum of raw and length-resized" in decision.rationale
     assert decision == type(decision).model_validate_json(decision.model_dump_json())
 
 
@@ -217,6 +233,57 @@ def test_fixed_selection_keeps_complete_pairs_and_balanced_generation_prefix() -
     missing = sources[:-1]
     with pytest.raises(ValueError, match="coverage"):
         select_fixed_validation(examples, missing, configuration)
+
+
+def test_cohort_ce_weights_tokens_within_cohort_then_macros_cohorts_equally() -> None:
+    sources: tuple[SourceSidecar, ...] = (
+        OrdinaryExampleSource(example_id="o1", source_manifest=Path("old"), source_example_id="o1"),
+        OrdinaryExampleSource(example_id="o2", source_manifest=Path("old"), source_example_id="o2"),
+        QwenEmotionalExampleSource(
+            example_id="q",
+            source_manifest=Path("qwen"),
+            source_example_id="q",
+            base_id="q",
+            family_id="q",
+            emotion=Delivery.HAPPY,
+        ),
+        NeuEmotionalExampleSource(
+            example_id="n",
+            source_manifest=Path("neu"),
+            source_example_id="n",
+            base_id="n",
+            family_id="n",
+            emotion=PilotEmotion.ANGRY,
+        ),
+    )
+    losses = tuple(
+        ExampleLoss(
+            example_id=identifier,
+            dialogue_id=identifier,
+            condition=EvaluationCondition.SPEECH,
+            cross_entropy=ce,
+            target_tokens=tokens,
+        )
+        for identifier, ce, tokens in (
+            ("o1", 1.0, 100),
+            ("o2", 3.0, 1),
+            ("q", 2.0, 1),
+            ("n", 4.0, 1),
+        )
+    )
+    outcome = EvaluationOutcome(
+        metrics=EvaluationMetrics(examples=4, target_tokens=103, cross_entropy=1.0, perplexity=2.0),
+        samples=(),
+        example_losses=losses,
+        diagnostics=(),
+    )
+    summary = summarize_cohort_validation(outcome, sources, EvaluationCondition.SPEECH)
+    assert summary.old_ordinary.cross_entropy == pytest.approx(103 / 101)
+    assert summary.macro_cross_entropy == pytest.approx((103 / 101 + 2 + 4) / 3)
+    assert summary.old_ordinary.evaluation_seconds == 0
+    assert outcome.metrics.cross_entropy == 1.0
+    with pytest.raises(ValueError, match="exactly cover"):
+        summarize_cohort_validation(outcome, sources[:-1], EvaluationCondition.SPEECH)
 
 
 class TestProjector(nn.Module):

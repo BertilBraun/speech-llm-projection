@@ -13,7 +13,12 @@ import torch
 from pydantic import ConfigDict, Field, model_validator
 from torch import Tensor
 
-from speech_projector.evaluation import match_feature_length
+from speech_projector.evaluation import (
+    EvaluationOutcome,
+    LossObservation,
+    match_feature_length,
+    summarize_losses,
+)
 from speech_projector.inputs import SpeechInput
 from speech_projector.journal import append_record, read_journal
 from speech_projector.judge import (
@@ -21,7 +26,15 @@ from speech_projector.judge import (
     PairedMetricObservation,
     paired_dialogue_bootstrap,
 )
-from speech_projector.models import EvaluationMetrics, Example, Record, RunConfig, Split
+from speech_projector.models import (
+    EvaluationCondition,
+    EvaluationMetrics,
+    Example,
+    GenerationKind,
+    Record,
+    RunConfig,
+    Split,
+)
 from speech_projector.overnight_data import (
     Cohort,
     NeuEmotionalExampleSource,
@@ -102,6 +115,13 @@ class ValidationCohorts(Record):
     old_emotional: EvaluationMetrics
     new_neu_emotional: EvaluationMetrics
 
+    @model_validator(mode="after")
+    def validate_cohort_coverage(self) -> "ValidationCohorts":
+        for item in (self.old_ordinary, self.old_emotional, self.new_neu_emotional):
+            if item.examples < 1 or item.target_tokens < 1 or not math.isfinite(item.cross_entropy):
+                raise ValueError("Each validation cohort needs nonempty finite scored coverage")
+        return self
+
     @property
     def macro_cross_entropy(self) -> float:
         return (
@@ -119,6 +139,13 @@ class SweepCandidate(Record):
     pseudo_tokens_per_second: float = Field(gt=0)
     training_seconds_per_update: float = Field(gt=0)
 
+    @property
+    def robust_neu_margin(self) -> float:
+        return min(
+            self.new_neu_preference.matching_margin.estimate,
+            self.new_neu_preference.resized_matching_margin.estimate,
+        )
+
     @model_validator(mode="after")
     def validate_finite_metrics(self) -> "SweepCandidate":
         values = (
@@ -126,6 +153,7 @@ class SweepCandidate(Record):
             self.validation.old_emotional.cross_entropy,
             self.validation.new_neu_emotional.cross_entropy,
             self.new_neu_preference.matching_margin.estimate,
+            self.new_neu_preference.resized_matching_margin.estimate,
             self.pseudo_tokens_per_second,
             self.training_seconds_per_update,
         )
@@ -350,7 +378,7 @@ def select_sweep(
     leader = min(
         tied,
         key=lambda item: (
-            -item.new_neu_preference.matching_margin.estimate,
+            -item.robust_neu_margin,
             item.training_seconds_per_update,
             item.validation.macro_cross_entropy,
             item.configuration.name,
@@ -372,7 +400,7 @@ def select_sweep(
             key=lambda item: (
                 item.pseudo_tokens_per_second,
                 item.validation.macro_cross_entropy,
-                -item.new_neu_preference.matching_margin.estimate,
+                -item.robust_neu_margin,
                 item.training_seconds_per_update,
                 item.configuration.name,
             ),
@@ -386,12 +414,74 @@ def select_sweep(
         ordinary_guard_eligible=tuple(item.configuration.name for item in eligible),
         rationale=(
             "Validation only: ordinary-content CE guard, equal-cohort macro CE band, "
-            "then new Neu same-word audio matching margin and training speed. "
+            "then the minimum of raw and length-resized new Neu same-word audio matching "
+            "margins, followed by training speed. No positive-margin acceptance gate. "
             "Compact selection additionally requires the precommitted macro CE tolerance "
             "and token-rate reduction. Old emotional margins are reported separately. "
             "Root reviews actual outputs before accepting this automatic recommendation; "
             "no test metric enters selection."
         ),
+    )
+
+
+def summarize_cohort_validation(
+    outcome: EvaluationOutcome,
+    sources: Sequence[SourceSidecar],
+    condition: EvaluationCondition,
+) -> ValidationCohorts:
+    """Aggregate stored records; cohort clocks remain unmeasured, whole-run clocks stay intact."""
+    sources_by_id = {item.example_id: item for item in sources}
+    if len(sources_by_id) != len(sources):
+        raise ValueError("Cohort summaries require unique source example IDs")
+    primary_losses = tuple(item for item in outcome.example_losses if item.condition == condition)
+    if len({item.example_id for item in primary_losses}) != len(primary_losses) or {
+        item.example_id for item in primary_losses
+    } != set(sources_by_id):
+        raise ValueError("Primary scored examples must exactly cover cohort source records")
+    metrics: list[EvaluationMetrics] = []
+    for cohort in (Cohort.ORDINARY, Cohort.QWEN_EMOTIONAL, Cohort.NEU_EMOTIONAL):
+        selected = tuple(
+            item for item in primary_losses if sources_by_id[item.example_id].cohort == cohort
+        )
+        cross_entropy, perplexity, tokens = summarize_losses(
+            tuple(
+                LossObservation(item.cross_entropy * item.target_tokens, item.target_tokens)
+                for item in selected
+            )
+        )
+        generations = tuple(
+            item
+            for item in outcome.samples
+            if item.condition == condition and sources_by_id[item.example_id].cohort == cohort
+        )
+        similarities = tuple(
+            item.semantic_similarity for item in generations if item.semantic_similarity is not None
+        )
+        metadata = tuple(item.generation for item in generations)
+        completion_known = all(item is not None for item in metadata)
+        metrics.append(
+            EvaluationMetrics(
+                examples=len(selected),
+                target_tokens=tokens,
+                cross_entropy=cross_entropy,
+                perplexity=perplexity,
+                semantic_similarity=sum(similarities) / len(similarities) if similarities else None,
+                generated_examples=len(generations),
+                generated_tokens=sum(len(item.token_ids) for item in metadata if item is not None),
+                completed_generations=sum(
+                    item.kind == GenerationKind.COMPLETED for item in metadata if item is not None
+                )
+                if completion_known
+                else None,
+                token_limited_generations=sum(
+                    item.kind == GenerationKind.TOKEN_LIMIT for item in metadata if item is not None
+                )
+                if completion_known
+                else None,
+            )
+        )
+    return ValidationCohorts(
+        old_ordinary=metrics[0], old_emotional=metrics[1], new_neu_emotional=metrics[2]
     )
 
 
