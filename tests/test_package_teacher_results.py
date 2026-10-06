@@ -1,21 +1,36 @@
 import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-from scripts.package_results import DatasetSource, PackageConfiguration
+from scripts.package_results import DatasetSource, ModelRevision, PackageConfiguration
 from scripts.package_teacher_results import (
+    TeacherJournalSnapshot,
     TeacherPackageConfiguration,
     audited_examples,
     copy_snapshot,
+    describe_file,
     examples_from_snapshot,
     feature_inventory,
     package_inputs,
     package_teacher_results,
     pinned_dataset_source,
+    verify_teacher_exports,
 )
+from speech_projector.generation import CompletedGeneration
 from speech_projector.models import Example, Split
+from speech_projector.teacher import (
+    BootstrapTeacherSelection,
+    FullTeacherSelection,
+    TeacherConfig,
+    TeacherExport,
+    TeacherProvenance,
+    TeacherSelection,
+    TeacherTarget,
+)
+from speech_projector.teacher_configuration import teacher_compression_runs
 
 
 def example(root: Path, identifier: str, split: Split) -> Example:
@@ -153,3 +168,96 @@ def test_package_refuses_to_run_while_writers_are_active(tmp_path: Path) -> None
     with pytest.raises(ValueError, match="writers-stopped"):
         package_teacher_results(configuration)
     assert not configuration.assets.results_root.exists()
+
+
+def write_export(path: Path, examples: tuple[Example, ...], selection: TeacherSelection) -> None:
+    path.write_text("".join(item.model_dump_json() + "\n" for item in examples), encoding="utf-8")
+    provenance = TeacherExport(
+        selection=selection, manifest=describe_file(path, path), examples=len(examples)
+    )
+    path.with_suffix(".provenance.json").write_text(provenance.model_dump_json(), encoding="utf-8")
+
+
+def exported_journal(root: Path) -> tuple[tuple[Example, ...], TeacherJournalSnapshot]:
+    source = tuple(example(root, split.value, split) for split in Split)
+    source_path = root / "examples_source.jsonl"
+    source_path.write_text(
+        "".join(item.model_dump_json() + "\n" for item in source), encoding="utf-8"
+    )
+    targets = tuple(
+        TeacherTarget(
+            example=item,
+            response=CompletedGeneration(
+                text=f"Fresh sampled response {item.example_id}", token_ids=(3, 2)
+            ),
+            capped_attempts=(),
+        )
+        for item in source
+    )
+    journal = TeacherJournalSnapshot(
+        provenance=TeacherProvenance(
+            config=TeacherConfig(
+                run=teacher_compression_runs()[0],
+                manifest=source_path,
+                output_directory=root / "teacher_targets",
+            ),
+            source_commit="immutable-source-commit",
+            input_manifest=describe_file(source_path, source_path),
+            model_revision=ModelRevision(
+                model_name="Qwen/Qwen3.5-2B",
+                snapshot_revisions=("snapshot",),
+                main_revision="snapshot",
+            ),
+            frozen_parameter_sha256="frozen-parameter-digest",
+            started_at=datetime.now(timezone.utc),
+        ),
+        targets=targets,
+    )
+    exported = tuple(
+        target.example.model_copy(update={"target_text": target.response.text})
+        for target in targets
+    )
+    bootstrap = root / "teacher_bootstrap.jsonl"
+    write_export(
+        bootstrap,
+        exported,
+        BootstrapTeacherSelection(
+            output_manifest=bootstrap, training_examples=1, validation_examples=1, test_examples=1
+        ),
+    )
+    full = root / "teacher_examples.jsonl"
+    write_export(full, exported, FullTeacherSelection(output_manifest=full))
+    return source, journal
+
+
+def test_both_exports_match_current_journal_and_canonical_selection(tmp_path: Path) -> None:
+    source, journal = exported_journal(tmp_path)
+    verify_teacher_exports(tmp_path, source, journal)
+
+
+@pytest.mark.parametrize("mutation", ("greedy_target", "reordered", "source_field"))
+def test_self_consistent_stale_or_reordered_exports_fail_current_journal_validation(
+    tmp_path: Path, mutation: str
+) -> None:
+    source, journal = exported_journal(tmp_path)
+    path = tmp_path / "teacher_bootstrap.jsonl"
+    exported = examples_from_snapshot(path)
+    match mutation:
+        case "greedy_target":
+            exported = (
+                exported[0].model_copy(update={"target_text": "Old greedy pilot response"}),
+                *exported[1:],
+            )
+        case "reordered":
+            exported = tuple(reversed(exported))
+        case "source_field":
+            exported = (
+                exported[0].model_copy(update={"user_text": "Changed synthesis transcript"}),
+                *exported[1:],
+            )
+    provenance = TeacherExport.model_validate_json(
+        path.with_suffix(".provenance.json").read_bytes()
+    )
+    write_export(path, exported, provenance.selection)
+    with pytest.raises(ValueError, match="current journal response/source/order"):
+        verify_teacher_exports(tmp_path, source, journal)

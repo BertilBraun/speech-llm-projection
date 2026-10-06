@@ -16,7 +16,12 @@ from scripts.package_results import (
 )
 from scripts.prepare_teacher_data import TeacherDataPreparation
 from speech_projector.models import Example, Record, Split
-from speech_projector.teacher import TeacherExport, TeacherProvenance, TeacherTarget
+from speech_projector.teacher import (
+    TeacherExport,
+    TeacherProvenance,
+    TeacherTarget,
+    select_examples,
+)
 
 
 @dataclass(frozen=True)
@@ -24,6 +29,12 @@ class TeacherPackageConfiguration:
     assets: PackageConfiguration
     original_results: Path
     writers_stopped: bool
+
+
+@dataclass(frozen=True)
+class TeacherJournalSnapshot:
+    provenance: TeacherProvenance
+    targets: tuple[TeacherTarget, ...]
 
 
 class FeatureInventory(Record):
@@ -42,6 +53,7 @@ class AuditedTeacherInput(Record):
 
 class TeacherPackageManifest(Record):
     dataset_source: DatasetSource
+    teacher_provenance: TeacherProvenance
     copied_artifacts: tuple[FileArtifact, ...]
     audited_inputs: tuple[AuditedTeacherInput, ...]
     copied_bytes: int
@@ -107,15 +119,6 @@ def verify_prepared_source(root: Path) -> tuple[Example, ...]:
         )
         if identifiers != subset.selected_ids or len(identifiers) != subset.selected_examples:
             raise ValueError("Teacher source order/count differs from the preparation provenance")
-    for name in ("teacher_bootstrap", "teacher_examples"):
-        exported = root / f"{name}.jsonl"
-        provenance = TeacherExport.model_validate_json(
-            (root / f"{name}.provenance.json").read_bytes()
-        )
-        if stable_digest(exported) != (provenance.manifest.bytes, provenance.manifest.sha256):
-            raise ValueError(f"Completed teacher export differs from its provenance: {name}")
-        if len(examples_from_snapshot(exported)) != provenance.examples:
-            raise ValueError(f"Completed teacher export has an incorrect example count: {name}")
     return source
 
 
@@ -131,7 +134,9 @@ def audited_examples(examples: tuple[Example, ...], count_per_split: int) -> tup
     return tuple(selected)
 
 
-def verify_teacher_journal(source: tuple[Example, ...], manifest: Path, results: Path) -> None:
+def verify_teacher_journal(
+    source: tuple[Example, ...], manifest: Path, results: Path
+) -> TeacherJournalSnapshot:
     directory = results / "teacher_targets"
     provenance = TeacherProvenance.model_validate_json((directory / "provenance.json").read_bytes())
     if stable_digest(manifest) != (
@@ -150,6 +155,34 @@ def verify_teacher_journal(source: tuple[Example, ...], manifest: Path, results:
     for target in targets:
         if target.example != expected[target.example.example_id]:
             raise ValueError("Teacher target journal changed an immutable source example")
+        if not target.response.text:
+            raise ValueError("Teacher target journal contains an empty completed response")
+    return TeacherJournalSnapshot(provenance=provenance, targets=targets)
+
+
+def verify_teacher_exports(
+    root: Path, source: tuple[Example, ...], journal: TeacherJournalSnapshot
+) -> None:
+    targets = {target.example.example_id: target for target in journal.targets}
+    for name in ("teacher_bootstrap", "teacher_examples"):
+        exported = root / f"{name}.jsonl"
+        provenance = TeacherExport.model_validate_json(
+            (root / f"{name}.provenance.json").read_bytes()
+        )
+        if stable_digest(exported) != (provenance.manifest.bytes, provenance.manifest.sha256):
+            raise ValueError(f"Completed teacher export differs from its provenance: {name}")
+        examples = examples_from_snapshot(exported)
+        selected = select_examples(source, provenance.selection)
+        if len(examples) != provenance.examples or len(examples) != len(selected):
+            raise ValueError(f"Completed teacher export has an incorrect example count: {name}")
+        for example, original in zip(examples, selected, strict=True):
+            expected = original.model_copy(
+                update={"target_text": targets[original.example_id].response.text}
+            )
+            if example != expected:
+                raise ValueError(
+                    f"Teacher export differs from current journal response/source/order: {name}"
+                )
 
 
 def feature_inventory(examples: tuple[Example, ...], manifest: Path) -> FeatureInventory:
@@ -220,9 +253,10 @@ def package_teacher_results(configuration: TeacherPackageConfiguration) -> Teach
         raise ValueError("Teacher package must not overwrite the sealed original results")
     provenance = pinned_dataset_source(configuration.original_results)
     source = verify_prepared_source(assets.dataset_root)
-    verify_teacher_journal(
+    journal = verify_teacher_journal(
         source, assets.dataset_root / "examples_source.jsonl", assets.results_root
     )
+    verify_teacher_exports(assets.dataset_root, source, journal)
     preparation = TeacherDataPreparation.model_validate_json(
         (assets.dataset_root / "preparation.json").read_bytes()
     )
@@ -252,6 +286,7 @@ def package_teacher_results(configuration: TeacherPackageConfiguration) -> Teach
     package_environment(assets)
     manifest = TeacherPackageManifest(
         dataset_source=provenance,
+        teacher_provenance=journal.provenance,
         copied_artifacts=tuple(files),
         audited_inputs=inputs,
         copied_bytes=sum(file.bytes for file in files),
