@@ -32,7 +32,7 @@ from speech_projector.training import ValidationCheckpointRecord
 
 class BestCheckpointSummary(Record):
     config: RunConfig
-    training_git_commit: str
+    run_completion_git_commit: str
     evaluation_git_commit: str
     checkpoint_path: Path
     checkpoint_sha256: str
@@ -91,7 +91,7 @@ def evaluate_best_checkpoint(
     save_evaluation(tested, output_directory / "test")
     summary = BestCheckpointSummary(
         config=configuration,
-        training_git_commit=result.git_commit,
+        run_completion_git_commit=result.git_commit,
         evaluation_git_commit=subprocess.check_output(
             ["git", "rev-parse", "HEAD"], text=True
         ).strip(),
