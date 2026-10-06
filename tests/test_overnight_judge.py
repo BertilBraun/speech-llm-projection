@@ -10,7 +10,7 @@ from pydantic import TypeAdapter, ValidationError
 from scripts.judge_overnight import ToneCalibrationResult, calibrate, calibration_cases
 from speech_projector.emotion_preview import Delivery
 from speech_projector.judge import JUDGE_SYSTEM, JudgeConfig, JudgeRequest, LocalJudge, judge_prompt
-from speech_projector.models import EvaluationCondition, SampleGeneration
+from speech_projector.models import EvaluationCondition, FileArtifact, SampleGeneration
 from speech_projector.overnight_data import (
     NeuEmotionalExampleSource,
     OrdinaryExampleSource,
@@ -19,6 +19,7 @@ from speech_projector.overnight_data import (
 )
 from speech_projector.overnight_judge import (
     TONE_PAIR_SYSTEM,
+    FinalJudgingProgram,
     FinalJudgingQuota,
     FinalJudgingSet,
     NeuToneJudgeRequest,
@@ -231,6 +232,41 @@ def test_final_set_requires_complete_pair_quota_and_excludes_teacher_references(
     assert len(selected.new_emotional) == len(selected.new_preferences) == 4
     assert "Teacher reference" not in selected.model_dump_json()
     assert FinalJudgingSet.model_validate_json(selected.model_dump_json()) == selected
+    combined = tuple(
+        sample.model_copy(update={"condition": condition})
+        for condition in (
+            EvaluationCondition.SPEECH,
+            EvaluationCondition.TEXT,
+            EvaluationCondition.ASR,
+        )
+        for sample in samples
+    )
+    sets = tuple(
+        build_final_judging_set(combined, sources, quota, condition)
+        for condition in (
+            EvaluationCondition.SPEECH,
+            EvaluationCondition.TEXT,
+            EvaluationCondition.ASR,
+        )
+    )
+    identifiers = tuple(item.example_id for current in sets for item in current.ordinary)
+    assert len(set(identifiers)) == 6
+    for current in sets:
+        assert current.ordinary[0].example_id.startswith(current.condition.value + ":")
+        assert current.condition.value + ":" not in judge_prompt(current.ordinary[0])
+        assert current.condition.value + ":" not in tone_prompt(current.new_emotional[0])
+    receipt = FileArtifact(
+        path=Path("saved_generations.jsonl"),
+        source_path=Path("saved_generations.jsonl").resolve(),
+        bytes=123,
+        sha256="a" * 64,
+    )
+    program = FinalJudgingProgram(sets=sets, source_artifacts=(receipt,))
+    assert FinalJudgingProgram.model_validate_json(program.model_dump_json()) == program
+    with pytest.raises(ValueError, match="unique nonempty conditions"):
+        FinalJudgingProgram(sets=(sets[0], sets[0]), source_artifacts=(receipt,))
+    with pytest.raises(ValueError, match="speech, text and ASR"):
+        build_final_judging_set(combined, sources, quota, EvaluationCondition.ZERO_SPEECH)
     with pytest.raises(ValueError, match="quotas"):
         build_final_judging_set(samples[:-1], sources, quota)
 

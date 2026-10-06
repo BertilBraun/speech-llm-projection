@@ -27,7 +27,13 @@ from speech_projector.judge import (
     paired_dialogue_bootstrap,
     summarize_judge,
 )
-from speech_projector.models import EvaluationCondition, Record, Role, SampleGeneration
+from speech_projector.models import (
+    EvaluationCondition,
+    FileArtifact,
+    Record,
+    Role,
+    SampleGeneration,
+)
 from speech_projector.overnight_data import (
     NeuEmotionalExampleSource,
     OrdinaryExampleSource,
@@ -179,6 +185,7 @@ class FinalJudgingQuota(Record):
 
 class FinalJudgingSet(Record):
     configuration: FinalJudgingQuota
+    condition: EvaluationCondition
     ordinary: tuple[JudgeRequest, ...]
     old_emotional: tuple[QwenToneJudgeRequest, ...]
     new_emotional: tuple[NeuToneJudgeRequest, ...]
@@ -212,6 +219,7 @@ class FinalJudgingSet(Record):
 
 
 class FinalJudgingSummary(Record):
+    condition: EvaluationCondition
     ordinary: JudgeSummary
     old_emotional: ToneJudgeSummary
     new_emotional: ToneJudgeSummary
@@ -219,6 +227,17 @@ class FinalJudgingSummary(Record):
     new_preferences: JudgedTonePreference
     main_judging_seconds: float
     paired_judging_seconds: float
+
+
+class FinalJudgingProgram(Record):
+    sets: tuple[FinalJudgingSet, ...]
+    source_artifacts: tuple[FileArtifact, ...]
+
+    @model_validator(mode="after")
+    def validate_unique_conditions(self) -> FinalJudgingProgram:
+        if not self.sets or len({item.condition for item in self.sets}) != len(self.sets):
+            raise ValueError("Final judging program requires unique nonempty conditions")
+        return self
 
 
 TONE_JUDGE_SYSTEM = (
@@ -319,6 +338,12 @@ def build_final_judging_set(
     configuration: FinalJudgingQuota,
     condition: EvaluationCondition = EvaluationCondition.SPEECH,
 ) -> FinalJudgingSet:
+    if condition not in (
+        EvaluationCondition.SPEECH,
+        EvaluationCondition.TEXT,
+        EvaluationCondition.ASR,
+    ):
+        raise ValueError("Final main judging supports speech, text and ASR conditions")
     by_id = {item.example_id: item for item in generations if item.condition == condition}
     if len(by_id) != sum(item.condition == condition for item in generations):
         raise ValueError("Final judging requires unique primary generations")
@@ -331,7 +356,7 @@ def build_final_judging_set(
     for sample in by_id.values():
         source = sources_by_id[sample.example_id]
         request = JudgeRequest(
-            example_id=sample.example_id,
+            example_id=f"{condition.value}:{sample.example_id}",
             dialogue_id=sample.dialogue_id,
             history=sample.history,
             transcript=sample.user_transcript,
@@ -374,6 +399,7 @@ def build_final_judging_set(
     selected_new = new[: configuration.new_emotional_pairs]
     return FinalJudgingSet(
         configuration=configuration,
+        condition=condition,
         ordinary=tuple(ordinary[: configuration.ordinary]),
         old_emotional=tuple(item for group in selected_old for item in group),
         new_emotional=tuple(item for group in selected_new for item in group),
@@ -670,6 +696,7 @@ def run_final_judging_set(
     old_pairs = run_pair_judgments(judge, requests.old_preferences, directory / "old_preferences")
     new_pairs = run_pair_judgments(judge, requests.new_preferences, directory / "new_preferences")
     summary = FinalJudgingSummary(
+        condition=requests.condition,
         ordinary=summarize_judge(ordinary),
         old_emotional=summarize_tone_judgments(old),
         new_emotional=summarize_tone_judgments(new),

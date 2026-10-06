@@ -14,6 +14,7 @@ from speech_projector.journal import read_journal
 from speech_projector.judge import JudgeConfig, JudgeRequest, LocalJudge
 from speech_projector.models import Record
 from speech_projector.overnight_judge import (
+    FinalJudgingProgram,
     FinalJudgingSet,
     NeuToneJudgeRequest,
     ResponseChoice,
@@ -172,6 +173,7 @@ def main() -> None:
     inputs = parser.add_mutually_exclusive_group()
     inputs.add_argument("--requests", type=Path)
     inputs.add_argument("--request-set", type=Path)
+    inputs.add_argument("--program", type=Path)
     parser.add_argument("--pair-requests", type=Path)
     parser.add_argument("--batch-size", type=int, default=16)
     arguments = parser.parse_args()
@@ -188,6 +190,14 @@ def main() -> None:
         return
     if not calibration.passed:
         raise ValueError("Tone judge calibration failed; quality rates are not reliable")
+    if arguments.program is not None:
+        program = FinalJudgingProgram.model_validate_json(arguments.program.read_bytes())
+        for requests in program.sets:
+            summary = run_final_judging_set(
+                judge, requests, arguments.output / requests.condition.value
+            )
+            print(summary.model_dump_json(), flush=True)
+        return
     if arguments.request_set is not None:
         requests = FinalJudgingSet.model_validate_json(arguments.request_set.read_bytes())
         summary = run_final_judging_set(judge, requests, arguments.output)
