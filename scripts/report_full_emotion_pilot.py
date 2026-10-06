@@ -15,6 +15,7 @@ from scripts.report_tts_pilot import ModelAudit, ModelResults, verify_results
 from speech_projector.neutts_batch_benchmark import (
     BatchMeasurement,
     NeuTtsBenchmarkResult,
+    validate_benchmark_manifest,
     verify_recorded_audio,
 )
 from speech_projector.tts_pilot import (
@@ -347,6 +348,12 @@ def report_full_emotions(configuration: FullEmotionReportConfig) -> Path:
         for directory in configuration.benchmark_directories
     )
     for directory, benchmark in zip(configuration.benchmark_directories, benchmarks, strict=True):
+        saved_manifest = TtsPilotManifest.model_validate_json(
+            (directory / "cases.json").read_bytes()
+        )
+        validate_benchmark_manifest(
+            saved_manifest, tuple(case.emotion.value for case in neu_manifest.cases)
+        )
         verify_benchmark(benchmark, directory, neu_manifest)
     text = render_report(configuration, runs, benchmarks)
     configuration.output.mkdir(parents=True, exist_ok=True)
