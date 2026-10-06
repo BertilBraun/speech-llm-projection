@@ -109,7 +109,10 @@ def test_batched_retry_preserves_order_and_only_retries_invalid_rows() -> None:
         reference_response="Hi",
         candidate_response="Hi",
     )
-    valid = '{"relevance":3,"grounded_detail":3,"naturalness":3,"acceptable":true,"evidence":"responsive"}'
+    valid = (
+        '{"relevance":3,"grounded_detail":3,"naturalness":3,'
+        '"acceptable":true,"evidence":"responsive"}'
+    )
     sizes: list[int] = []
 
     def generate(items: Sequence[JudgeRequest], corrections: Sequence[str]) -> tuple[str, ...]:

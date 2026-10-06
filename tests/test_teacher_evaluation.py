@@ -39,6 +39,9 @@ def test_aligned_target_prefix_agreement_differs_from_target_accuracy() -> None:
     assert metrics.top1_agreement == 1
     assert metrics.input_target_accuracy == 0.5
     assert metrics.transcript_target_accuracy == 0.5
+    assert metrics.first_token_target_accuracy == 1
+    assert metrics.first_8_tokens == 2
+    assert metrics.first_8_token_target_accuracy == 0.5
     assert metrics.teacher_to_input_kl > 0
     assert metrics.excess_cross_entropy == pytest.approx(
         metrics.input_cross_entropy - metrics.transcript_cross_entropy

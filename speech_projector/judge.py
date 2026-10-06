@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import Enum, IntEnum
 from pathlib import Path
 from typing import Annotated, Literal, TypeAlias
 
@@ -282,6 +282,25 @@ class JudgeSummary(Record):
     naturalness: float
 
 
+class JudgeMetric(str, Enum):
+    ACCEPTABLE = "acceptable"
+    RELEVANCE = "relevance"
+    GROUNDED_DETAIL = "grounded_detail"
+    NATURALNESS = "naturalness"
+
+
+def verdict_metric(verdict: JudgeVerdict, metric: JudgeMetric) -> float:
+    match metric:
+        case JudgeMetric.ACCEPTABLE:
+            return float(verdict.acceptable)
+        case JudgeMetric.RELEVANCE:
+            return float(verdict.relevance)
+        case JudgeMetric.GROUNDED_DETAIL:
+            return float(verdict.grounded_detail)
+        case JudgeMetric.NATURALNESS:
+            return float(verdict.naturalness)
+
+
 def summarize_judge(observations: Sequence[JudgeOutcome]) -> JudgeSummary:
     valid = tuple(item for item in observations if isinstance(item, JudgeSuccess))
     if not observations or not valid:
@@ -304,6 +323,7 @@ class PairedMetricObservation:
     example_id: str
     dialogue_id: str
     difference: float
+    weight: float = 1.0
 
 
 class BootstrapInterval(Record):
@@ -326,15 +346,22 @@ def paired_dialogue_bootstrap(
         raise ValueError("Bootstrap requires observations, multiple draws and valid confidence")
     if len({item.example_id for item in observations}) != len(observations):
         raise ValueError("Paired bootstrap requires unique example IDs")
+    if any(item.weight <= 0 for item in observations):
+        raise ValueError("Bootstrap weights must be positive")
     dialogues = tuple(dict.fromkeys(item.dialogue_id for item in observations))
     if len(dialogues) < 2:
         raise ValueError("Dialogue bootstrap requires at least two independent dialogue IDs")
     groups = tuple(
-        tuple(item.difference for item in observations if item.dialogue_id == dialogue)
+        tuple(item for item in observations if item.dialogue_id == dialogue)
         for dialogue in dialogues
     )
-    sums = numpy.array([sum(group) for group in groups], dtype=numpy.float64)
-    counts = numpy.array([len(group) for group in groups], dtype=numpy.int64)
+    sums = numpy.array(
+        [sum(item.difference * item.weight for item in group) for group in groups],
+        dtype=numpy.float64,
+    )
+    counts = numpy.array(
+        [sum(item.weight for item in group) for group in groups], dtype=numpy.float64
+    )
     indices = numpy.random.default_rng(seed).integers(0, len(groups), size=(draws, len(groups)))
     values = sums[indices].sum(axis=1) / counts[indices].sum(axis=1)
     alpha = (1 - confidence) / 2

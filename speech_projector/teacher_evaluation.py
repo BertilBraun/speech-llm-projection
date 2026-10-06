@@ -34,6 +34,11 @@ class TeacherFidelity(Record):
     input_target_accuracy: float
     transcript_target_accuracy: float
     teacher_to_input_kl: float
+    first_token_agreement: float
+    first_token_target_accuracy: float
+    first_8_tokens: int
+    first_8_token_agreement: float
+    first_8_token_target_accuracy: float
 
 
 class FidelitySummary(Record):
@@ -47,6 +52,11 @@ class FidelitySummary(Record):
     input_target_accuracy: float
     transcript_target_accuracy: float
     teacher_to_input_kl: float
+    first_token_agreement: float
+    first_token_target_accuracy: float
+    first_8_tokens: int
+    first_8_token_agreement: float
+    first_8_token_target_accuracy: float
 
 
 class FidelityProvenance(Record):
@@ -108,6 +118,11 @@ def compare_target_scores(
         input_target_accuracy=float((input_top1 == targets).float().mean()),
         transcript_target_accuracy=float((transcript_top1 == targets).float().mean()),
         teacher_to_input_kl=exact_teacher_kl(transcript_scores.logits, input_scores.logits),
+        first_token_agreement=float(input_top1[0] == transcript_top1[0]),
+        first_token_target_accuracy=float(input_top1[0] == targets[0]),
+        first_8_tokens=min(8, targets.numel()),
+        first_8_token_agreement=float((input_top1[:8] == transcript_top1[:8]).float().mean()),
+        first_8_token_target_accuracy=float((input_top1[:8] == targets[:8]).float().mean()),
     )
 
 
@@ -204,6 +219,7 @@ def summarize_fidelity(
         raise ValueError("Fidelity summary requires observations")
     observations = selected
     tokens = sum(item.target_tokens for item in observations)
+    early_tokens = sum(item.first_8_tokens for item in observations)
     return FidelitySummary(
         condition=condition,
         examples=len(observations),
@@ -234,6 +250,19 @@ def summarize_fidelity(
             item.teacher_to_input_kl * item.target_tokens for item in observations
         )
         / tokens,
+        first_token_agreement=sum(item.first_token_agreement for item in observations)
+        / len(observations),
+        first_token_target_accuracy=sum(item.first_token_target_accuracy for item in observations)
+        / len(observations),
+        first_8_tokens=early_tokens,
+        first_8_token_agreement=sum(
+            item.first_8_token_agreement * item.first_8_tokens for item in observations
+        )
+        / early_tokens,
+        first_8_token_target_accuracy=sum(
+            item.first_8_token_target_accuracy * item.first_8_tokens for item in observations
+        )
+        / early_tokens,
     )
 
 
