@@ -9,7 +9,7 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 45.1GiB cgroup RAM limi
 - [x] Dialogue-disjoint manifests, filtering and audio quality inspection.
 - [x] Selective audio acquisition and reusable final Whisper state cache (first1k+256heldout).
 - [x] Frozen Qwen wrapper, target masking, gradient and weight invariance verification.
-- [x] CPU sanity tests, formatting and lint checks (56 tests passed locally and in isolated node staging).
+- [x] CPU sanity tests, formatting and lint checks (65 tests passed locally and in isolated node staging).
 - [x] GPU smoke test, memory and throughput profile, initial generations.
 - [x] V0 small subset training, evaluation and audio-conditioning diagnostics.
 - [x] Text and ASR baselines on fixed validation/test examples.
@@ -21,15 +21,18 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 45.1GiB cgroup RAM limi
 
 ## Experiment state
 
-Updated 2026-10-06 03:04 Europe/Berlin.
+Updated 2026-10-06 03:40 Europe/Berlin.
 Completed: V0, all four heldout baselines, training/untrained conditioning probes,
 first cache and ASR, model gradient/memory profile, 10k audio download.
 Completed V1:1k,3k and10k runs, including full validation/test and conditioning diagnostics.
 Completed V2:25 tokens/s with10k examples, validation/test CE1.7704/1.6912.
-Running: V2 5 tokens/s with10k examples; no other GPU workload.
+Completed V2:5 tokens/s, validation/test CE1.8558/1.7528 andcosine0.4415/0.3407.
+Its validation shuffle margin is+0.3184(SE0.0667), below25Hz+0.5025(SE0.0807).
+Five-Hz validation semantic gains do not replicate ontest; lower-rate quality remains mixed.
+Running: V2 2.5 tokens/s with10k examples; no other GPU workload.
 Completed:30k audio download,20k new clips/6.889GB in84 minutes, zero failures.
 Full30k train plus128val/128test waveform SHA256 audit found zero cross-split overlaps.
-Queued: V2 2.5 tokens/s and V3 linear/convolutional comparison.
+Queued: V3 linear/convolutional comparison after the validation-based compression review.
 Registered but stopped:20k two-epoch V1 extension at10 tokens/s, to start after the core
 suite if timing remains reasonable. The30k configuration remains available but unqueued.
 Prepared: first-epoch checkpoint preservation for a2500-update/20k-exposure comparison
@@ -39,7 +42,7 @@ Prepared: verified result package with original80MB Parquet, exact subset manife
 Dataset revision0495356d589c06f08253ab29ad1a1482e05d90f8 matches the original Parquet SHA256.
 Typed input API, canonical stage/condition enums and discriminated projector configs
 validated in separate node staging, pending post-training GPU parity for all architectures.
-Local candidate commitf81c483. Seeded projector weights/forward outputs are byte-identical
+Local code candidate commite8f2f17. Seeded projector weights/forward outputs are byte-identical
 to the running source for linear,MLP andconvolutional architectures.
 An external CPU watcher will pause the suite briefly after V2 to review compression
 quality before V3; the live source and training process remain preserved.
@@ -64,7 +67,8 @@ The10k checkpoint is selected for V2/V3; saturation is not established. Data siz
 optimization exposure are confounded by equal epochs, and semantic improvements are noisy.
 Best10k validation checkpoint is step2400, CE1.7957, retained separately from final2500.
 10k+256heldout cache:5.687GB, latest7k extraction46.79GPU-synchronized seconds,
-98.94s pipeline wall time. V0/1k/3k/10k checkpoints and baselines backed up locally.
+98.94s pipeline wall time. V0/1k/3k/10k/25Hz/5Hz checkpoints and baselines backed up locally.
+Exact selected-subset distributions and manifest-prefix agreement are audited and saved.
 Package hashes verified for46 copied files/118.60MB, including original metadata and audit assets.
 All-result SHA256 inventory/relocation verification is ready for the final stopped-writer backup.
 Remaining: finish V2/V3, assess optional larger-data run, evaluate promising best checkpoints,
