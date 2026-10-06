@@ -94,7 +94,7 @@ def neu_teacher_request(case: TtsPilotCase, config: NeuGenerationConfig) -> Text
 
 
 def generate_neu_drafts(
-    config: NeuGenerationConfig, cached: CachedGeneration
+    config: NeuGenerationConfig, cached: CachedGeneration, limit: int | None = None
 ) -> tuple[NeuUtterance, ...]:
     requests = build_neu_requests(config.generation.dataset)
     saved = read_journal(config.generation.output_directory / "utterances.jsonl", NeuUtterance)
@@ -104,6 +104,14 @@ def generate_neu_drafts(
         for request in requests
         if any(assignment.base_id not in completed for assignment in request.assignments)
     )
+    if limit is not None:
+        permitted_ids = {
+            request.batch_id
+            for request in requests[: limit // config.generation.dataset.batch_size]
+        }
+        if limit == config.generation.dataset.utterance_count:
+            permitted_ids = {request.batch_id for request in requests}
+        pending = tuple(request for request in pending if request.batch_id in permitted_ids)
     offsets = {request.batch_id: index for index, request in enumerate(pending)}
 
     def generate(request: NeuDraftRequest) -> GeneratedDraftBatch:
@@ -135,8 +143,11 @@ def generate_neu_drafts(
         previous_utterances=config.previous_utterances,
         previous_sha256=config.previous_sha256,
     )
-    utterances = run_neu_construction(config.generation.output_directory, provenance, generate)
-    write_neu_cases(config.generation.output_directory, utterances, config.generation.seed)
+    utterances = run_neu_construction(
+        config.generation.output_directory, provenance, generate, limit
+    )
+    if len(utterances) == config.generation.dataset.utterance_count:
+        write_neu_cases(config.generation.output_directory, utterances, config.generation.seed)
     return utterances
 
 

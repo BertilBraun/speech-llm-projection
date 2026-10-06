@@ -33,8 +33,6 @@ def main() -> None:
     parser.add_argument("--limit", type=int)
     arguments = parser.parse_args()
     config = NeuGenerationConfig.model_validate_json(arguments.config.read_bytes())
-    if arguments.limit is not None and arguments.stage != Stage.TARGETS:
-        raise ValueError("A bounded limit applies only to teacher target generation")
     if config.generation.backend != GenerationBackend.VLLM:
         raise ValueError("Neu dataset entry point requires frozen vLLM generation")
     directory = config.generation.output_directory / config.generation.trace_subdirectory
@@ -57,7 +55,7 @@ def main() -> None:
     cached = CachedGeneration(config.generation, generator.generate)
     match arguments.stage:
         case Stage.DRAFTS:
-            generate_neu_drafts(config, cached)
+            generate_neu_drafts(config, cached, arguments.limit)
         case Stage.TARGETS:
             generate_neu_targets(config, cached, arguments.limit)
     render_neu_pilot(config.generation.output_directory)

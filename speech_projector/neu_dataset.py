@@ -28,6 +28,33 @@ EMOTION_PAIRS = (
     (PilotEmotion.HAPPY, PilotEmotion.ANGRY),
     (PilotEmotion.SAD, PilotEmotion.ANGRY),
 )
+EXPLICIT_EMOTION_WORDS = frozenset(
+    (
+        "happy",
+        "happiness",
+        "sad",
+        "sadness",
+        "angry",
+        "anger",
+        "fearful",
+        "fear",
+        "afraid",
+        "furious",
+        "excited",
+        "frustrated",
+        "worried",
+        "scared",
+        "anxious",
+        "heartbroken",
+        "sarcastic",
+        "depressed",
+        "unhappy",
+        "terrified",
+        "joyful",
+        "delighted",
+        "miserable",
+    )
+)
 
 
 class NeuDraftAssignment(Record):
@@ -110,14 +137,23 @@ def neu_draft_prompt(request: NeuDraftRequest) -> str:
     prompt = (
         "Write a FRESH natural everyday USER utterance for every assigned ID. "
         "Each text must plausibly carry BOTH assigned emotional deliveries without changing "
-        "any spoken words. Choose situations whose interpretation can change with vocal tone. "
+        "any spoken words. The emotion assignments describe AUDIO delivery only: NEVER put "
+        "them into the spoken text. Write neutral concrete events, plans, facts or requests. "
+        "Do not say 'I feel happy', 'I am angry', 'I am sad', 'I am afraid', or combine "
+        "opposing emotional self-descriptions. Example of a neutral literal utterance: "
+        "'They asked me to give the presentation tomorrow, and everyone will be there.' "
+        "The same words can sound happy or fearful without stating either feeling. "
+        "Avoid evaluative good-news/bad-news explanations. "
         f"Aim for {request.configuration.preferred_min_words}–"
         f"{request.configuration.preferred_max_words} words; the required minimum is "
         f"{request.configuration.min_words} words. Use 1–3 sentences. "
         "Keep necessary facts inside the literal words; there is no hidden dialogue history. "
         "Use diverse concrete contexts and phrasing. Do not supply assistant replies, emotion "
         "labels, delivery explanations, stage directions or instructions in the utterances. "
-        "Return JSON only, every assigned ID exactly once and in order.\n\nAssignments:\n["
+        "Return JSON only, every assigned ID exactly once and in order. "
+        "Forbidden emotion-label words in literal text: "
+        + ", ".join(sorted(EXPLICIT_EMOTION_WORDS))
+        + ".\n\nAssignments:\n["
         + ",".join(assignment.model_dump_json() for assignment in request.assignments)
         + "]"
     )
@@ -143,6 +179,12 @@ def accept_neu_batch(
         normalized = normalized_utterance(row.text)
         words = len(normalized.split())
         sentences = sentence_count(row.text)
+        emotion_words = explicit_emotion_words(row.text)
+        if emotion_words:
+            errors.append(
+                f"{row.base_id}: explicit emotion-label words={emotion_words}; "
+                "replace them with neutral concrete spoken facts or requests"
+            )
         if words < request.configuration.min_words:
             errors.append(
                 f"{row.base_id}: word_count={words}; minimum={request.configuration.min_words}"
@@ -158,6 +200,10 @@ def accept_neu_batch(
         NeuUtterance(assignment=assignment, text=row.text)
         for assignment, row in zip(request.assignments, generated.utterances, strict=True)
     )
+
+
+def explicit_emotion_words(text: str) -> tuple[str, ...]:
+    return tuple(sorted(set(normalized_utterance(text).split()) & EXPLICIT_EMOTION_WORDS))
 
 
 def validate_neu_provenance(directory: Path, provenance: NeuDatasetProvenance) -> set[str]:
@@ -179,7 +225,18 @@ def run_neu_construction(
     directory: Path,
     provenance: NeuDatasetProvenance,
     generate: Callable[[NeuDraftRequest], GeneratedDraftBatch],
+    limit: int | None = None,
 ) -> tuple[NeuUtterance, ...]:
+    if limit is not None and (
+        not 1 <= limit <= provenance.configuration.utterance_count
+        or (
+            limit % provenance.configuration.batch_size
+            and limit != provenance.configuration.utterance_count
+        )
+    ):
+        raise ValueError(
+            "Draft limit must be a complete batch boundary within the configured quota"
+        )
     old_texts = validate_neu_provenance(directory, provenance)
     requests = build_neu_requests(provenance.configuration)
     plan_path = directory / "plan.jsonl"
@@ -210,6 +267,8 @@ def run_neu_construction(
     start = 0
     for request in requests:
         end = start + len(request.assignments)
+        if limit is not None and end > limit:
+            break
         if end <= len(rows):
             start = end
             continue

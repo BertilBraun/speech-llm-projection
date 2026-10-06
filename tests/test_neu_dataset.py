@@ -28,6 +28,7 @@ from speech_projector.neu_dataset import (
     NeuUtterance,
     accept_neu_batch,
     build_neu_requests,
+    explicit_emotion_words,
     neu_cases,
     neu_draft_prompt,
     run_neu_construction,
@@ -187,3 +188,44 @@ def test_old_manifest_hash_change_blocks_resume(tmp_path: Path) -> None:
     source.previous_utterances.write_text("tampered", encoding="utf-8")
     with pytest.raises(ValueError, match="pinned SHA256"):
         run_neu_construction(tmp_path / "new", source, generated)
+
+
+@pytest.mark.parametrize(
+    "text,terms",
+    [
+        ("I'm happy about this appointment but I am angry about the delay.", ("angry", "happy")),
+        (
+            "I feel terrified and anxious before our meeting tomorrow morning.",
+            ("anxious", "terrified"),
+        ),
+        ("They asked me to give the presentation tomorrow, and everyone will be there.", ()),
+    ],
+)
+def test_explicit_affect_words_are_invalid_literal_text(text: str, terms: tuple[str, ...]) -> None:
+    assert explicit_emotion_words(text) == terms
+    request = build_neu_requests(EmotionalDatasetConfig(utterance_count=1))[0]
+    batch = GeneratedDraftBatch(
+        utterances=(GeneratedDraftText(base_id=request.assignments[0].base_id, text=text),)
+    )
+    if terms:
+        with pytest.raises(ValueError, match="neu_base_00000: explicit emotion-label"):
+            accept_neu_batch(request, batch, set())
+    else:
+        assert accept_neu_batch(request, batch, set())[0].text == text
+
+
+def test_draft_pilot_limit_resumes_under_unchanged_full_configuration(tmp_path: Path) -> None:
+    source = provenance(tmp_path, EmotionalDatasetConfig(utterance_count=20, batch_size=10))
+    output = tmp_path / "new"
+    calls: list[str] = []
+
+    def generate(request: NeuDraftRequest) -> GeneratedDraftBatch:
+        calls.append(request.batch_id)
+        return generated(request)
+
+    pilot = run_neu_construction(output, source, generate, limit=10)
+    assert len(pilot) == 10 and len(calls) == 1
+    full = run_neu_construction(output, source, generate)
+    assert len(full) == 20 and len(calls) == 2 and full[:10] == pilot
+    with pytest.raises(ValueError, match="complete batch boundary"):
+        run_neu_construction(output, source, generate, limit=7)
