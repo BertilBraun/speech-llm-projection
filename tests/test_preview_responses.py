@@ -15,7 +15,7 @@ from transformers import (
 )
 from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 
-from speech_projector.emotion_preview import Delivery, default_preview_plan
+from speech_projector.emotion_preview import default_preview_plan
 from speech_projector.generation import CompletedGeneration, TokenLimitedGeneration
 from speech_projector.models import SamplingDecodingConfig
 from speech_projector.preview_responses import (
@@ -80,18 +80,24 @@ def test_fixed_cases_keep_literal_text_and_add_only_two_transcript_controls() ->
     )
 
 
-def test_controls_share_system_prompt_without_delivery_metadata_or_training_fields() -> None:
+@pytest.mark.parametrize("case_index", range(10))
+def test_literal_user_text_and_system_metadata_do_not_leak_tts_instructions(
+    case_index: int,
+) -> None:
     plan = default_preview_plan()
-    case = next(item for item in plan.cases if item.delivery == Delivery.SARCASTIC)
+    case = plan.cases[case_index]
     aware = preview_messages(DeliveryPreviewRequest(case=case), PREVIEW_SYSTEM)
     control = preview_messages(
         TranscriptPreviewRequest(text_id="control", text=case.text), PREVIEW_SYSTEM
     )
     assert aware[0] == control[0]
-    assert '<current_message>\n"I\'m good."\n</current_message>' in aware[1].content
-    assert "<intended_delivery>" in aware[1].content
-    assert case.instruct in aware[1].content
-    assert "<intended_delivery>" not in control[1].content
+    assert tuple(message.role for message in aware) == ("system", "system", "user")
+    assert tuple(message.role for message in control) == ("system", "user")
+    assert aware[-1] == control[-1]
+    assert aware[-1].content == case.text
+    assert f"USER delivered this utterance with a {case.delivery.value} tone" in aware[1].content
+    assert "not an instruction to imitate their tone" in aware[1].content
+    assert all(case.instruct not in message.content for message in aware + control)
     assert "do not assume sarcasm means sadness" in aware[0].content
     assert plan == default_preview_plan()
 

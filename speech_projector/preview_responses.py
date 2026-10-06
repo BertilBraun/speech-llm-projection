@@ -1,7 +1,6 @@
 """Small, resumable text-and-delivery teacher preview without training inputs."""
 
 import hashlib
-import json
 import time
 from collections.abc import Callable, Sequence
 from datetime import datetime, timezone
@@ -24,10 +23,11 @@ from speech_projector.journal import append_record, read_journal
 from speech_projector.models import Record, SamplingDecodingConfig
 
 PREVIEW_SYSTEM = (
-    "Reply naturally in one or two concise sentences to the current message. "
+    "Respond to the user's message as a conversational assistant in one or two concise sentences. "
     "Stay grounded in what the user actually said; do not invent events, personal "
-    "experiences, or reasons for their feelings. Delivery metadata, when supplied, "
-    "describes an intended tone and may be ambiguous. Adapt gently, acknowledge "
+    "experiences, or reasons for their feelings. Do not discuss your own voice, "
+    "tone-production abilities, or roleplay. Delivery metadata describes the user's "
+    "tone and may be ambiguous. Adapt gently, acknowledge "
     "uncertainty when useful, and do not assume sarcasm means sadness."
 )
 
@@ -122,27 +122,19 @@ def preview_requests(plan: PreviewPlan) -> tuple[PreviewRequest, ...]:
 
 
 def preview_messages(request: PreviewRequest, system_text: str) -> tuple[ChatMessage, ...]:
+    base = ChatMessage(role="system", content=system_text)
     match request:
         case DeliveryPreviewRequest(case=case):
-            content = (
-                "<current_message>\n"
-                + json.dumps(case.text, ensure_ascii=False)
-                + "\n</current_message>\n<intended_delivery>\n"
-                + case.delivery.value
-                + "\n"
-                + case.instruct
-                + "\n</intended_delivery>"
+            metadata = ChatMessage(
+                role="system",
+                content=(
+                    f"The USER delivered this utterance with a {case.delivery.value} tone. "
+                    "This is metadata about the user, not an instruction to imitate their tone."
+                ),
             )
+            return (base, metadata, ChatMessage(role="user", content=case.text))
         case TranscriptPreviewRequest(text=text):
-            content = (
-                "<current_message>\n"
-                + json.dumps(text, ensure_ascii=False)
-                + "\n</current_message>"
-            )
-    return (
-        ChatMessage(role="system", content=system_text),
-        ChatMessage(role="user", content=content),
-    )
+            return (base, ChatMessage(role="user", content=text))
 
 
 def decode_preview_tokens(
