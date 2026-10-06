@@ -84,14 +84,19 @@ def render_comparison(manifest: TtsPilotManifest, models: tuple[ModelResults, ..
         "RTF = generation seconds / generated audio seconds; lower is faster.",
         "Generation includes the synthesis call and codec, excludes WAV writing,",
         "downloads, initialization and the separately recorded warmup.",
+        "Index reference preparation occurs inside warmup; its separately recorded zero",
+        "does not mean reference conditioning is free. Neu loads bundled codes separately.",
+        "Startup scopes differ slightly: Index initializes CUDA before its constructor",
+        "clock; Neu includes its first device initialization in the constructor clock.",
         "",
         "The intended neutral IndexTTS control uses the calm vector. Angry is not",
         "silently relabelled as frustrated. The voice is fixed within each model;",
         "IndexTTS clones the bundled NeuTTS Paul reference, without guaranteed voice parity.",
         "This is a listening pilot, not verified emotion labels or a training dataset.",
         "",
-        "| Model | Clips | Generation s | Audio s | Aggregate RTF | Startup s | Warmup s |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Model | Clips | Generation s | Audio s | Aggregate RTF | "
+        "Startup s | Reference s | Warmup s |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for model in models:
         audit = verify_results(manifest, model)
@@ -99,6 +104,7 @@ def render_comparison(manifest: TtsPilotManifest, models: tuple[ModelResults, ..
             f"| {audit.model_repository} | {audit.clip_count} | "
             f"{audit.generation_seconds:.3f} | {audit.audio_seconds:.3f} | "
             f"{audit.aggregate_real_time_factor:.3f} | {audit.startup_seconds:.3f} | "
+            f"{audit.reference_preparation_seconds:.3f} | "
             f"{audit.warmup_generation_seconds:.3f} |"
         )
     for case in manifest.cases:
