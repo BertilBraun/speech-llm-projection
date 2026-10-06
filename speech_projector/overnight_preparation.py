@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import TypeVar
+from typing import Literal, TypeVar
 
 import soundfile
 from pydantic import Field
@@ -86,6 +86,18 @@ class CohortCoverage(Record):
     duration_seconds: Distribution
 
 
+class StudentPromptOverlap(Record):
+    prompt_sha256: str
+    protected_split: Literal[Split.VALIDATION, Split.TEST]
+    protected_example_ids: tuple[str, ...]
+
+
+class OrdinaryTrainingDialogueExclusion(Record):
+    dialogue_id: str
+    example_ids: tuple[str, ...]
+    overlaps: tuple[StudentPromptOverlap, ...]
+
+
 class CombinedPreparation(Record):
     configuration: OvernightPreparationConfig
     source_commit: str
@@ -97,6 +109,8 @@ class CombinedPreparation(Record):
     fixed_test: FileArtifact
     coverage: tuple[CohortCoverage, ...]
     exclusions: tuple[PairExclusion, ...]
+    ordinary_prompt_exclusions: tuple[OrdinaryTrainingDialogueExclusion, ...]
+    ordinary_prompt_excluded_examples: int
     cached_features_reused: int
     missing_features: int
     ordinary_asr_reused: int
@@ -110,6 +124,12 @@ class PreparedRows:
     sources: tuple[SourceSidecar, ...]
     audio: tuple[FileArtifact, ...]
     exclusions: tuple[PairExclusion, ...]
+
+
+@dataclass(frozen=True)
+class FilteredOrdinaryRows:
+    examples: tuple[Example, ...]
+    exclusions: tuple[OrdinaryTrainingDialogueExclusion, ...]
 
 
 def load_records(path: Path, record_type: type[TRecord]) -> tuple[TRecord, ...]:
@@ -356,6 +376,68 @@ def neu_rows(config: NeuSourceConfig, output: Path) -> PreparedRows:
     return PreparedRows(tuple(examples), tuple(sources), tuple(audio), tuple(exclusions))
 
 
+def student_prompt_digest(example: Example) -> str:
+    return hashlib.sha256(
+        (
+            example.prompt.model_dump_json()
+            + "\n"
+            + "\n".join(f"{turn.role.value}:{turn.text}" for turn in example.history[-2:])
+            + "\n"
+            + re.sub(r"\s+", " ", example.user_text.strip().casefold())
+        ).encode()
+    ).hexdigest()
+
+
+def filter_ordinary_prompt_collisions(examples: tuple[Example, ...]) -> FilteredOrdinaryRows:
+    dialogues: dict[str, list[Example]] = {}
+    for example in examples:
+        group = dialogues.setdefault(example.dialogue_id, [])
+        if group and group[0].split != example.split:
+            raise ValueError(f"An ordinary conversation crosses splits: {example.dialogue_id}")
+        group.append(example)
+    heldout_prompts: dict[str, list[Example]] = {}
+    for split in (Split.TEST, Split.VALIDATION):
+        for example in examples:
+            if example.split == split:
+                group = heldout_prompts.setdefault(student_prompt_digest(example), [])
+                if group and group[0].split != split:
+                    raise ValueError(
+                        "An exact normalized heldout student prompt crosses splits: "
+                        f"{example.example_id}"
+                    )
+                group.append(example)
+    exclusions: list[OrdinaryTrainingDialogueExclusion] = []
+    for identifier, group in dialogues.items():
+        if group[0].split != Split.TRAIN:
+            continue
+        overlaps: list[StudentPromptOverlap] = []
+        for digest in sorted({student_prompt_digest(example) for example in group}):
+            protected = heldout_prompts.get(digest, ())
+            if protected:
+                overlaps.append(
+                    StudentPromptOverlap(
+                        prompt_sha256=digest,
+                        protected_split=protected[0].split,
+                        protected_example_ids=tuple(example.example_id for example in protected),
+                    )
+                )
+        if overlaps:
+            exclusions.append(
+                OrdinaryTrainingDialogueExclusion(
+                    dialogue_id=identifier,
+                    example_ids=tuple(example.example_id for example in group),
+                    overlaps=tuple(overlaps),
+                )
+            )
+    excluded_dialogues = {record.dialogue_id for record in exclusions}
+    return FilteredOrdinaryRows(
+        examples=tuple(
+            example for example in examples if example.dialogue_id not in excluded_dialogues
+        ),
+        exclusions=tuple(exclusions),
+    )
+
+
 def validate_boundaries(examples: Sequence[Example], audio: Sequence[FileArtifact]) -> None:
     if len({row.example_id for row in examples}) != len(examples):
         raise ValueError("Combined example identifiers must be unique")
@@ -367,15 +449,7 @@ def validate_boundaries(examples: Sequence[Example], audio: Sequence[FileArtifac
         previous = dialogue_splits.setdefault(example.dialogue_id, example.split)
         if previous != example.split:
             raise ValueError(f"Conversation/scenario family crosses splits: {example.dialogue_id}")
-        key = hashlib.sha256(
-            (
-                example.prompt.model_dump_json()
-                + "\n"
-                + "\n".join(f"{turn.role.value}:{turn.text}" for turn in example.history[-2:])
-                + "\n"
-                + re.sub(r"\s+", " ", example.user_text.strip().casefold())
-            ).encode()
-        ).hexdigest()
+        key = student_prompt_digest(example)
         if prompt_splits.setdefault(key, example.split) != example.split:
             raise ValueError(
                 f"An exact normalized student prompt crosses splits: {example.example_id}"
@@ -414,6 +488,8 @@ def prepare_combined(config: OvernightPreparationConfig, source_commit: str) -> 
         )
         for row in ordinary
     )
+    filtered_ordinary = filter_ordinary_prompt_collisions(ordinary)
+    ordinary = filtered_ordinary.examples
     ordinary_sources = tuple(
         OrdinaryExampleSource(
             example_id=row.example_id,
@@ -481,6 +557,10 @@ def prepare_combined(config: OvernightPreparationConfig, source_commit: str) -> 
         fixed_test=artifact(root / "fixed_test.jsonl"),
         coverage=coverage,
         exclusions=qwen.exclusions + neu.exclusions,
+        ordinary_prompt_exclusions=filtered_ordinary.exclusions,
+        ordinary_prompt_excluded_examples=sum(
+            len(record.example_ids) for record in filtered_ordinary.exclusions
+        ),
         cached_features_reused=sum(row.feature_path.exists() for row in examples),
         missing_features=sum(not row.feature_path.exists() for row in examples),
         ordinary_asr_reused=len(reused_asr),

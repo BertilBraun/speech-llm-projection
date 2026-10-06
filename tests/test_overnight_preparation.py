@@ -22,16 +22,20 @@ from speech_projector.models import (
     AsrTranscript,
     ChatPromptConfig,
     Example,
+    Role,
     Split,
     SystemPromptConfig,
+    Turn,
 )
 from speech_projector.overnight_data import OrdinaryExampleSource
 from speech_projector.overnight_preparation import (
     QwenSourceConfig,
     artifact,
+    filter_ordinary_prompt_collisions,
     load_records,
     qwen_rows,
     reuse_ordinary_asr,
+    student_prompt_digest,
     validate_boundaries,
     write_immutable,
     write_records,
@@ -203,3 +207,82 @@ def test_ordinary_asr_reuses_recognized_text_under_namespaced_ids(tmp_path: Path
         AsrTranscript(example_id="ordinary:first", text=rows[0].text),
     )
     assert path.read_bytes() == before
+
+
+def test_prompt_overlap_filters_entire_train_dialogue_and_preserves_source_and_heldouts(
+    tmp_path: Path,
+) -> None:
+    train = ordinary("train", Split.TRAIN, tmp_path / "train.wav").model_copy(
+        update={"user_text": "Please explain the Roaring Twenties."}
+    )
+    other_train_turn = ordinary("other", Split.TRAIN, tmp_path / "other.wav").model_copy(
+        update={"dialogue_id": train.dialogue_id}
+    )
+    heldout = ordinary("test", Split.TEST, tmp_path / "test.wav").model_copy(
+        update={"user_text": " Please explain the roaring twenties. "}
+    )
+    validation = ordinary("validation", Split.VALIDATION, tmp_path / "validation.wav")
+    retained = ordinary("retained", Split.TRAIN, tmp_path / "retained.wav")
+    source = (train, other_train_turn, heldout, validation, retained)
+    source_path = tmp_path / "source.jsonl"
+    write_records(source_path, source)
+    original_bytes = source_path.read_bytes()
+    filtered = filter_ordinary_prompt_collisions(source)
+    assert filtered.examples == (heldout, validation, retained)
+    assert source_path.read_bytes() == original_bytes
+    assert len(filtered.exclusions) == 1
+    exclusion = filtered.exclusions[0]
+    assert exclusion.dialogue_id == train.dialogue_id
+    assert exclusion.example_ids == (train.example_id, other_train_turn.example_id)
+    assert exclusion.overlaps[0].protected_split == Split.TEST
+    assert exclusion.overlaps[0].protected_example_ids == (heldout.example_id,)
+    assert exclusion.overlaps[0].prompt_sha256 == student_prompt_digest(train)
+    assert filtered == filter_ordinary_prompt_collisions(source)
+    audio = tuple(
+        FileArtifact(
+            path=row.audio_path, source_path=row.audio_path, bytes=1, sha256=row.example_id
+        )
+        for row in filtered.examples
+    )
+    validate_boundaries(filtered.examples, audio)
+
+
+def test_prompt_filter_uses_last_two_turns_and_generic_policy_only(tmp_path: Path) -> None:
+    suffix = (
+        Turn(role=Role.USER, text="Earlier user."),
+        Turn(role=Role.ASSISTANT, text="Earlier reply."),
+    )
+    train = ordinary("train", Split.TRAIN, tmp_path / "train.wav").model_copy(
+        update={
+            "history": (Turn(role=Role.USER, text="Different older train history."),) + suffix,
+            "user_text": "Same current words.",
+        }
+    )
+    heldout = ordinary("test", Split.TEST, tmp_path / "test.wav").model_copy(
+        update={
+            "history": (Turn(role=Role.USER, text="Different older test history."),) + suffix,
+            "user_text": train.user_text,
+        }
+    )
+    assert filter_ordinary_prompt_collisions((train, heldout)).examples == (heldout,)
+    other_policy = train.model_copy(
+        update={"prompt": SystemPromptConfig(system_text="Other policy")}
+    )
+    assert filter_ordinary_prompt_collisions((other_policy, heldout)).examples == (
+        other_policy,
+        heldout,
+    )
+
+
+def test_prompt_filter_keeps_heldout_and_dialogue_leakage_guards_strict(tmp_path: Path) -> None:
+    validation = ordinary("validation", Split.VALIDATION, tmp_path / "validation.wav")
+    test = ordinary("test", Split.TEST, tmp_path / "test.wav").model_copy(
+        update={"user_text": validation.user_text}
+    )
+    with pytest.raises(ValueError, match="heldout student prompt crosses splits"):
+        filter_ordinary_prompt_collisions((validation, test))
+    train = ordinary("train", Split.TRAIN, tmp_path / "train.wav").model_copy(
+        update={"dialogue_id": validation.dialogue_id}
+    )
+    with pytest.raises(ValueError, match="conversation crosses splits"):
+        filter_ordinary_prompt_collisions((validation, train))
