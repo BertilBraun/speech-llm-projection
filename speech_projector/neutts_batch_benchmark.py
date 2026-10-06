@@ -1,11 +1,12 @@
 """SDK-independent records for the bounded NeuTTS backbone batching benchmark."""
 
+from collections.abc import Callable
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from scripts.neutts_pilot_state import NeuTtsPilotConfig, digest
-from speech_projector.tts_pilot import PilotTermination, TtsPilotClip
+from speech_projector.tts_pilot import PilotTermination, TtsPilotCase, TtsPilotClip
 
 
 class NeuTtsBenchmarkConfig(BaseModel):
@@ -83,6 +84,12 @@ def completed_tokens(
         index = generated.index(end_token)
         return generated[: index + 1], PilotTermination.STOP
     return generated, PilotTermination.TOKEN_LIMIT
+
+
+def prompt_emotions(
+    cases: tuple[TtsPilotCase, ...], checker: Callable[[str], str | None]
+) -> tuple[str | None, ...]:
+    return tuple(checker(case.emotion.value) for case in cases)
 
 
 def verify_recorded_audio(result: NeuTtsBenchmarkResult, directory: Path) -> None:

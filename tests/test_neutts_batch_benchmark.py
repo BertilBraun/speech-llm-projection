@@ -11,6 +11,7 @@ from speech_projector.neutts_batch_benchmark import (
     BatchMeasurement,
     NeuTtsBenchmarkConfig,
     completed_tokens,
+    prompt_emotions,
 )
 from speech_projector.tts_pilot import PilotEmotion, PilotTermination, TtsPilotCase, TtsPilotClip
 
@@ -27,6 +28,27 @@ def test_completed_tokens_retains_eos(
     tokens: tuple[int, ...], expected: tuple[int, ...], termination: PilotTermination
 ) -> None:
     assert completed_tokens(tokens, 99) == (expected, termination)
+
+
+def test_prompt_control_uses_provider_neutral_normalization() -> None:
+    checked: list[str] = []
+
+    def sdk_checker(emotion: str) -> str | None:
+        checked.append(emotion)
+        return None if emotion == "neutral" else emotion
+
+    cases = tuple(
+        TtsPilotCase(
+            case_id=emotion.value,
+            utterance_id="same",
+            text="The same literal sentence.",
+            emotion=emotion,
+            seed=42,
+        )
+        for emotion in (PilotEmotion.NEUTRAL, PilotEmotion.HAPPY, PilotEmotion.SAD)
+    )
+    assert prompt_emotions(cases, sdk_checker) == (None, "happy", "sad")
+    assert checked == ["neutral", "happy", "sad"]
 
 
 def test_batch_aggregate_uses_wall_time_once() -> None:

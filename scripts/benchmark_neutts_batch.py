@@ -24,6 +24,7 @@ from speech_projector.neutts_batch_benchmark import (
     NeuTtsBenchmarkConfig,
     NeuTtsBenchmarkResult,
     completed_tokens,
+    prompt_emotions,
     verify_recorded_audio,
 )
 from speech_projector.tts_pilot import (
@@ -69,9 +70,10 @@ def synthesize_batch(
     generation_token_cap = backbone.generation_config.max_new_tokens
     torch.cuda.synchronize()
     started = perf_counter()
+    emotions = prompt_emotions(cases, model._check_emotion)
     prompts: tuple[list[int], ...] = tuple(
-        model._apply_chat_template(reference_codes, reference_text, case.text, case.emotion.value)
-        for case in cases
+        model._apply_chat_template(reference_codes, reference_text, case.text, emotion)
+        for case, emotion in zip(cases, emotions, strict=True)
     )
     width = max(len(prompt) for prompt in prompts)
     if width + 50 >= model.max_context:
