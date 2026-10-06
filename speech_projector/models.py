@@ -11,6 +11,13 @@ class Record(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
 
+class FileArtifact(Record):
+    path: Path
+    source_path: Path
+    bytes: int
+    sha256: str
+
+
 class Role(str, Enum):
     USER = "user"
     ASSISTANT = "assistant"

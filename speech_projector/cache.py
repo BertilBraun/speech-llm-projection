@@ -3,6 +3,8 @@
 import argparse
 import math
 import time
+from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 import torch
@@ -10,8 +12,9 @@ from pydantic import Field
 from transformers import WhisperFeatureExtractor, WhisperForConditionalGeneration, WhisperTokenizer
 from transformers.modeling_outputs import BaseModelOutput
 
+from scripts.inventory_results import stable_digest, write_record
 from speech_projector.data import load_audio, load_examples
-from speech_projector.models import AsrTranscript, Example, Record, Split
+from speech_projector.models import AsrTranscript, Example, FileArtifact, Record, Split
 
 
 class CacheConfig(Record):
@@ -44,6 +47,121 @@ class CacheStatistics(Record):
     masking: str
 
 
+@dataclass(frozen=True)
+class AudioFeatureInput:
+    audio_path: Path
+    feature_path: Path
+
+
+class AdditionalAudioFeature(Record):
+    audio: FileArtifact
+    features: FileArtifact
+    audio_seconds: float
+    valid_frames: int
+
+
+class AdditionalAudioStatistics(Record):
+    entries: tuple[AdditionalAudioFeature, ...]
+    extracted_count: int
+    feature_bytes: int
+    extraction_seconds: float
+    wall_seconds: float
+
+
+def feature_artifact(path: Path) -> FileArtifact:
+    size, digest = stable_digest(path)
+    return FileArtifact(path=path, source_path=path.resolve(), bytes=size, sha256=digest)
+
+
+def save_encoder_feature(
+    states: torch.Tensor, audio_samples: int, native_rate: float, path: Path
+) -> int:
+    valid_frames = min(states.shape[0], math.ceil(audio_samples / 16000 * native_rate))
+    hidden = states[:valid_frames].to(device="cpu", dtype=torch.bfloat16).contiguous()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    partial = path.with_suffix(".part")
+    torch.save(hidden, partial)
+    partial.replace(path)
+    return valid_frames
+
+
+@torch.inference_mode()
+def extract_additional_audio(
+    configuration: CacheConfig,
+    inputs: Sequence[AudioFeatureInput],
+    model: WhisperForConditionalGeneration,
+    extractor: WhisperFeatureExtractor,
+    native_rate: float,
+) -> AdditionalAudioStatistics:
+    if len({item.feature_path for item in inputs}) != len(inputs):
+        raise ValueError("Additional audio feature destinations must be unique")
+    started = time.monotonic()
+    entries: list[AdditionalAudioFeature] = []
+    pending: list[AudioFeatureInput] = []
+    for item in inputs:
+        receipt = item.feature_path.with_suffix(".receipt.json")
+        if receipt.exists():
+            entry = AdditionalAudioFeature.model_validate_json(receipt.read_bytes())
+            if entry.audio != feature_artifact(
+                item.audio_path
+            ) or entry.features != feature_artifact(item.feature_path):
+                raise ValueError(
+                    "Additional audio or cached feature differs from its committed receipt"
+                )
+            entries.append(entry)
+        else:
+            pending.append(item)
+    extraction_seconds = 0.0
+    dtype = next(model.parameters()).dtype
+    for offset in range(0, len(pending), configuration.batch_size):
+        batch = pending[offset : offset + configuration.batch_size]
+        audio = [load_audio(item.audio_path) for item in batch]
+        if any(not 0 < len(waveform) <= 16000 * 30 for waveform in audio):
+            raise ValueError(
+                "Additional audio must have positive duration and fit Whisper's 30-second window"
+            )
+        encoded = extractor(
+            audio,
+            sampling_rate=16000,
+            return_tensors="pt",
+            padding="max_length",
+            return_attention_mask=True,
+        )
+        features = encoded.input_features.to(device=configuration.device, dtype=dtype)
+        if configuration.device == "cuda":
+            torch.cuda.synchronize()
+        extraction_started = time.monotonic()
+        output: BaseModelOutput = model.model.encoder(features, return_dict=True)
+        if configuration.device == "cuda":
+            torch.cuda.synchronize()
+        extraction_seconds += time.monotonic() - extraction_started
+        for index, item in enumerate(batch):
+            frames = save_encoder_feature(
+                output.last_hidden_state[index], len(audio[index]), native_rate, item.feature_path
+            )
+            entry = AdditionalAudioFeature(
+                audio=feature_artifact(item.audio_path),
+                features=feature_artifact(item.feature_path),
+                audio_seconds=len(audio[index]) / 16000,
+                valid_frames=frames,
+            )
+            write_record(item.feature_path.with_suffix(".receipt.json"), entry)
+            entries.append(entry)
+    by_path = {entry.features.path: entry for entry in entries}
+    result = AdditionalAudioStatistics(
+        entries=tuple(by_path[item.feature_path] for item in inputs),
+        extracted_count=len(pending),
+        feature_bytes=sum(entry.features.bytes for entry in entries),
+        extraction_seconds=extraction_seconds,
+        wall_seconds=time.monotonic() - started,
+    )
+    statistics_path = configuration.root / "additional_audio_cache.json"
+    if pending or not statistics_path.exists():
+        write_record(statistics_path, result)
+    print(result.model_dump_json(indent=2), flush=True)
+    return result
+
+
 def load_feature(path: Path) -> torch.Tensor:
     return torch.load(path, map_location="cpu", weights_only=True)
 
@@ -64,7 +182,9 @@ def select_examples(configuration: CacheConfig) -> list[Example]:
     )
 
 
-def extract_features(configuration: CacheConfig) -> CacheStatistics:
+def extract_features(
+    configuration: CacheConfig, *, additional_audio: Sequence[AudioFeatureInput] = ()
+) -> CacheStatistics:
     examples = select_examples(configuration)
     transcripts_path = configuration.root / "asr_transcripts.jsonl"
     transcripts = load_asr(transcripts_path)
@@ -122,19 +242,12 @@ def extract_features(configuration: CacheConfig) -> CacheStatistics:
             for index, example in enumerate(batch):
                 if example.feature_path.exists():
                     continue
-                valid_frames = min(
-                    outputs.last_hidden_state.shape[1],
-                    math.ceil(len(audio[index]) / 16000 * native_rate),
+                save_encoder_feature(
+                    outputs.last_hidden_state[index],
+                    len(audio[index]),
+                    native_rate,
+                    example.feature_path,
                 )
-                hidden = (
-                    outputs.last_hidden_state[index, :valid_frames]
-                    .to(device="cpu", dtype=torch.bfloat16)
-                    .contiguous()
-                )
-                example.feature_path.parent.mkdir(parents=True, exist_ok=True)
-                partial = example.feature_path.with_suffix(".part")
-                torch.save(hidden, partial)
-                partial.replace(example.feature_path)
                 extracted_count += 1
                 extracted_audio_seconds += len(audio[index]) / 16000
             asr_indices = [
@@ -210,6 +323,8 @@ def extract_features(configuration: CacheConfig) -> CacheStatistics:
     statistics_path = configuration.root / f"cache_stats_{configuration.train_examples}.json"
     statistics_path.write_text(statistics.model_dump_json(indent=2), encoding="utf-8")
     print(statistics.model_dump_json(indent=2), flush=True)
+    if additional_audio:
+        extract_additional_audio(configuration, additional_audio, model, extractor, native_rate)
     return statistics
 
 
@@ -219,6 +334,9 @@ def main() -> None:
     parser.add_argument("--train-examples", type=int, required=True)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--no-asr", action="store_true")
+    parser.add_argument(
+        "--additional-audio", nargs=2, action="append", metavar=("WAV", "FEATURE"), default=[]
+    )
     arguments = parser.parse_args()
     extract_features(
         CacheConfig(
@@ -226,7 +344,11 @@ def main() -> None:
             train_examples=arguments.train_examples,
             batch_size=arguments.batch_size,
             transcribe_heldout=not arguments.no_asr,
-        )
+        ),
+        additional_audio=tuple(
+            AudioFeatureInput(Path(audio), Path(feature))
+            for audio, feature in arguments.additional_audio
+        ),
     )
 
 

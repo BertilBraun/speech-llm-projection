@@ -6,8 +6,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 
-from scripts.package_results import FileArtifact
-from speech_projector.models import Record
+from speech_projector.models import FileArtifact, Record
 
 INVENTORY_PATH = Path("reproducibility/results_inventory.json")
 VERIFICATION_PATH = Path("reproducibility/results_inventory_verification.json")

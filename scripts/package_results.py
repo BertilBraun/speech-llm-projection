@@ -14,7 +14,7 @@ from huggingface_hub.hf_api import HfApi, RepoFile, RepoFolder
 
 from speech_projector.cache import CacheStatistics, load_asr
 from speech_projector.data import DATASET_URL, load_examples
-from speech_projector.models import Record, Split
+from speech_projector.models import FileArtifact, Record, Split
 
 DATASET_ARTIFACTS = (
     "metadata.parquet",
@@ -35,13 +35,6 @@ class PackageConfiguration:
     dataset_root: Path
     results_root: Path
     hugging_face_hub: Path
-
-
-class FileArtifact(Record):
-    path: Path
-    source_path: Path
-    bytes: int
-    sha256: str
 
 
 class AudioArtifact(Record):
