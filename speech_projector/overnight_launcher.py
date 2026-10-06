@@ -4,6 +4,7 @@ import argparse
 import math
 import time
 import traceback
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -82,6 +83,26 @@ class ContinuationStop(Record):
     selected_sweep: str
     last_completed_run: str
     reason: str
+
+
+@dataclass(frozen=True)
+class ContinuationBudget:
+    remaining_updates: int
+    seconds_per_update: float
+    minimum_final_pass_reserve_seconds: float
+
+
+def continuation_fits_budget(
+    configuration: OvernightSuiteConfig, budget: ContinuationBudget, current_time: float
+) -> bool:
+    estimated_seconds = budget.remaining_updates * budget.seconds_per_update + 120
+    return (
+        current_time
+        + estimated_seconds
+        + budget.minimum_final_pass_reserve_seconds
+        + configuration.finalization_reserve_seconds
+        <= configuration.deadline_unix_time
+    )
 
 
 class OvernightCompletion(Record):
@@ -443,7 +464,12 @@ def execute_sweep(
     stops: list[ContinuationStop] = []
     updates_per_epoch = math.ceil(len(training) / 8)
 
-    def continue_to(source: SweepCandidate, name: str, updates: int) -> SweepCandidate | None:
+    def continue_to(
+        source: SweepCandidate,
+        name: str,
+        updates: int,
+        minimum_final_pass_reserve_seconds: float,
+    ) -> SweepCandidate | None:
         source_config = source.configuration
         source_result = RunResult.model_validate_json(
             (config.output_root / source_config.name / "result.json").read_bytes()
@@ -459,17 +485,22 @@ def execute_sweep(
             if (destination / "checkpoint" / "state.json").exists()
             else source_result.steps
         )
-        estimate = (updates - current_steps) * source.training_seconds_per_update + 120
-        if (
-            not (destination / "candidate.json").exists()
-            and time.time() + estimate + config.finalization_reserve_seconds
-            > config.deadline_unix_time
+        budget = ContinuationBudget(
+            remaining_updates=updates - current_steps,
+            seconds_per_update=source.training_seconds_per_update,
+            minimum_final_pass_reserve_seconds=minimum_final_pass_reserve_seconds,
+        )
+        if not (destination / "candidate.json").exists() and not continuation_fits_budget(
+            config, budget, time.time()
         ):
             stops.append(
                 ContinuationStop(
                     selected_sweep=source_config.name,
                     last_completed_run=source_config.name,
-                    reason="Insufficient budget for continuation plus finalization reserve",
+                    reason=(
+                        "Insufficient budget for continuation, minimum final pass, "
+                        "and finalization reserve"
+                    ),
                 )
             )
             write_record(config.output_root / "budget_stop.json", stops[-1])
@@ -479,8 +510,15 @@ def execute_sweep(
         )
         return execute(continuation_config)
 
+    minimum_final_pass_reserve_seconds = (
+        max(updates_per_epoch - 4000, 0)
+        * max(candidate.training_seconds_per_update for candidate in candidates)
+        + 120
+    )
     for name in selected_names:
-        continued = continue_to(latest[name], f"{name}_updates4000", 4000)
+        continued = continue_to(
+            latest[name], f"{name}_updates4000", 4000, minimum_final_pass_reserve_seconds
+        )
         if continued is not None:
             latest[name] = continued
     shortlist = select_sweep(tuple(latest.values()), config.selection)
@@ -501,7 +539,7 @@ def execute_sweep(
         ).steps
         if current_steps >= updates:
             continue
-        continued = continue_to(winner, f"{shortlist.quality_leader}_epoch{epoch}", updates)
+        continued = continue_to(winner, f"{shortlist.quality_leader}_epoch{epoch}", updates, 0)
         if continued is None:
             break
         improvement = (

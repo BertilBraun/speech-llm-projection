@@ -13,7 +13,13 @@ from speech_projector.overnight_data import (
     SourceSidecar,
 )
 from speech_projector.overnight_judge import FinalJudgingQuota
-from speech_projector.overnight_launcher import final_evaluation_config, select_final_evaluation
+from speech_projector.overnight_launcher import (
+    ContinuationBudget,
+    OvernightSuiteConfig,
+    continuation_fits_budget,
+    final_evaluation_config,
+    select_final_evaluation,
+)
 from speech_projector.tts_pilot import PilotEmotion
 
 
@@ -128,3 +134,32 @@ def test_final_selection_rejects_missing_complete_pairs() -> None:
             tuple(source for source in sources if source.example_id in identifiers),
             FinalJudgingQuota(),
         )
+
+
+def test_optional_compact_continuation_cannot_consume_minimum_winner_pass_budget() -> None:
+    configuration = OvernightSuiteConfig(
+        data_root=Path("data"),
+        output_root=Path("results"),
+        deadline_unix_time=18000,
+        finalization_reserve_seconds=3600,
+    )
+    optional_without_minimum = ContinuationBudget(
+        remaining_updates=2000,
+        seconds_per_update=2,
+        minimum_final_pass_reserve_seconds=0,
+    )
+    optional_with_minimum = ContinuationBudget(
+        remaining_updates=2000,
+        seconds_per_update=2,
+        minimum_final_pass_reserve_seconds=(4775 - 4000) * 2 + 120,
+    )
+    winner_full_pass = ContinuationBudget(
+        remaining_updates=4775 - 4000,
+        seconds_per_update=2,
+        minimum_final_pass_reserve_seconds=0,
+    )
+    assert continuation_fits_budget(configuration, optional_without_minimum, 10000)
+    assert not continuation_fits_budget(configuration, optional_with_minimum, 10000)
+    assert continuation_fits_budget(configuration, winner_full_pass, 10000)
+    assert continuation_fits_budget(configuration, winner_full_pass, 12730)
+    assert not continuation_fits_budget(configuration, winner_full_pass, 12731)
