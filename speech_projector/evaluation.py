@@ -249,7 +249,7 @@ def evaluate(
         losses.append(_record_loss(wrapper, example, condition, utterance))
         match utterance:
             case SpeechInput(embeddings=embeddings) if diagnostics and index < min(
-                32, len(examples)
+                config.conditioning_examples, len(examples)
             ):
                 assert projector is not None
                 shuffled = projector(
@@ -379,7 +379,8 @@ def evaluate(
     paired_losses = [
         loss
         for loss in losses
-        if loss.example_id in {example.example_id for example in examples[:32]}
+        if loss.example_id
+        in {example.example_id for example in examples[: config.conditioning_examples]}
     ]
     diagnostic_results = (
         tuple(

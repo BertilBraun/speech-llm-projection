@@ -91,6 +91,15 @@ ProjectorConfig: TypeAlias = Annotated[
 ]
 
 
+class PromptConfig(Record):
+    system_text: str = Field(
+        default=(
+            "You are a helpful conversational assistant. Reply naturally to the user's utterance."
+        ),
+        min_length=1,
+    )
+
+
 class RunConfig(Record):
     name: str
     stage: ExperimentStage
@@ -98,6 +107,7 @@ class RunConfig(Record):
     train_examples: int = Field(gt=0)
     validation_examples: int = 128
     test_examples: int = 128
+    training_validation_examples: int | None = Field(default=None, gt=0)
     epochs: int = Field(gt=0)
     learning_rate: float = Field(gt=0)
     microbatch_size: int = 1
@@ -112,8 +122,10 @@ class RunConfig(Record):
     checkpoint_interval: int = 100
     qualitative_examples: int = 16
     semantic_examples: int = 48
+    conditioning_examples: int = Field(default=32, ge=1)
     model_name: str = "Qwen/Qwen3.5-2B"
     speech_model_name: str = "openai/whisper-small"
+    prompt: PromptConfig = PromptConfig()
     projector: ProjectorConfig
 
 

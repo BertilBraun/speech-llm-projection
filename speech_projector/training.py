@@ -220,6 +220,11 @@ def train_run(
         else None
     )
     fixed_training_examples = examples[:128]
+    checkpoint_validation = (
+        validation[: config.training_validation_examples]
+        if config.training_validation_examples is not None
+        else validation
+    )
     if wrapper.device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(wrapper.device)
     if (checkpoint_dir / "state.json").exists():
@@ -233,7 +238,7 @@ def train_run(
             )
         )
     else:
-        initial = validation_loss(wrapper, projector, validation)
+        initial = validation_loss(wrapper, projector, checkpoint_validation)
         initial_training = validation_loss(wrapper, projector, fixed_training_examples)
         state = TrainingState(
             epoch=0,
@@ -290,7 +295,7 @@ def train_run(
             )
             measured_validation = None
             if step % config.evaluation_interval == 0:
-                measured_validation = validation_loss(wrapper, projector, validation)
+                measured_validation = validation_loss(wrapper, projector, checkpoint_validation)
                 best_validation = _save_best_validation(
                     output_dir, projector, step, measured_validation, best_validation
                 )
