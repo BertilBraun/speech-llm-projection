@@ -55,6 +55,24 @@ class NeuToneJudgeRequest(Record):
     intended_tone: PilotEmotion
 
 
+class ToneCalibrationCase(Record):
+    request: NeuToneJudgeRequest
+    expected_acceptable: bool
+
+
+class ToneCalibrationResult(Record):
+    configuration: JudgeConfig
+    cases_sha256: str
+    requested: int
+    valid: int
+    correct_acceptability: int
+    preference_requests: int
+    preference_correct: int
+    passed: bool
+    runtime_seconds: float
+    peak_pytorch_allocated_decimal_gb: float
+
+
 class PastUserDelivery(Record):
     history_index: int = Field(ge=0)
     intended_tone: PilotEmotion

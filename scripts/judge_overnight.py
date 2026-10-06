@@ -12,12 +12,13 @@ from pydantic import TypeAdapter
 
 from speech_projector.journal import read_journal
 from speech_projector.judge import JudgeConfig, JudgeRequest, LocalJudge
-from speech_projector.models import Record
 from speech_projector.overnight_judge import (
     FinalJudgingProgram,
     FinalJudgingSet,
     NeuToneJudgeRequest,
     ResponseChoice,
+    ToneCalibrationCase,
+    ToneCalibrationResult,
     ToneJudgeRequest,
     ToneJudgeSuccess,
     TonePairJudgeRequest,
@@ -29,24 +30,6 @@ from speech_projector.overnight_judge import (
     summarize_tone_judgments,
 )
 from speech_projector.tts_pilot import PilotEmotion
-
-
-class ToneCalibrationCase(Record):
-    request: NeuToneJudgeRequest
-    expected_acceptable: bool
-
-
-class ToneCalibrationResult(Record):
-    configuration: JudgeConfig
-    cases_sha256: str
-    requested: int
-    valid: int
-    correct_acceptability: int
-    preference_requests: int
-    preference_correct: int
-    passed: bool
-    runtime_seconds: float
-    peak_pytorch_allocated_decimal_gb: float
 
 
 def calibration_cases() -> tuple[ToneCalibrationCase, ...]:

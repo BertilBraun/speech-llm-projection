@@ -14,6 +14,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--final-run-directory", type=Path, action="append", default=[])
     parser.add_argument("--note", action="append", default=[])
+    parser.add_argument("--judge-calibration", type=Path)
     arguments = parser.parse_args()
     print(
         report_overnight(
@@ -24,6 +25,7 @@ def main() -> None:
                 output_directory=arguments.output,
                 final_run_directories=tuple(arguments.final_run_directory),
                 operational_notes=tuple(arguments.note),
+                judge_calibration_directory=arguments.judge_calibration,
             )
         )
     )

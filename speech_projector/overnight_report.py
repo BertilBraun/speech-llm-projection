@@ -3,7 +3,17 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from speech_projector.models import Record, RunResult, SampleGeneration
+from speech_projector.models import (
+    EvaluationCondition,
+    EvaluationMetrics,
+    Record,
+    RunResult,
+    SampleGeneration,
+)
+from speech_projector.overnight_conversation_execution import (
+    ConversationEvaluationProvenance,
+    ConversationEvaluationSummary,
+)
 from speech_projector.overnight_data import (
     NeuEmotionalExampleSource,
     OrdinaryExampleSource,
@@ -11,6 +21,7 @@ from speech_projector.overnight_data import (
     SourceSidecar,
 )
 from speech_projector.overnight_evaluation import SweepDecision
+from speech_projector.overnight_judge import FinalJudgingSummary, ToneCalibrationResult
 from speech_projector.overnight_preparation import CombinedPreparation
 
 
@@ -21,6 +32,7 @@ class OvernightReportConfig(Record):
     output_directory: Path
     final_run_directories: tuple[Path, ...] = ()
     operational_notes: tuple[str, ...] = ()
+    judge_calibration_directory: Path | None = None
 
 
 def _margin(estimate: float, lower: float, upper: float) -> str:
@@ -287,6 +299,184 @@ def render_generations(
     return "\n".join(lines)
 
 
+def render_baselines(results_root: Path) -> str:
+    lines = [
+        "## Recorded words-only references",
+        "",
+        "The ordinary transcript branch has the textual input used by its teacher. Emotional "
+        "text and ASR branches receive words and the generic response policy, without the "
+        "intended-tone metadata used to construct their teacher targets. They are words-only "
+        "comparators, not information-complete emotional upper bounds. Aggregate CE weights "
+        "target tokens and should be compared on identical saved example membership.",
+        "",
+        "| Split | Input | CE examples | CE | Semantic cosine | Generations | Completed / capped |",
+        "| --- | --- | ---: | ---: | ---: | ---: | --- |",
+    ]
+    for split in ("validation", "test"):
+        for condition in (EvaluationCondition.TEXT, EvaluationCondition.ASR):
+            path = results_root / "baseline" / split / condition.value / "evaluation.json"
+            if not path.exists():
+                lines.append(f"| {split} | {condition.value} | Not measured | — | — | — | — |")
+                continue
+            metrics = EvaluationMetrics.model_validate_json(path.read_bytes())
+            semantic = (
+                "—" if metrics.semantic_similarity is None else f"{metrics.semantic_similarity:.4f}"
+            )
+            completed = (
+                "unknown"
+                if metrics.completed_generations is None
+                else str(metrics.completed_generations)
+            )
+            capped = (
+                "unknown"
+                if metrics.token_limited_generations is None
+                else str(metrics.token_limited_generations)
+            )
+            lines.append(
+                f"| {split} | {condition.value} | {metrics.examples} | "
+                f"{metrics.cross_entropy:.4f} | {semantic} | {metrics.generated_examples} | "
+                f"{completed} / {capped} |"
+            )
+    return "\n".join(lines)
+
+
+def render_final_judging(directory: Path, calibration: ToneCalibrationResult | None) -> str:
+    if calibration is None:
+        return (
+            f"Blinded final response judging for {directory.name}: calibration result not "
+            "supplied. Quality rates are not presented without the tone-calibration gate."
+        )
+    gate = (
+        f"Tone calibration: **{'passed' if calibration.passed else 'FAILED'}**; "
+        f"{calibration.correct_acceptability}/{calibration.requested} candidate decisions "
+        f"({calibration.valid} valid JSON outputs), "
+        f"{calibration.preference_correct}/{calibration.preference_requests} paired decisions. "
+        f"Judge: `{calibration.configuration.model_name}` at "
+        f"`{calibration.configuration.revision}`. Calibration wall seconds "
+        f"{calibration.runtime_seconds:.1f}; peak PyTorch allocated decimal GB "
+        f"{calibration.peak_pytorch_allocated_decimal_gb:.3f}."
+    )
+    if not calibration.passed:
+        return gate + " Quality rates are suppressed; raw failed calibration evidence is retained."
+    lines = [
+        f"## Blinded final response judgments — {directory.name}",
+        "",
+        gate,
+        "",
+        "These are compact-model rubric judgments, not human ratings or acoustic emotion "
+        "recognition. The judge sees true words, history and intended emotional annotation, "
+        "even though the words-only generators did not receive that annotation. A successful "
+        "summary requires the dedicated tone calibration gate; the calibration evidence "
+        "and raw judgments remain necessary to assess reliability. Acceptance includes "
+        "failed JSON outputs in its denominator. Emotional intervals resample families "
+        "(95% percentile bootstrap); they omit judge bias and training-seed uncertainty.",
+        "",
+        "| Input | Cohort | Requested / valid / failed | Acceptable | Tone score / 3 | "
+        "Acceptable 95% CI |",
+        "| --- | --- | --- | ---: | ---: | --- |",
+    ]
+    summaries: list[FinalJudgingSummary] = []
+    for condition in (
+        EvaluationCondition.SPEECH,
+        EvaluationCondition.TEXT,
+        EvaluationCondition.ASR,
+    ):
+        path = directory / "judge" / condition.value / "summary.json"
+        if not path.exists():
+            lines.append(f"| {condition.value} | All | Not measured | — | — | — |")
+            continue
+        summary = FinalJudgingSummary.model_validate_json(path.read_bytes())
+        if summary.condition != condition:
+            raise ValueError("Final judge summary condition differs from its output directory")
+        summaries.append(summary)
+        ordinary = summary.ordinary
+        lines.append(
+            f"| {condition.value} | ordinary | {ordinary.requested_examples} / "
+            f"{ordinary.valid_examples} / {ordinary.failed_examples} | "
+            f"{ordinary.acceptable_rate_requested:.1%} | — | Not recorded |"
+        )
+        for cohort, judged in (
+            ("old emotional", summary.old_emotional),
+            ("Neu emotional", summary.new_emotional),
+        ):
+            interval = judged.acceptable_interval
+            lines.append(
+                f"| {condition.value} | {cohort} | {judged.requested} / {judged.valid} / "
+                f"{judged.failed} | {judged.acceptable_rate_requested:.1%} | "
+                f"{judged.tone_appropriateness:.3f} | "
+                f"[{interval.lower:.1%}, {interval.upper:.1%}] |"
+            )
+    lines.extend(
+        [
+            "",
+            "Paired A/B judgments compare the two actual responses to the same words under each "
+            "intended delivery. Slots are blinded and deterministically shuffled. Identical "
+            "responses are counted as ties regardless of an arbitrary judge slot choice. "
+            "This measures whether different responses fit the annotation, not whether listeners "
+            "actually hear that tone.",
+            "",
+            "| Input | Cohort | A/B requested / valid / failed | Matches / ties / mismatches | "
+            "Matching rate 95% CI |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+    )
+    for summary in summaries:
+        for cohort, judged in (
+            ("old emotional", summary.old_preferences),
+            ("Neu emotional", summary.new_preferences),
+        ):
+            interval = judged.matching_win_rate
+            lines.append(
+                f"| {summary.condition.value} | {cohort} | {judged.requested} / {judged.valid} / "
+                f"{judged.failed} | {judged.matching_wins} / {judged.ties} / "
+                f"{judged.matching_losses} | {interval.estimate:.1%} "
+                f"[{interval.lower:.1%}, {interval.upper:.1%}] |"
+            )
+    lines.extend(
+        [
+            "",
+            "| Input | Main judging wall s | Additional A/B judging wall s | Sum s |",
+            "| --- | ---: | ---: | ---: |",
+        ]
+    )
+    for summary in summaries:
+        lines.append(
+            f"| {summary.condition.value} | {summary.main_judging_seconds:.1f} | "
+            f"{summary.paired_judging_seconds:.1f} | "
+            f"{summary.main_judging_seconds + summary.paired_judging_seconds:.1f} |"
+        )
+    lines.extend(
+        ["", "These clocks exclude model loading and calibration; they are not GPU-busy hours."]
+    )
+    return "\n".join(lines)
+
+
+def render_conversation_measurements(directory: Path) -> str:
+    path = directory / "conversation" / "summary.json"
+    if not path.exists():
+        return f"Conversation measurements for {directory.name}: not recorded."
+    summary = ConversationEvaluationSummary.model_validate_json(path.read_bytes())
+    provenance_path = directory / "conversation" / "provenance.json"
+    provenance = ConversationEvaluationProvenance.model_validate_json(provenance_path.read_bytes())
+    evidence_path = directory / "conversation" / "conversation_evidence.md"
+    return (
+        f"Recorded conversation measurements for {directory.name}: {summary.scenarios} paired "
+        f"scenarios, {summary.controlled_responses} controlled replies, {summary.rollouts} "
+        f"practical rollouts ({summary.rollout_responses} replies); "
+        f"{summary.completed_responses} completed and {summary.token_limited_responses} capped "
+        f"responses. Recorded generation wall time: {summary.generation_seconds:.1f} seconds. "
+        f"Evaluation source `{provenance.source_commit}`, projector SHA256 "
+        f"`{provenance.projector_weights_sha256}`, fixture SHA256 `{provenance.fixtures_sha256}`. "
+        f"History budget {provenance.configuration.history_turns} turns / "
+        f"{provenance.configuration.max_history_tokens} tokens. "
+        f"Inspect [saved replies]({(directory / 'conversation' / 'replies.jsonl').as_posix()}) "
+        "and "
+        f"[readable evidence]({evidence_path.as_posix()}); "
+        "counts alone do not establish delayed-cue use. Controlled branches share fixed "
+        "assistant text; practical rollouts can carry the initial cue in generated text."
+    )
+
+
 def report_overnight(configuration: OvernightReportConfig) -> Path:
     preparation = CombinedPreparation.model_validate_json(
         configuration.preparation_path.read_bytes()
@@ -305,6 +495,24 @@ def report_overnight(configuration: OvernightReportConfig) -> Path:
     text = render_overnight_report(
         preparation, decision, results, finals, configuration.operational_notes
     )
+    text += (
+        f"\n\nRecorded selection values: [decision.json]({configuration.decision_path.as_posix()})."
+    )
+    for name in ("compression_sweep.png", "compression_sweep.pdf", "compression_values.csv"):
+        path = configuration.output_directory / name
+        if path.exists():
+            text += f"\n\n[{name}]({path.as_posix()})"
+    text += "\n\n" + render_baselines(configuration.results_root)
+    calibration = (
+        None
+        if configuration.judge_calibration_directory is None
+        else ToneCalibrationResult.model_validate_json(
+            (configuration.judge_calibration_directory / "result.json").read_bytes()
+        )
+    )
+    for directory in configuration.final_run_directories:
+        text += "\n\n" + render_final_judging(directory, calibration)
+        text += "\n\n" + render_conversation_measurements(directory)
     configuration.output_directory.mkdir(parents=True, exist_ok=True)
     destination = configuration.output_directory / "research_report.md"
     destination.write_text(text, encoding="utf-8")
