@@ -9,7 +9,7 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 45.1GiB cgroup RAM limi
 - [x] Dialogue-disjoint manifests, filtering and audio quality inspection.
 - [x] Selective audio acquisition and reusable final Whisper state cache (first1k+256heldout).
 - [x] Frozen Qwen wrapper, target masking, gradient and weight invariance verification.
-- [x] CPU sanity tests, formatting and lint checks (65 tests passed locally and in isolated node staging).
+- [x] CPU sanity tests, formatting and lint checks (79 local tests; earlier65 passed isolated node staging).
 - [x] GPU smoke test, memory and throughput profile, initial generations.
 - [x] V0 small subset training, evaluation and audio-conditioning diagnostics.
 - [x] Text and ASR baselines on fixed validation/test examples.
@@ -21,7 +21,7 @@ Started 2026-10-05 23:56 Europe/Berlin. Node: 1 RTX3090, 45.1GiB cgroup RAM limi
 
 ## Experiment state
 
-Updated 2026-10-06 05:05 Europe/Berlin.
+Updated 2026-10-06 05:32 Europe/Berlin.
 Completed: V0, all four heldout baselines, training/untrained conditioning probes,
 first cache and ASR, model gradient/memory profile, 10k audio download.
 Completed V1:1k,3k and10k runs, including full validation/test and conditioning diagnostics.
@@ -51,7 +51,7 @@ Prepared: verified result package with original80MB Parquet, exact subset manife
 Dataset revision0495356d589c06f08253ab29ad1a1482e05d90f8 matches the original Parquet SHA256.
 Typed input API, canonical stage/condition enums and discriminated projector configs
 validated in separate node staging, pending post-training GPU parity for all architectures.
-Local code candidate commite8f2f17. Seeded projector weights/forward outputs are byte-identical
+Local code candidate commit85fbe5e. Seeded projector weights/forward outputs are byte-identical
 to the running source for linear,MLP andconvolutional architectures.
 The external CPU watcher paused the suite after V2 for the completed review and exited.
 The live source and training process remained preserved; no completed run was repeated.
@@ -82,5 +82,14 @@ Package hashes verified for46 copied files/118.60MB, including original metadata
 All-result SHA256 inventory/relocation verification is ready for the final stopped-writer backup.
 Remaining: finish V3 and the authorized20k run, evaluate matched-budget and promising best checkpoints,
 validate the typed API on GPU, finalize the research report, verify and back up all artifacts.
+Late audit: the initial random quality check missed audio/text alignment defects.
+Training-prefix256/1k/3k/10k/20k mismatches:6/21/55/187/389;20k audio-target matches357.
+Heldout3validation and3test mismatches:five audio originals equal the assistant target.
+Original text baseline is an original-dialogue-text reference, not a perfect waveform transcript.
+Aligned125-case per-split sensitivity preserves positive audio margins and the25Hz validation choice.
+No fixed-case topic audit examples are misaligned. Raw128-case comparisons and manifests preserved.
+Twenty-k expansion reauthorized on the same collected data to preserve controlled comparisons;
+known target-audio contamination is prominent in the report and must be cleaned before follow-up.
+Canonical synthesis audit and actual-synthesis-text baseline helper tested; baseline GPU run pending.
 Planned: initial V0 256–1,000 examples at factor5 (10 tokens/s); matrix adapts to measured speed.
 No long run starts until V0 correctness gates pass.
