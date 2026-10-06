@@ -1,21 +1,15 @@
 """Controlled configurations for transcript-teacher distillation."""
 
 from speech_projector.models import (
+    ChatPromptConfig,
     ExperimentStage,
     LinearProjectorConfig,
     MlpProjectorConfig,
     ProjectorConfig,
-    PromptConfig,
     RunConfig,
 )
 
-TEACHER_PROMPT = PromptConfig(
-    system_text=(
-        "You are a helpful conversational assistant. Reply naturally to the user's utterance "
-        "in one to three concise sentences. Answer the question or continue the conversation "
-        "directly."
-    )
-)
+TEACHER_PROMPT = ChatPromptConfig()
 
 
 def teacher_run(
@@ -37,8 +31,8 @@ def teacher_run(
         gradient_accumulation=8,
         evaluation_interval=250,
         checkpoint_interval=100,
-        max_target_tokens=257,
-        max_new_tokens=256,
+        max_target_tokens=513,
+        max_new_tokens=512,
         qualitative_examples=16,
         semantic_examples=512,
         conditioning_examples=128,

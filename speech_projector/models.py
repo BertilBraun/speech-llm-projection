@@ -91,13 +91,23 @@ ProjectorConfig: TypeAlias = Annotated[
 ]
 
 
-class PromptConfig(Record):
+class SystemPromptConfig(Record):
+    kind: Literal["system"] = "system"
     system_text: str = Field(
         default=(
             "You are a helpful conversational assistant. Reply naturally to the user's utterance."
         ),
         min_length=1,
     )
+
+
+class ChatPromptConfig(Record):
+    kind: Literal["chat"] = "chat"
+
+
+PromptConfig: TypeAlias = Annotated[
+    SystemPromptConfig | ChatPromptConfig, Field(discriminator="kind")
+]
 
 
 class RunConfig(Record):
@@ -125,7 +135,7 @@ class RunConfig(Record):
     conditioning_examples: int = Field(default=32, ge=1)
     model_name: str = "Qwen/Qwen3.5-2B"
     speech_model_name: str = "openai/whisper-small"
-    prompt: PromptConfig = PromptConfig()
+    prompt: PromptConfig = SystemPromptConfig()
     projector: ProjectorConfig
 
 

@@ -12,8 +12,8 @@
   "gradient_accumulation": 8,
   "history_turns": 2,
   "max_history_tokens": 256,
-  "max_target_tokens": 257,
-  "max_new_tokens": 256,
+  "max_target_tokens": 513,
+  "max_new_tokens": 512,
   "sequence_length_multiple": 64,
   "gradient_checkpointing": true,
   "evaluation_interval": 250,
@@ -24,7 +24,7 @@
   "model_name": "Qwen/Qwen3.5-2B",
   "speech_model_name": "openai/whisper-small",
   "prompt": {
-    "system_text": "You are a helpful conversational assistant. Reply naturally to the user's utterance in one to three concise sentences. Answer the question or continue the conversation directly."
+    "kind": "chat"
   },
   "projector": {
     "compression_factor": 5,

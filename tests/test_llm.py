@@ -16,13 +16,14 @@ from speech_projector.generation import CompletedGeneration, TokenLimitedGenerat
 from speech_projector.inputs import SpeechInput, TranscriptInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
+    ChatPromptConfig,
     EvaluationCondition,
     Example,
     ExperimentStage,
     LinearProjectorConfig,
-    PromptConfig,
     RunConfig,
     Split,
+    SystemPromptConfig,
 )
 from speech_projector.projectors import Projector
 from speech_projector.training import (
@@ -174,7 +175,7 @@ def test_custom_system_prompt_is_shared_by_transcript_and_speech(
     original_text = wrapper.prepare(example, TranscriptInput(example.user_text))
     original_speech = wrapper.prepare(example, SpeechInput(torch.zeros(3, 32)))
     wrapper.config = wrapper.config.model_copy(
-        update={"prompt": PromptConfig(system_text="yes yes")}
+        update={"prompt": SystemPromptConfig(system_text="yes yes")}
     )
     changed_text = wrapper.prepare(example, TranscriptInput(example.user_text))
     changed_speech = wrapper.prepare(example, SpeechInput(torch.zeros(3, 32)))
@@ -182,6 +183,23 @@ def test_custom_system_prompt_is_shared_by_transcript_and_speech(
     assert difference != 0
     assert original_speech.target_start - changed_speech.target_start == difference
     torch.testing.assert_close(changed_text.embeddings[0, :2], changed_speech.embeddings[0, :2])
+
+
+def test_standard_chat_omits_system_message_for_both_input_branches(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    previous_text = wrapper.prepare(example, TranscriptInput(example.user_text))
+    speech = torch.zeros(3, 32)
+    previous_speech = wrapper.prepare(example, SpeechInput(speech))
+    wrapper.config = wrapper.config.model_copy(update={"prompt": ChatPromptConfig()})
+    chat_text = wrapper.prepare(example, TranscriptInput(example.user_text))
+    chat_speech = wrapper.prepare(example, SpeechInput(speech))
+    expected = wrapper._embed(wrapper._encode("<|im_start|>user\n"))
+    torch.testing.assert_close(chat_text.embeddings[0, : expected.shape[0]], expected)
+    torch.testing.assert_close(chat_speech.embeddings[0, : expected.shape[0]], expected)
+    removed = previous_text.target_start - chat_text.target_start
+    assert removed > 0
+    assert previous_speech.target_start - chat_speech.target_start == removed
 
 
 def test_target_scores_match_loss_and_preserve_target_ids(

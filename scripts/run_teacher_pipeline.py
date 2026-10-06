@@ -51,9 +51,9 @@ def jobs(root: Path, teacher_batch_size: int, include_scaling: bool) -> tuple[Jo
         "--batch-size",
         str(teacher_batch_size),
         "--initial-max-new-tokens",
-        "128",
-        "--retry-max-new-tokens",
         "256",
+        "--retry-max-new-tokens",
+        "512",
     )
     launch_feasibility = (
         "-m",
