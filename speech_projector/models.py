@@ -2,6 +2,7 @@
 
 from enum import Enum
 from pathlib import Path
+from typing import Annotated, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -63,13 +64,31 @@ class Architecture(str, Enum):
     CONV = "conv"
 
 
-class ProjectorConfig(Record):
-    architecture: Architecture
+class ProjectorDimensions(Record):
     compression_factor: int = Field(ge=1)
     encoder_dimension: int = 768
     embedding_dimension: int = 2048
-    hidden_dimension: int = 1024
     native_rate: float = 50.0
+
+
+class LinearProjectorConfig(ProjectorDimensions):
+    architecture: Literal[Architecture.LINEAR] = Architecture.LINEAR
+
+
+class MlpProjectorConfig(ProjectorDimensions):
+    architecture: Literal[Architecture.MLP] = Architecture.MLP
+    hidden_dimension: int = 1024
+
+
+class ConvProjectorConfig(ProjectorDimensions):
+    architecture: Literal[Architecture.CONV] = Architecture.CONV
+    hidden_dimension: int = 1024
+
+
+ProjectorConfig: TypeAlias = Annotated[
+    LinearProjectorConfig | MlpProjectorConfig | ConvProjectorConfig,
+    Field(discriminator="architecture"),
+]
 
 
 class RunConfig(Record):

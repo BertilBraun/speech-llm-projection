@@ -1,6 +1,13 @@
 """Controlled experiment matrix, updated using measured runtime."""
 
-from speech_projector.models import Architecture, ExperimentStage, ProjectorConfig, RunConfig
+from speech_projector.models import (
+    ConvProjectorConfig,
+    ExperimentStage,
+    LinearProjectorConfig,
+    MlpProjectorConfig,
+    ProjectorConfig,
+    RunConfig,
+)
 
 
 def make_run(
@@ -8,8 +15,7 @@ def make_run(
     stage: ExperimentStage,
     train_examples: int,
     epochs: int,
-    compression_factor: int,
-    architecture: Architecture,
+    projector: ProjectorConfig,
 ) -> RunConfig:
     return RunConfig(
         name=name,
@@ -17,20 +23,25 @@ def make_run(
         train_examples=train_examples,
         epochs=epochs,
         learning_rate=0.001,
-        projector=ProjectorConfig(
-            architecture=architecture,
-            compression_factor=compression_factor,
-        ),
+        projector=projector,
     )
 
 
 def feasibility_run() -> RunConfig:
-    return make_run("v0_256_mlp_10hz", ExperimentStage.V0, 256, 5, 5, Architecture.MLP)
+    return make_run(
+        "v0_256_mlp_10hz", ExperimentStage.V0, 256, 5, MlpProjectorConfig(compression_factor=5)
+    )
 
 
 def scaling_runs() -> list[RunConfig]:
     return [
-        make_run(f"v1_{count}_mlp_10hz", ExperimentStage.V1, count, 2, 5, Architecture.MLP)
+        make_run(
+            f"v1_{count}_mlp_10hz",
+            ExperimentStage.V1,
+            count,
+            2,
+            MlpProjectorConfig(compression_factor=5),
+        )
         for count in (1000, 3000, 10000)
     ]
 
@@ -42,8 +53,7 @@ def compression_runs(train_examples: int) -> list[RunConfig]:
             ExperimentStage.V2,
             train_examples,
             2,
-            factor,
-            Architecture.MLP,
+            MlpProjectorConfig(compression_factor=factor),
         )
         for factor in (2, 10, 20)
     ]
@@ -52,12 +62,14 @@ def compression_runs(train_examples: int) -> list[RunConfig]:
 def architecture_runs(train_examples: int, factor: int) -> list[RunConfig]:
     return [
         make_run(
-            f"v3_{train_examples}_{architecture.value}_{factor}x",
+            f"v3_{train_examples}_{projector.architecture.value}_{factor}x",
             ExperimentStage.V3,
             train_examples,
             2,
-            factor,
-            architecture,
+            projector,
         )
-        for architecture in (Architecture.LINEAR, Architecture.CONV)
+        for projector in (
+            LinearProjectorConfig(compression_factor=factor),
+            ConvProjectorConfig(compression_factor=factor),
+        )
     ]

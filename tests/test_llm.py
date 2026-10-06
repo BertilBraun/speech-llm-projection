@@ -14,10 +14,9 @@ from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
 from speech_projector.inputs import SpeechInput, TranscriptInput
 from speech_projector.llm import FrozenQwen
 from speech_projector.models import (
-    Architecture,
     Example,
     ExperimentStage,
-    ProjectorConfig,
+    LinearProjectorConfig,
     RunConfig,
     Split,
 )
@@ -66,8 +65,7 @@ def wrapper() -> FrozenQwen:
         learning_rate=0.001,
         gradient_accumulation=2,
         gradient_checkpointing=True,
-        projector=ProjectorConfig(
-            architecture=Architecture.LINEAR,
+        projector=LinearProjectorConfig(
             compression_factor=2,
             encoder_dimension=8,
             embedding_dimension=32,

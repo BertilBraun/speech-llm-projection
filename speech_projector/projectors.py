@@ -6,7 +6,12 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as functional
 
-from speech_projector.models import Architecture, ProjectorConfig
+from speech_projector.models import (
+    ConvProjectorConfig,
+    LinearProjectorConfig,
+    MlpProjectorConfig,
+    ProjectorConfig,
+)
 
 
 def mean_pool(features: Tensor, factor: int) -> Tensor:
@@ -29,18 +34,18 @@ class Projector(nn.Module):
         super().__init__()
         self.config = config
         self.normalization = nn.LayerNorm(config.encoder_dimension)
-        match config.architecture:
-            case Architecture.LINEAR:
+        match config:
+            case LinearProjectorConfig():
                 self.projection = nn.Linear(config.encoder_dimension, config.embedding_dimension)
                 self.temporal = None
-            case Architecture.MLP:
+            case MlpProjectorConfig():
                 self.projection = nn.Sequential(
                     nn.Linear(config.encoder_dimension, config.hidden_dimension),
                     nn.GELU(),
                     nn.Linear(config.hidden_dimension, config.embedding_dimension),
                 )
                 self.temporal = None
-            case Architecture.CONV:
+            case ConvProjectorConfig():
                 self.temporal = nn.Conv1d(
                     config.encoder_dimension,
                     config.encoder_dimension,
