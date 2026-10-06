@@ -60,6 +60,7 @@ class IndexEmotionControl(BaseModel):
 
     case: TtsPilotCase
     vector: tuple[float, ...]
+    effective_vector: tuple[float, ...]
 
 
 def digest(path: Path) -> str:

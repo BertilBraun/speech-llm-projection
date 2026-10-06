@@ -204,6 +204,11 @@ def generate(configuration: IndexPilotConfig) -> TtsPilotResult:
                 IndexEmotionControl(
                     case=case,
                     vector=emotion_vector(case.emotion, configuration.emotion_intensity),
+                    effective_vector=tuple(
+                        model.normalize_emo_vec(
+                            list(emotion_vector(case.emotion, configuration.emotion_intensity))
+                        )
+                    ),
                 ),
             )
             clips.append(clip)
