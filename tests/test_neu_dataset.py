@@ -229,3 +229,74 @@ def test_draft_pilot_limit_resumes_under_unchanged_full_configuration(tmp_path: 
     assert len(full) == 20 and len(calls) == 2 and full[:10] == pilot
     with pytest.raises(ValueError, match="complete batch boundary"):
         run_neu_construction(output, source, generate, limit=7)
+
+
+def test_exhausted_full_batch_resumes_only_the_duplicate_and_retains_valid_rows(
+    tmp_path: Path,
+) -> None:
+    source = provenance(
+        tmp_path, EmotionalDatasetConfig(utterance_count=10, max_acceptance_attempts=10)
+    )
+    output = tmp_path / "new"
+    request = build_neu_requests(source.configuration)[0]
+    original = generated(request)
+    duplicate = GeneratedDraftText(
+        base_id=request.assignments[0].base_id,
+        text="Please check the delivery receipt before our appointment tomorrow.",
+    )
+    invalid = GeneratedDraftBatch(utterances=(duplicate,) + original.utterances[1:])
+    for index in range(10):
+        previous = NeuDraftRequest(
+            batch_id=request.batch_id if index == 0 else f"{request.batch_id}_repair_{index}",
+            configuration=request.configuration,
+            assignments=request.assignments,
+            feedback=(),
+        )
+        append_record(
+            output / "acceptance_failures.jsonl",
+            NeuDraftFailure(
+                request=previous, generated=invalid, error="Exact normalized duplicate"
+            ),
+        )
+    calls: list[str] = []
+
+    def generate(request: NeuDraftRequest) -> GeneratedDraftBatch:
+        calls.append(request.batch_id)
+        assert request.batch_id == "neu_batch_0000_repair_10"
+        assert tuple(assignment.base_id for assignment in request.assignments) == (
+            "neu_base_00000",
+        )
+        assert "this text already exists" in request.feedback[0]
+        assert "Do NOT return the old invalid sentence" in request.feedback[1]
+        return generated(request)
+
+    rows = run_neu_construction(output, source, generate)
+    assert calls == ["neu_batch_0000_repair_10"] and len(rows) == 10
+    assert tuple(row.text for row in rows[1:]) == tuple(row.text for row in original.utterances[1:])
+    assert len(read_journal(output / "acceptance_failures.jsonl", NeuDraftFailure)) == 10
+
+
+def test_failed_single_row_continuation_uses_a_fresh_request_id_next_run(tmp_path: Path) -> None:
+    source = provenance(
+        tmp_path, EmotionalDatasetConfig(utterance_count=2, max_acceptance_attempts=1)
+    )
+    output = tmp_path / "new"
+
+    def invalid(request: NeuDraftRequest) -> GeneratedDraftBatch:
+        return GeneratedDraftBatch(
+            utterances=tuple(
+                GeneratedDraftText(base_id=assignment.base_id, text="Too short.")
+                for assignment in request.assignments
+            )
+        )
+
+    with pytest.raises(ValueError, match="repairs exhausted"):
+        run_neu_construction(output, source, invalid)
+    calls: list[str] = []
+
+    def corrected(request: NeuDraftRequest) -> GeneratedDraftBatch:
+        calls.append(request.batch_id)
+        return generated(request)
+
+    assert len(run_neu_construction(output, source, corrected)) == 2
+    assert calls == ["neu_batch_0000_repair_1"]

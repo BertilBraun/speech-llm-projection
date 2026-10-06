@@ -176,24 +176,8 @@ def accept_neu_batch(
     unique = previous_texts.copy()
     errors: list[str] = []
     for row in generated.utterances:
-        normalized = normalized_utterance(row.text)
-        words = len(normalized.split())
-        sentences = sentence_count(row.text)
-        emotion_words = explicit_emotion_words(row.text)
-        if emotion_words:
-            errors.append(
-                f"{row.base_id}: explicit emotion-label words={emotion_words}; "
-                "replace them with neutral concrete spoken facts or requests"
-            )
-        if words < request.configuration.min_words:
-            errors.append(
-                f"{row.base_id}: word_count={words}; minimum={request.configuration.min_words}"
-            )
-        if not 1 <= sentences <= 3:
-            errors.append(f"{row.base_id}: sentence_count={sentences}; required range=1–3")
-        if normalized in unique:
-            errors.append(f"{row.base_id}: exact normalized duplicate of an old/new utterance")
-        unique.add(normalized)
+        errors.extend(neu_row_errors(row, request.configuration, unique))
+        unique.add(normalized_utterance(row.text))
     if errors:
         raise ValueError("; ".join(errors))
     return tuple(
@@ -204,6 +188,134 @@ def accept_neu_batch(
 
 def explicit_emotion_words(text: str) -> tuple[str, ...]:
     return tuple(sorted(set(normalized_utterance(text).split()) & EXPLICIT_EMOTION_WORDS))
+
+
+def neu_row_errors(
+    row: GeneratedDraftText, configuration: EmotionalDatasetConfig, previous_texts: set[str]
+) -> tuple[str, ...]:
+    normalized = normalized_utterance(row.text)
+    words = len(normalized.split())
+    sentences = sentence_count(row.text)
+    emotion_words = explicit_emotion_words(row.text)
+    errors: list[str] = []
+    if emotion_words:
+        errors.append(
+            f"{row.base_id}: explicit emotion-label words={emotion_words}; "
+            "replace them with neutral concrete spoken facts or requests"
+        )
+    if words < configuration.min_words:
+        errors.append(f"{row.base_id}: word_count={words}; minimum={configuration.min_words}")
+    if not 1 <= sentences <= 3:
+        errors.append(f"{row.base_id}: sentence_count={sentences}; required range=1–3")
+    if normalized in previous_texts:
+        errors.append(
+            f"{row.base_id}: exact normalized duplicate of an old/new utterance; "
+            f"this text already exists: {row.text!r}"
+        )
+    return tuple(errors)
+
+
+def pending_neu_repairs(
+    request: NeuDraftRequest, candidates: dict[str, GeneratedDraftText], previous_texts: set[str]
+) -> tuple[tuple[NeuDraftAssignment, ...], tuple[str, ...]]:
+    unique = previous_texts.copy()
+    pending: list[NeuDraftAssignment] = []
+    errors: list[str] = []
+    for assignment in request.assignments:
+        row = candidates.get(assignment.base_id)
+        if row is None:
+            pending.append(assignment)
+            errors.append(f"{assignment.base_id}: missing literal utterance")
+        else:
+            row_errors = neu_row_errors(row, request.configuration, unique)
+            if row_errors:
+                pending.append(assignment)
+                errors.extend(row_errors)
+            else:
+                unique.add(normalized_utterance(row.text))
+    return tuple(pending), tuple(errors)
+
+
+def repair_request(
+    request: NeuDraftRequest,
+    candidates: dict[str, GeneratedDraftText],
+    previous_texts: set[str],
+    repair_index: int,
+) -> NeuDraftRequest:
+    pending, errors = pending_neu_repairs(request, candidates, previous_texts)
+    invalid = (
+        GeneratedDraftBatch(
+            utterances=tuple(
+                candidates[assignment.base_id]
+                for assignment in pending
+                if assignment.base_id in candidates
+            )
+        )
+        if any(assignment.base_id in candidates for assignment in pending)
+        else None
+    )
+    feedback = (
+        "; ".join(errors),
+        "Only these offending IDs are requested; all other rows are already retained. "
+        "Rewrite these rows from scratch with a different sentence opening and concrete wording. "
+        "Do NOT return the old invalid sentence. Keep the assigned intent and factual item.",
+    )
+    if invalid is not None:
+        feedback += ("Do NOT reuse these invalid texts: " + invalid.model_dump_json(),)
+    return NeuDraftRequest(
+        batch_id=f"{request.batch_id}_repair_{repair_index}",
+        configuration=request.configuration,
+        assignments=pending,
+        feedback=feedback,
+    )
+
+
+def generate_neu_transaction(
+    request: NeuDraftRequest,
+    previous_texts: set[str],
+    generate: Callable[[NeuDraftRequest], GeneratedDraftBatch],
+    failure_path: Path,
+) -> NeuAcceptedBatch:
+    failures = tuple(
+        failure
+        for failure in read_journal(failure_path, NeuDraftFailure)
+        if failure.request.batch_id == request.batch_id
+        or failure.request.batch_id.startswith(request.batch_id + "_repair_")
+    )
+    candidates: dict[str, GeneratedDraftText] = {}
+    for failure in failures:
+        expected = tuple(assignment.base_id for assignment in failure.request.assignments)
+        if tuple(row.base_id for row in failure.generated.utterances) == expected:
+            candidates.update((row.base_id, row) for row in failure.generated.utterances)
+    current = (
+        repair_request(request, candidates, previous_texts, len(failures)) if failures else request
+    )
+    for attempt in range(request.configuration.max_acceptance_attempts):
+        generated = generate(current)
+        expected = tuple(assignment.base_id for assignment in current.assignments)
+        if tuple(row.base_id for row in generated.utterances) == expected:
+            candidates.update((row.base_id, row) for row in generated.utterances)
+            pending, errors = pending_neu_repairs(request, candidates, previous_texts)
+        else:
+            pending = request.assignments
+            errors = ("Generated IDs must match the exact ordered assignments",)
+        if not pending:
+            combined = GeneratedDraftBatch(
+                utterances=tuple(
+                    candidates[assignment.base_id] for assignment in request.assignments
+                )
+            )
+            return NeuAcceptedBatch(
+                request=request, utterances=accept_neu_batch(request, combined, previous_texts)
+            )
+        append_record(
+            failure_path,
+            NeuDraftFailure(request=current, generated=generated, error="; ".join(errors)),
+        )
+        if attempt + 1 == request.configuration.max_acceptance_attempts:
+            raise ValueError(f"Required structural repairs exhausted for {request.batch_id}")
+        current = repair_request(request, candidates, previous_texts, len(failures) + attempt + 1)
+    raise AssertionError("Positive repair budget must return or raise")
 
 
 def validate_neu_provenance(directory: Path, provenance: NeuDatasetProvenance) -> set[str]:
@@ -276,37 +388,12 @@ def run_neu_construction(
         if transaction_path.exists():
             transaction = NeuAcceptedBatch.model_validate_json(transaction_path.read_bytes())
         else:
-            current = request
-            for attempt in range(provenance.configuration.max_acceptance_attempts):
-                generated = generate(current)
-                try:
-                    accepted = accept_neu_batch(
-                        request,
-                        generated,
-                        old_texts | {normalized_utterance(row.text) for row in rows[:start]},
-                    )
-                    transaction = NeuAcceptedBatch(request=request, utterances=accepted)
-                    break
-                except ValueError as error:
-                    append_record(
-                        directory / "acceptance_failures.jsonl",
-                        NeuDraftFailure(request=current, generated=generated, error=str(error)),
-                    )
-                    if attempt + 1 == provenance.configuration.max_acceptance_attempts:
-                        raise ValueError(
-                            f"Required structural repairs exhausted for {request.batch_id}"
-                        ) from error
-                    current = NeuDraftRequest(
-                        batch_id=f"{request.batch_id}_repair_{attempt + 1}",
-                        configuration=request.configuration,
-                        assignments=request.assignments,
-                        feedback=(
-                            str(error),
-                            "Previous invalid JSON: " + generated.model_dump_json(),
-                        ),
-                    )
-            else:
-                raise AssertionError("Positive repair budget must return or raise")
+            transaction = generate_neu_transaction(
+                request,
+                old_texts | {normalized_utterance(row.text) for row in rows[:start]},
+                generate,
+                directory / "acceptance_failures.jsonl",
+            )
             write_record(transaction_path, transaction)
         validated = accept_neu_batch(
             request,
