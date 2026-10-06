@@ -2,7 +2,7 @@
 
 import argparse
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,7 +17,12 @@ from speech_projector.neutts_batch_benchmark import (
     NeuTtsBenchmarkResult,
     verify_recorded_audio,
 )
-from speech_projector.tts_pilot import PilotTermination, TtsPilotManifest, TtsPilotResult
+from speech_projector.tts_pilot import (
+    PilotEmotion,
+    PilotTermination,
+    TtsPilotManifest,
+    TtsPilotResult,
+)
 
 
 class FullEmotionReportConfig(BaseModel):
@@ -62,9 +67,19 @@ def verify_benchmark(
                 raise ValueError("Benchmark waveform path escapes its result directory")
     verify_recorded_audio(result, directory)
     saved_manifest = TtsPilotManifest.model_validate_json((directory / "cases.json").read_bytes())
-    if saved_manifest != manifest:
-        raise ValueError("Benchmark manifest differs from the serial Neu comparison")
-    expected_cases = {case.case_id: case for case in manifest.cases}
+    expected_content = Counter((case.emotion, case.text, case.seed) for case in manifest.cases)
+    saved_content = Counter((case.emotion, case.text, case.seed) for case in saved_manifest.cases)
+    replicas, remainder = divmod(len(saved_manifest.cases), len(manifest.cases))
+    if (
+        remainder
+        or not replicas
+        or set(saved_content) != set(expected_content)
+        or any(saved_content[key] != count * replicas for key, count in expected_content.items())
+        or saved_manifest.warmup_text != manifest.warmup_text
+        or saved_manifest.warmup_seed != manifest.warmup_seed
+    ):
+        raise ValueError("Benchmark pool is not complete replicas of the serial Neu comparison")
+    expected_cases = {case.case_id: case for case in saved_manifest.cases}
     groups: defaultdict[tuple[int, int], list[BatchMeasurement]] = defaultdict(list)
     for measurement in result.measurements:
         groups[(measurement.requested_batch_size, measurement.repetition)].append(measurement)
@@ -212,6 +227,9 @@ def render_report(
                 "times would overcount. Whole-batch completion time is not time to first audio, "
                 "nor independent per-request latency. "
                 "Shared batch seeds and padding can change outputs.",
+                "The larger pool repeats the same sentence/emotion controls with unique case IDs; "
+                "it measures bulk throughput, not additional linguistic or emotion diversity. "
+                "Repeated timing passes reset the seed and are not independent quality samples.",
                 "",
                 f"Recorded source: `{result.configuration.source_commit}`; "
                 f"helper SHA256 `{result.helper_sha256}`.",
@@ -226,23 +244,26 @@ def render_report(
                 "",
             ]
         )
+        gallery_batch_size = max(result.configuration.batch_sizes)
         batch_gallery = tuple(
             item
             for item in result.measurements
-            if item.requested_batch_size == 7 and item.repetition == 0
+            if item.requested_batch_size == gallery_batch_size and item.repetition == 0
         )
         if batch_gallery:
             lines.extend(
                 [
-                    "### Actual batch-seven samples, first measured pass",
+                    f"### Actual batch-{gallery_batch_size} samples, first measured pass",
                     "",
                     "These are the faster configuration's actual sampled outputs. "
                     "The shared whole-batch completion time below is not each clip's "
                     "individual generation time. Throughput RTF is reported separately above; "
-                    "listen to these samples before drawing quality conclusions.",
+                    "listen to these samples before drawing quality conclusions. "
+                    "One first-occurring clip per emotion is shown; every replica is retained.",
                     "",
                 ]
             )
+            shown_emotions: set[PilotEmotion] = set()
             for measurement in batch_gallery:
                 lines.extend(
                     [
@@ -255,6 +276,9 @@ def render_report(
                 )
                 for evidence in measurement.clips:
                     clip = evidence.clip
+                    if clip.case.emotion in shown_emotions:
+                        continue
+                    shown_emotions.add(clip.case.emotion)
                     audio = (directory / clip.audio_path).resolve().as_posix()
                     lines.extend(
                         [
@@ -262,7 +286,8 @@ def render_report(
                             "",
                             f"> {clip.case.text}",
                             "",
-                            f"![Neu batch seven {clip.case.emotion.value}](<{audio}>)",
+                            f"![Neu batch {gallery_batch_size} "
+                            f"{clip.case.emotion.value}](<{audio}>)",
                             "",
                             f"Audio {clip.audio_seconds:.3f}s; termination "
                             f"{clip.termination.value}; batch seed "

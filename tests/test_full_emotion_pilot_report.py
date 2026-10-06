@@ -153,12 +153,54 @@ def test_faster_setting_gallery_uses_actual_batch_outputs_and_shared_latency(
         output=tmp_path / "report",
     )
     report = render_report(report_configuration, (), (result,))
-    assert "Actual batch-seven samples, first measured pass" in report
+    assert "Actual batch-7 samples, first measured pass" in report
     assert "shared completion 2.000s; 8.000s total audio; throughput RTF 0.250" in report
     for evidence in measurement.clips:
         assert (tmp_path / evidence.clip.audio_path).resolve().as_posix() in report
     assert "not each clip's individual generation time" in report
     assert "generation /" not in report
+
+
+def test_benchmark_validates_replica_pool_and_complete_pass(
+    tmp_path: Path, benchmark: tuple[NeuTtsBenchmarkResult, TtsPilotManifest]
+) -> None:
+    result, manifest = benchmark
+    originals = result.measurements[0].clips
+    replica_clips = tuple(
+        item.model_copy(
+            update={
+                "clip": item.clip.model_copy(
+                    update={
+                        "case": item.clip.case.model_copy(
+                            update={
+                                "case_id": f"{item.clip.case.case_id}_replica",
+                                "utterance_id": f"{item.clip.case.case_id}_replica",
+                            }
+                        )
+                    }
+                )
+            }
+        )
+        for item in originals
+    )
+    pool = manifest.model_copy(
+        update={"cases": manifest.cases + tuple(item.clip.case for item in replica_clips)}
+    )
+    write_record(tmp_path / "cases.json", pool)
+    repeated = result.measurements[0].model_copy(update={"batch_index": 1, "clips": replica_clips})
+    result = result.model_copy(update={"measurements": result.measurements + (repeated,)})
+    verify_benchmark(result, tmp_path, manifest)
+    assert "| 2 | 1 | 4 | 4.000 | 16.000 | 0.250" in benchmark_table(result)[2]
+    incomplete = result.model_copy(update={"measurements": result.measurements[:1]})
+    with pytest.raises(ValueError, match="missing or duplicated cases"):
+        verify_benchmark(incomplete, tmp_path, manifest)
+    changed_case = pool.cases[-1].model_copy(update={"text": "A different sentence."})
+    write_record(
+        tmp_path / "cases.json",
+        pool.model_copy(update={"cases": pool.cases[:-1] + (changed_case,)}),
+    )
+    with pytest.raises(ValueError, match="not complete replicas"):
+        verify_benchmark(result, tmp_path, manifest)
 
 
 @pytest.mark.parametrize("failure", ("duplicate", "cap", "corrupt"))
