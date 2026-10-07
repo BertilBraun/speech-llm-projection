@@ -64,7 +64,7 @@ def stable_digest(path: Path) -> tuple[int, str]:
 def write_record(destination: Path, record: Record) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     partial = destination.with_suffix(".part")
-    partial.write_text(record.model_dump_json(indent=2), encoding="utf-8")
+    partial.write_text(record.model_dump_json(indent=2), encoding="utf-8", newline="\n")
     partial.replace(destination)
 
 

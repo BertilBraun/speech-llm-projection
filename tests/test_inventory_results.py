@@ -3,7 +3,19 @@ from pathlib import Path
 
 import pytest
 
-from scripts.inventory_results import verify_inventory, write_inventory
+from scripts.inventory_results import verify_inventory, write_inventory, write_record
+from speech_projector.models import AsrTranscript
+
+
+def test_serialized_record_has_portable_exact_utf8_lf_bytes(tmp_path: Path) -> None:
+    record = AsrTranscript(example_id="speech", text="First line\nSecond line — café")
+    path = tmp_path / "record.json"
+    write_record(path, record)
+    serialized = path.read_bytes()
+    assert serialized == record.model_dump_json(indent=2).encode("utf-8")
+    assert serialized.count(b"\n") >= 3
+    assert b"\r\n" not in serialized
+    assert not path.with_suffix(".part").exists()
 
 
 def test_inventory_survives_relocation(tmp_path: Path) -> None:
