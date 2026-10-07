@@ -1,0 +1,95 @@
+{
+  "inputs": [
+    {
+      "path": "results_preview\\followup10hz_20261007\\evaluation_ce_control\\fidelity\\teacher_fidelity.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_ce_control\\fidelity\\teacher_fidelity.jsonl",
+      "bytes": 176674,
+      "sha256": "73525955bd67fd712e3fab9ebe21cb789393c7dc5e09ecb6bdd1b2b229fb0da5"
+    },
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+      "bytes": 9604728,
+      "sha256": "8471f5cde9cdd2d5c3f721d5829fe3ec6380bd81c5c21eeba35eda6262e19ae9"
+    }
+  ],
+  "example_ids": [
+    "ordinary:fd4e223f8049d448d5ff",
+    "ordinary:5f974f9882d8e62778fb",
+    "ordinary:0419a43ba52c830c3bf6",
+    "ordinary:2a792344171e76e9c2d8",
+    "ordinary:45665bfcdc5c1228eb9c",
+    "ordinary:3a40c2e8bac51922fc8f",
+    "ordinary:bb9b88a018df9cff9ecc",
+    "ordinary:5d25f7437b5d81423443",
+    "ordinary:d7499578acb6f5f7fdd4",
+    "ordinary:3eb274fe9312d05979be",
+    "ordinary:371607b3fea7369efdae",
+    "ordinary:a238d207e50e10409809",
+    "ordinary:2bc1930bff43c2abfc4a",
+    "ordinary:f59fd6302a83faaed78f",
+    "ordinary:e0da122ba242910d3bb4",
+    "ordinary:1b194e31dac26e6d6720",
+    "ordinary:157f273c89dbffa17781",
+    "ordinary:44bda9802b621af8243e",
+    "ordinary:fa2819e3ecfe81a6165a",
+    "ordinary:b2932cc9bc518399a1b3",
+    "ordinary:915cbd088b895da1dbe8",
+    "ordinary:fa9a8d9ca2a6cb93bab5",
+    "ordinary:82473dbf792b290ff79a",
+    "ordinary:4de25e78cfbb029c6673"
+  ],
+  "summaries": [
+    {
+      "condition": "speech",
+      "examples": 24,
+      "target_tokens": 5245,
+      "input_cross_entropy": 1.6143423362955578,
+      "transcript_cross_entropy": 1.5735467877810745,
+      "excess_cross_entropy": 0.04079554851448343,
+      "top1_agreement": 0.7872259278883811,
+      "input_target_accuracy": 0.555004767393134,
+      "transcript_target_accuracy": 0.55805529637264,
+      "teacher_to_input_kl": 0.17624257764921078,
+      "first_token_agreement": 0.9166666666666666,
+      "first_token_target_accuracy": 0.5416666666666666,
+      "first_8_tokens": 192,
+      "first_8_token_agreement": 0.7760416666666666,
+      "first_8_token_target_accuracy": 0.53125
+    },
+    {
+      "condition": "shuffled_speech",
+      "examples": 24,
+      "target_tokens": 5245,
+      "input_cross_entropy": 1.8116970828422714,
+      "transcript_cross_entropy": 1.5735467877810745,
+      "excess_cross_entropy": 0.23815029506119692,
+      "top1_agreement": 0.7454718798427382,
+      "input_target_accuracy": 0.5325071530414832,
+      "transcript_target_accuracy": 0.55805529637264,
+      "teacher_to_input_kl": 0.34533579377805307,
+      "first_token_agreement": 0.5,
+      "first_token_target_accuracy": 0.4166666666666667,
+      "first_8_tokens": 192,
+      "first_8_token_agreement": 0.5260416666666666,
+      "first_8_token_target_accuracy": 0.4375
+    },
+    {
+      "condition": "zero_speech",
+      "examples": 24,
+      "target_tokens": 5245,
+      "input_cross_entropy": 1.888763537261461,
+      "transcript_cross_entropy": 1.5735467877810745,
+      "excess_cross_entropy": 0.3152167494803866,
+      "top1_agreement": 0.7906577789181181,
+      "input_target_accuracy": 0.5136320390226276,
+      "transcript_target_accuracy": 0.55805529637264,
+      "teacher_to_input_kl": 0.29357181213480305,
+      "first_token_agreement": 0.20833333333333334,
+      "first_token_target_accuracy": 0.125,
+      "first_8_tokens": 192,
+      "first_8_token_agreement": 0.421875,
+      "first_8_token_target_accuracy": 0.3697916666666667
+    }
+  ]
+}

@@ -1,0 +1,338 @@
+{
+  "configuration": {
+    "selection": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+    "sources": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+    "cohort": "neu_emotional",
+    "systems": [
+      {
+        "name": "speech_10hz_parent4775",
+        "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech",
+        "condition": "speech"
+      },
+      {
+        "name": "true_text",
+        "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text",
+        "condition": "text"
+      },
+      {
+        "name": "plain_asr",
+        "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr",
+        "condition": "asr"
+      },
+      {
+        "name": "asr_predicted_tone",
+        "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone",
+        "condition": "text"
+      },
+      {
+        "name": "asr_oracle_tone_reused",
+        "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone",
+        "condition": "text"
+      }
+    ],
+    "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\parent4775_neu64_matched"
+  },
+  "example_ids": [
+    "neu:neu_base_00011_angry",
+    "neu:neu_base_00011_sad",
+    "neu:neu_base_00016_happy",
+    "neu:neu_base_00016_sad",
+    "neu:neu_base_00073_fearful",
+    "neu:neu_base_00073_happy",
+    "neu:neu_base_00215_angry",
+    "neu:neu_base_00215_sad",
+    "neu:neu_base_00352_happy",
+    "neu:neu_base_00352_sad",
+    "neu:neu_base_00358_angry",
+    "neu:neu_base_00358_happy",
+    "neu:neu_base_00970_angry",
+    "neu:neu_base_00970_happy",
+    "neu:neu_base_01094_angry",
+    "neu:neu_base_01094_happy",
+    "neu:neu_base_01095_angry",
+    "neu:neu_base_01095_sad",
+    "neu:neu_base_01196_happy",
+    "neu:neu_base_01196_sad",
+    "neu:neu_base_01198_angry",
+    "neu:neu_base_01198_happy",
+    "neu:neu_base_01404_happy",
+    "neu:neu_base_01404_sad",
+    "neu:neu_base_01710_angry",
+    "neu:neu_base_01710_happy",
+    "neu:neu_base_01716_happy",
+    "neu:neu_base_01716_sad",
+    "neu:neu_base_01717_fearful",
+    "neu:neu_base_01717_happy",
+    "neu:neu_base_02064_happy",
+    "neu:neu_base_02064_sad",
+    "neu:neu_base_02081_fearful",
+    "neu:neu_base_02081_happy",
+    "neu:neu_base_02089_fearful",
+    "neu:neu_base_02089_happy",
+    "neu:neu_base_02124_happy",
+    "neu:neu_base_02124_sad",
+    "neu:neu_base_02125_fearful",
+    "neu:neu_base_02125_happy",
+    "neu:neu_base_02127_angry",
+    "neu:neu_base_02127_sad",
+    "neu:neu_base_02344_happy",
+    "neu:neu_base_02344_sad",
+    "neu:neu_base_02347_angry",
+    "neu:neu_base_02347_sad",
+    "neu:neu_base_02349_fearful",
+    "neu:neu_base_02349_happy",
+    "neu:neu_base_02967_angry",
+    "neu:neu_base_02967_sad",
+    "neu:neu_base_03150_angry",
+    "neu:neu_base_03150_happy",
+    "neu:neu_base_03952_happy",
+    "neu:neu_base_03952_sad",
+    "neu:neu_base_04107_angry",
+    "neu:neu_base_04107_sad",
+    "neu:neu_base_04109_fearful",
+    "neu:neu_base_04109_happy",
+    "neu:neu_base_04310_angry",
+    "neu:neu_base_04310_happy",
+    "neu:neu_base_04475_angry",
+    "neu:neu_base_04475_sad",
+    "neu:neu_base_04476_happy",
+    "neu:neu_base_04476_sad"
+  ],
+  "measurements": [
+    {
+      "name": "speech_10hz_parent4775",
+      "condition": "speech",
+      "metrics": {
+        "examples": 64,
+        "target_tokens": 1802,
+        "cross_entropy": 0.7458688195517802,
+        "perplexity": 2.108272347735346,
+        "semantic_similarity": 0.677354290150106,
+        "generated_examples": 64,
+        "generation_seconds": 0.0,
+        "generated_tokens": 1574,
+        "completed_generations": 64,
+        "token_limited_generations": 0,
+        "shuffled_audio_cross_entropy": null,
+        "zero_audio_cross_entropy": null,
+        "no_history_cross_entropy": null,
+        "no_history_shuffled_cross_entropy": null,
+        "evaluation_seconds": 0.0
+      },
+      "artifacts": [
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation.json",
+          "bytes": 590,
+          "sha256": "27263891fb379c7251c5a206bf8877f38b27a36dda3da1214b0f4423cb6a2dc2"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_losses.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_losses.jsonl",
+          "bytes": 61101,
+          "sha256": "3f244dec8ef5be911fb94703eae48fb99a1758e54a7cc68ae81af46be1033252"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_generations.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_generations.jsonl",
+          "bytes": 293662,
+          "sha256": "34d5c3dabb05e420dc20dffe6fa5b0c3a513d2740336cd4ba16bcbdd8d03516e"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_conditioning.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_conditioning.json",
+          "bytes": 802,
+          "sha256": "1c8d44a3391c4f9d4b3953129c6d977dfb7f9bf72fdc1a24898108598f3561f4"
+        }
+      ]
+    },
+    {
+      "name": "true_text",
+      "condition": "text",
+      "metrics": {
+        "examples": 64,
+        "target_tokens": 1802,
+        "cross_entropy": 0.7463068459823844,
+        "perplexity": 2.109196029030208,
+        "semantic_similarity": 0.7205655281431973,
+        "generated_examples": 64,
+        "generation_seconds": 0.0,
+        "generated_tokens": 1938,
+        "completed_generations": 64,
+        "token_limited_generations": 0,
+        "shuffled_audio_cross_entropy": null,
+        "zero_audio_cross_entropy": null,
+        "no_history_cross_entropy": null,
+        "no_history_shuffled_cross_entropy": null,
+        "evaluation_seconds": 0.0
+      },
+      "artifacts": [
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation.json",
+          "bytes": 535,
+          "sha256": "3d03e865b3bc4ba38cf61f402762342b9200140b220a8fa5913d68b0dcc565d2"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_losses.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_losses.jsonl",
+          "bytes": 42510,
+          "sha256": "b59c18c511baa6abd3fc83ddd77b3922bf428945f44afe8ebe9374d1826fba64"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_generations.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_generations.jsonl",
+          "bytes": 229366,
+          "sha256": "cc7282bdc9c577bd999c09000e14bcfb19f9463424a6d1bdff18a889f00d894b"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_conditioning.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_conditioning.json",
+          "bytes": 2,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ]
+    },
+    {
+      "name": "plain_asr",
+      "condition": "asr",
+      "metrics": {
+        "examples": 64,
+        "target_tokens": 1802,
+        "cross_entropy": 0.7798652176917856,
+        "perplexity": 2.181178261444669,
+        "semantic_similarity": 0.7150281346403062,
+        "generated_examples": 64,
+        "generation_seconds": 0.0,
+        "generated_tokens": 2106,
+        "completed_generations": 64,
+        "token_limited_generations": 0,
+        "shuffled_audio_cross_entropy": null,
+        "zero_audio_cross_entropy": null,
+        "no_history_cross_entropy": null,
+        "no_history_shuffled_cross_entropy": null,
+        "evaluation_seconds": 0.0
+      },
+      "artifacts": [
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation.json",
+          "bytes": 533,
+          "sha256": "866ee22f9359df48c11227abd4158cd98b3d5e9d1d1edc1088c7f924078ab07e"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_losses.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_losses.jsonl",
+          "bytes": 42251,
+          "sha256": "108fcf4c25a40b4d693f32e41620a13355bb0b6e71c1ae1ceb9a80f65ce2ccf1"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+          "bytes": 243507,
+          "sha256": "da4f19bd719cde295c4adddc62f7a125af2ac9306ca62e72c6d666b68ebeb45f"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_conditioning.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_conditioning.json",
+          "bytes": 2,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ]
+    },
+    {
+      "name": "asr_predicted_tone",
+      "condition": "text",
+      "metrics": {
+        "examples": 64,
+        "target_tokens": 1802,
+        "cross_entropy": 0.6865503352371093,
+        "perplexity": 1.986849732185506,
+        "semantic_similarity": 0.9080769470892847,
+        "generated_examples": 64,
+        "generation_seconds": 0.0,
+        "generated_tokens": 1778,
+        "completed_generations": 64,
+        "token_limited_generations": 0,
+        "shuffled_audio_cross_entropy": null,
+        "zero_audio_cross_entropy": null,
+        "no_history_cross_entropy": null,
+        "no_history_shuffled_cross_entropy": null,
+        "evaluation_seconds": 0.0
+      },
+      "artifacts": [
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation.json",
+          "bytes": 530,
+          "sha256": "e54c3da099b9b279901ebc22102c78fe454169f14dc4459ae9cab279f40baec5"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_losses.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_losses.jsonl",
+          "bytes": 10124,
+          "sha256": "706d13a4017cf1f329dedd796dec38c8fcbee2602a39602069891ee23d467770"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_generations.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_generations.jsonl",
+          "bytes": 49907,
+          "sha256": "6aaf5cfffcf42f0bc3a616cfcd9fd519f861edc25ddedaf18e025dbf197f9928"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_conditioning.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_conditioning.json",
+          "bytes": 2,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ]
+    },
+    {
+      "name": "asr_oracle_tone_reused",
+      "condition": "text",
+      "metrics": {
+        "examples": 64,
+        "target_tokens": 1802,
+        "cross_entropy": 0.6865503352371093,
+        "perplexity": 1.986849732185506,
+        "semantic_similarity": 0.9080769470892847,
+        "generated_examples": 64,
+        "generation_seconds": 0.0,
+        "generated_tokens": 1778,
+        "completed_generations": 64,
+        "token_limited_generations": 0,
+        "shuffled_audio_cross_entropy": null,
+        "zero_audio_cross_entropy": null,
+        "no_history_cross_entropy": null,
+        "no_history_shuffled_cross_entropy": null,
+        "evaluation_seconds": 0.0
+      },
+      "artifacts": [
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\evaluation.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\evaluation.json",
+          "bytes": 530,
+          "sha256": "e54c3da099b9b279901ebc22102c78fe454169f14dc4459ae9cab279f40baec5"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\evaluation_losses.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\evaluation_losses.jsonl",
+          "bytes": 10124,
+          "sha256": "706d13a4017cf1f329dedd796dec38c8fcbee2602a39602069891ee23d467770"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\evaluation_generations.jsonl",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\evaluation_generations.jsonl",
+          "bytes": 49907,
+          "sha256": "6aaf5cfffcf42f0bc3a616cfcd9fd519f861edc25ddedaf18e025dbf197f9928"
+        },
+        {
+          "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\evaluation_conditioning.json",
+          "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\evaluation_conditioning.json",
+          "bytes": 2,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      ]
+    }
+  ]
+}

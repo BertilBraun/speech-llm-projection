@@ -1,0 +1,6 @@
+{
+  "cards_sha256": "cbf361f5b642cdac258b0bb3e65dd3586f52b77e67aaf364023a1479eb018237",
+  "ratings_sha256": "f3235211d8b340f7212f06974520857e14c184ca5eb537c7a0ff564b2211c6e5",
+  "assessed_cases": 88,
+  "methodology": "All88 cases personally read by Codex in fresh-salt A/B slots before mapping or root ratings. Broader context and familiar ASR replies known, so blinding is partial. Ratings condition on intended synthetic labels, no listening or teacher-resemblance scoring; ordinal means are heuristic, not accuracy."
+}

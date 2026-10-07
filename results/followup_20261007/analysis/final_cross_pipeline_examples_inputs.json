@@ -1,0 +1,54 @@
+{
+  "captured_at": "2026-10-07T14:03:40.276426Z",
+  "source_root": "C:\\Projects\\Voice-Full-Duplex-Light",
+  "artifacts": [
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_generations.jsonl",
+      "bytes": 229366,
+      "sha256": "cc7282bdc9c577bd999c09000e14bcfb19f9463424a6d1bdff18a889f00d894b"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+      "bytes": 243507,
+      "sha256": "da4f19bd719cde295c4adddc62f7a125af2ac9306ca62e72c6d666b68ebeb45f"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_generations.jsonl",
+      "bytes": 49907,
+      "sha256": "6aaf5cfffcf42f0bc3a616cfcd9fd519f861edc25ddedaf18e025dbf197f9928"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech\\evaluation_generations.jsonl",
+      "bytes": 293459,
+      "sha256": "54192a6ebd6661e38c8378725852ff1bfa6c56166b5744b55679c3a45dd4b708"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_generations.jsonl",
+      "bytes": 293662,
+      "sha256": "34d5c3dabb05e420dc20dffe6fa5b0c3a513d2740336cd4ba16bcbdd8d03516e"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\evaluation_transcript30\\speech\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_transcript30\\speech\\evaluation_generations.jsonl",
+      "bytes": 292434,
+      "sha256": "5186a9d439c8c2e85fd2a0e66a280377efad683fee224d09ad5d742f20441070"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\evaluation_ordinarykl\\speech\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_ordinarykl\\speech\\evaluation_generations.jsonl",
+      "bytes": 299020,
+      "sha256": "93a900f6334882b1598244428c22af14b672f2f27affc7ea5e4340ee8e6904d4"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\evaluation_followup_mean_10hz_ce_control_9550\\speech\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_followup_mean_10hz_ce_control_9550\\speech\\evaluation_generations.jsonl",
+      "bytes": 298899,
+      "sha256": "e2b677317edbc8b88be1d1448211eab0a8f3a807f2f925420ea3a9d9c1a2e597"
+    }
+  ]
+}

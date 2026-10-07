@@ -1,0 +1,3 @@
+first_source,second_source,cohort,cases,families,axis,first_mean,second_mean,difference,lower_95,upper_95,wins,ties,losses,half_credit_win_fraction
+asr_predicted_tone,plain_asr,neu_emotional,64,19,tone,1.328125,1.109375,0.21875,0.06060606060606061,0.38235294117647056,20,38,6,0.609375
+asr_predicted_tone,plain_asr,neu_emotional,64,19,grounding,1.046875,1.140625,-0.09375,-0.3461805555555555,0.17143973214285707,10,40,14,0.46875

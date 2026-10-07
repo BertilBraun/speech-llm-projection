@@ -1,0 +1,41 @@
+{
+  "first": {
+    "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\validation\\evaluation_generations.jsonl",
+    "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\validation\\evaluation_generations.jsonl",
+    "bytes": 89382,
+    "sha256": "a9bed2b34e50a72e5f8d0066697bf3cdc49b2d1ff25fb39dbf1cca7e8c6ae358"
+  },
+  "second": {
+    "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\validation\\evaluation_generations.jsonl",
+    "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\validation\\evaluation_generations.jsonl",
+    "bytes": 90860,
+    "sha256": "99dd8811bca200aa6e0ed5639ad028ed9d57fe8418d4376a649f51e397541270"
+  },
+  "matched_examples": 24,
+  "example_ids": [
+    "ordinary:cb12f37ac2ffb78c1585",
+    "ordinary:14154499075c39d034f7",
+    "ordinary:413d45dd5575ee18e8d9",
+    "ordinary:cf5f5a90ab8079a0bbc4",
+    "ordinary:de5cb2bc961bb73e4721",
+    "ordinary:8c95076b5a004c6e0c1c",
+    "ordinary:f912451e8fd38f297083",
+    "ordinary:d28987e37fb15c3cc9ff",
+    "qwen:utterance_00766_frustrated",
+    "qwen:utterance_00766_happy",
+    "qwen:utterance_01649_frustrated",
+    "qwen:utterance_01649_neutral",
+    "qwen:utterance_02251_happy",
+    "qwen:utterance_02251_sad",
+    "qwen:utterance_00286_happy",
+    "qwen:utterance_00286_sarcastic",
+    "neu:neu_base_04082_angry",
+    "neu:neu_base_04082_happy",
+    "neu:neu_base_04095_angry",
+    "neu:neu_base_04095_sad",
+    "neu:neu_base_03973_fearful",
+    "neu:neu_base_03973_happy",
+    "neu:neu_base_03052_happy",
+    "neu:neu_base_03052_sad"
+  ]
+}

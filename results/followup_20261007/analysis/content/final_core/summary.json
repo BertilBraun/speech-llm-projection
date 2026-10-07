@@ -1,0 +1,115 @@
+{
+  "configuration": {
+    "selection": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+    "sources": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+    "responses": [
+      {
+        "name": "speech_2.5Hz_4775",
+        "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\evaluation_generations.jsonl",
+        "condition": "speech"
+      },
+      {
+        "name": "speech_10Hz_4775",
+        "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_generations.jsonl",
+        "condition": "speech"
+      },
+      {
+        "name": "followup_mean_10hz_ce_control_6775",
+        "generations": "results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech\\evaluation_generations.jsonl",
+        "condition": "speech"
+      },
+      {
+        "name": "true_TEXT",
+        "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_generations.jsonl",
+        "condition": "text"
+      },
+      {
+        "name": "plain_ASR",
+        "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+        "condition": "asr"
+      }
+    ],
+    "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\content\\final_core"
+  },
+  "artifacts": [
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+      "bytes": 363098,
+      "sha256": "75fae88f574715c67ff3703d14bd20b79fc514a6235be9b2b41f166ae5ee4750"
+    },
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+      "bytes": 9604728,
+      "sha256": "8471f5cde9cdd2d5c3f721d5829fe3ec6380bd81c5c21eeba35eda6262e19ae9"
+    },
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\evaluation_generations.jsonl",
+      "bytes": 283882,
+      "sha256": "9ab7be29e463a99c6affa0f1b9540d4ac1d0298314467004000e751aa5df0537"
+    },
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_generations.jsonl",
+      "bytes": 293662,
+      "sha256": "34d5c3dabb05e420dc20dffe6fa5b0c3a513d2740336cd4ba16bcbdd8d03516e"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech\\evaluation_generations.jsonl",
+      "bytes": 293459,
+      "sha256": "54192a6ebd6661e38c8378725852ff1bfa6c56166b5744b55679c3a45dd4b708"
+    },
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_generations.jsonl",
+      "bytes": 229366,
+      "sha256": "cc7282bdc9c577bd999c09000e14bcfb19f9463424a6d1bdff18a889f00d894b"
+    },
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+      "bytes": 243507,
+      "sha256": "da4f19bd719cde295c4adddc62f7a125af2ac9306ca62e72c6d666b68ebeb45f"
+    }
+  ],
+  "counts": [
+    {
+      "source_name": "speech_2.5Hz_4775",
+      "examples": 136,
+      "novel_number_time_or_weekday_cases": 20,
+      "source_negation_without_response_marker_cases": 32,
+      "first_person_action_overlap_cases": 0
+    },
+    {
+      "source_name": "speech_10Hz_4775",
+      "examples": 136,
+      "novel_number_time_or_weekday_cases": 17,
+      "source_negation_without_response_marker_cases": 26,
+      "first_person_action_overlap_cases": 1
+    },
+    {
+      "source_name": "followup_mean_10hz_ce_control_6775",
+      "examples": 136,
+      "novel_number_time_or_weekday_cases": 20,
+      "source_negation_without_response_marker_cases": 28,
+      "first_person_action_overlap_cases": 0
+    },
+    {
+      "source_name": "true_TEXT",
+      "examples": 136,
+      "novel_number_time_or_weekday_cases": 20,
+      "source_negation_without_response_marker_cases": 24,
+      "first_person_action_overlap_cases": 0
+    },
+    {
+      "source_name": "plain_ASR",
+      "examples": 136,
+      "novel_number_time_or_weekday_cases": 25,
+      "source_negation_without_response_marker_cases": 22,
+      "first_person_action_overlap_cases": 0
+    }
+  ]
+}

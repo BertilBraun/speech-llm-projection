@@ -1,12 +1,48 @@
 # Speech projector serving handoff for the Rust scheduler
 
+## Current checkpoint: 7 October 2026
+
+The latest research selection is **`followup_mean_10hz_ce_control_6775`**, trained
+on the 38,193-example mixed dataset including paired emotional audio. Use its
+final `checkpoint/projector.safetensors`, SHA256
+`ae0f59349e30d049b863b5174fe0e93d9bb4fcd899d448a96c460854f85b9e3a`.
+The local asset is under
+`results_preview/followup10hz_20261007/runs/followup_mean_10hz_ce_control_6775/`;
+the node asset is under
+`/workspace/speech-projector/results_followup_20261007/followup_mean_10hz_ce_control_6775/`.
+The projector dimensions, audio handling and chat delimiters below still apply.
+The older 20,000-example weights are historical. See the [main results](../README.md)
+for measured grounding, emotional and multi-turn limitations. No production
+server, vLLM speech-path parity, persistent session cache or request-latency
+benchmark has been established. The classifier alternative also requires
+natural-speaker validation before use with arbitrary microphone input.
+
+Current evaluation uses **greedy decoding with a 256-new-token cap**. The mixed
+model's examples supply their own generic `prompt` policy: ordinary examples use
+chat without a system message; older Qwen emotion examples use the one-to-two
+short-sentence policy; Neu examples use the exact four-delivery generic policy
+quoted in the main README. These are not the current clip's tone label.
+`RunConfig.prompt=chat` alone does not reproduce all emotional evaluations.
+Select and record a serving policy explicitly; changing it is an untested
+comparison. The older no-system/sampling settings below describe the historical
+20k prototype.
+
+The existing model entry point is
+`FrozenQwen.generate_conversation(ConversationRequest(identifier, prompt, history, current), max_new_tokens)`.
+It accepts typed text or speech current turns and typed history. Its retained
+`SpeechHistoryTurn` mode was evaluated as an unfamiliar inference layout, not
+trained or validated as persistent-session cache parity. Request assembly starts
+a fresh prefill; the decoder's internal cache is used within that request.
+
+## Historical handoff: 6 October 2026
+
 Prepared 6 October 2026 for integration with a separately implemented Rust scheduler. The current model consumes a **complete user utterance**, then generates assistant text. Accept audio packets throughout the utterance, finalize them on the external end-of-turn event, and perform one logical Qwen prefill followed by cached autoregressive decoding. Text output can be streamed after that prefill.
 
 The implemented inference reference is PyTorch plus Hugging Face Transformers. A persistent Python model worker is the simplest initial integration. vLLM is a promising faster Qwen backend with an embedding-input interface, but the **speech-projector path has not yet been validated in vLLM**. This handoff describes the existing model and a proposed serving contract; it does not deploy a server or resume training.
 
-## Model and checkpoint to integrate
+## Historical model and checkpoint
 
-Use the completed Qwen-teacher distillation checkpoint for the initial serving prototype:
+The original serving prototype used this completed Qwen-teacher distillation checkpoint:
 
 | Component | Actual interface |
 | --- | --- |

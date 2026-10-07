@@ -1,0 +1,176 @@
+{
+  "provenance": {
+    "configuration": {
+      "selection": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+      "sources": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+      "first": {
+        "name": "asr_predicted_tone",
+        "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_generations.jsonl",
+        "condition": "text"
+      },
+      "second": {
+        "name": "plain_asr",
+        "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+        "condition": "asr"
+      },
+      "cohorts": [
+        "neu_emotional"
+      ],
+      "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\quality\\asr_tone_vs_asr",
+      "seed": 42
+    },
+    "artifacts": [
+      {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+        "bytes": 363098,
+        "sha256": "75fae88f574715c67ff3703d14bd20b79fc514a6235be9b2b41f166ae5ee4750"
+      },
+      {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+        "bytes": 9604728,
+        "sha256": "8471f5cde9cdd2d5c3f721d5829fe3ec6380bd81c5c21eeba35eda6262e19ae9"
+      },
+      {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_generations.jsonl",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_generations.jsonl",
+        "bytes": 49907,
+        "sha256": "6aaf5cfffcf42f0bc3a616cfcd9fd519f861edc25ddedaf18e025dbf197f9928"
+      },
+      {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+        "bytes": 243507,
+        "sha256": "da4f19bd719cde295c4adddc62f7a125af2ac9306ca62e72c6d666b68ebeb45f"
+      }
+    ]
+  },
+  "ratings": {
+    "path": "results_preview\\followup10hz_20261007\\analysis\\quality\\asr_tone_vs_asr\\independent\\ratings_locked.jsonl",
+    "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\quality\\asr_tone_vs_asr\\independent\\ratings_locked.jsonl",
+    "bytes": 24628,
+    "sha256": "3b4b892c4e5c6aab6ba90c9427b83799223b0a17702bd4167cea13cbf8167448"
+  },
+  "overall": {
+    "examples": 64,
+    "bases": 32,
+    "families": 19,
+    "tone": {
+      "first_mean": 1.328125,
+      "second_mean": 1.109375,
+      "first_minus_second": {
+        "examples": 64,
+        "dialogues": 19,
+        "draws": 2000,
+        "confidence": 0.95,
+        "estimate": 0.21875,
+        "lower": 0.06060606060606061,
+        "upper": 0.38235294117647056
+      },
+      "wins": 20,
+      "ties": 38,
+      "losses": 6,
+      "half_credit_win_fraction": {
+        "examples": 64,
+        "dialogues": 19,
+        "draws": 2000,
+        "confidence": 0.95,
+        "estimate": 0.609375,
+        "lower": 0.5390625,
+        "upper": 0.6764705882352942
+      }
+    },
+    "grounding": {
+      "first_mean": 1.046875,
+      "second_mean": 1.140625,
+      "first_minus_second": {
+        "examples": 64,
+        "dialogues": 19,
+        "draws": 2000,
+        "confidence": 0.95,
+        "estimate": -0.09375,
+        "lower": -0.3461805555555555,
+        "upper": 0.17143973214285707
+      },
+      "wins": 10,
+      "ties": 40,
+      "losses": 14,
+      "half_credit_win_fraction": {
+        "examples": 64,
+        "dialogues": 19,
+        "draws": 2000,
+        "confidence": 0.95,
+        "estimate": 0.46875,
+        "lower": 0.38333333333333336,
+        "upper": 0.5625
+      }
+    },
+    "tone_better_grounding_not_worse": 16,
+    "tone_better_grounding_worse": 4,
+    "ambiguous_cases": 11
+  },
+  "cohorts": [
+    {
+      "cohort": "neu_emotional",
+      "comparison": {
+        "examples": 64,
+        "bases": 32,
+        "families": 19,
+        "tone": {
+          "first_mean": 1.328125,
+          "second_mean": 1.109375,
+          "first_minus_second": {
+            "examples": 64,
+            "dialogues": 19,
+            "draws": 2000,
+            "confidence": 0.95,
+            "estimate": 0.21875,
+            "lower": 0.06060606060606061,
+            "upper": 0.38235294117647056
+          },
+          "wins": 20,
+          "ties": 38,
+          "losses": 6,
+          "half_credit_win_fraction": {
+            "examples": 64,
+            "dialogues": 19,
+            "draws": 2000,
+            "confidence": 0.95,
+            "estimate": 0.609375,
+            "lower": 0.5390625,
+            "upper": 0.6764705882352942
+          }
+        },
+        "grounding": {
+          "first_mean": 1.046875,
+          "second_mean": 1.140625,
+          "first_minus_second": {
+            "examples": 64,
+            "dialogues": 19,
+            "draws": 2000,
+            "confidence": 0.95,
+            "estimate": -0.09375,
+            "lower": -0.3461805555555555,
+            "upper": 0.17143973214285707
+          },
+          "wins": 10,
+          "ties": 40,
+          "losses": 14,
+          "half_credit_win_fraction": {
+            "examples": 64,
+            "dialogues": 19,
+            "draws": 2000,
+            "confidence": 0.95,
+            "estimate": 0.46875,
+            "lower": 0.38333333333333336,
+            "upper": 0.5625
+          }
+        },
+        "tone_better_grounding_not_worse": 16,
+        "tone_better_grounding_worse": 4,
+        "ambiguous_cases": 11
+      }
+    }
+  ]
+}

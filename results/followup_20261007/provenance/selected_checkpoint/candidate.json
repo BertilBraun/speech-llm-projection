@@ -1,0 +1,174 @@
+{
+  "configuration": {
+    "name": "followup_mean_10hz_ce_control_6775",
+    "stage": "V2",
+    "seed": 42,
+    "train_examples": 38193,
+    "validation_examples": 128,
+    "test_examples": 128,
+    "training_validation_examples": null,
+    "epochs": 3,
+    "max_optimizer_updates": 6775,
+    "learning_rate": 0.0002,
+    "microbatch_size": 1,
+    "gradient_accumulation": 8,
+    "history_turns": 2,
+    "max_history_tokens": 256,
+    "max_target_tokens": 4097,
+    "max_new_tokens": 256,
+    "sequence_length_multiple": 64,
+    "gradient_checkpointing": true,
+    "evaluation_interval": 250,
+    "checkpoint_interval": 100,
+    "qualitative_examples": 24,
+    "semantic_examples": 24,
+    "generation_batch_size": 8,
+    "conditioning_examples": 24,
+    "model_name": "Qwen/Qwen3.5-2B",
+    "speech_model_name": "openai/whisper-small",
+    "prompt": {
+      "kind": "chat"
+    },
+    "decoding": {
+      "kind": "greedy"
+    },
+    "objective": {
+      "kind": "response_ce"
+    },
+    "projector": {
+      "compression_factor": 5,
+      "encoder_dimension": 768,
+      "embedding_dimension": 2048,
+      "native_rate": 50.0,
+      "architecture": "mlp",
+      "hidden_dimension": 1024
+    }
+  },
+  "validation": {
+    "old_ordinary": {
+      "examples": 48,
+      "target_tokens": 10723,
+      "cross_entropy": 1.5882947180105058,
+      "perplexity": 4.895393779565218,
+      "semantic_similarity": 0.6426619328558445,
+      "generated_examples": 8,
+      "generation_seconds": 0.0,
+      "generated_tokens": 977,
+      "completed_generations": 6,
+      "token_limited_generations": 2,
+      "shuffled_audio_cross_entropy": null,
+      "zero_audio_cross_entropy": null,
+      "no_history_cross_entropy": null,
+      "no_history_shuffled_cross_entropy": null,
+      "evaluation_seconds": 0.0
+    },
+    "old_emotional": {
+      "examples": 40,
+      "target_tokens": 978,
+      "cross_entropy": 0.7655269873684657,
+      "perplexity": 2.150127166002717,
+      "semantic_similarity": 0.5315280668437481,
+      "generated_examples": 8,
+      "generation_seconds": 0.0,
+      "generated_tokens": 181,
+      "completed_generations": 8,
+      "token_limited_generations": 0,
+      "shuffled_audio_cross_entropy": null,
+      "zero_audio_cross_entropy": null,
+      "no_history_cross_entropy": null,
+      "no_history_shuffled_cross_entropy": null,
+      "evaluation_seconds": 0.0
+    },
+    "new_neu_emotional": {
+      "examples": 40,
+      "target_tokens": 1110,
+      "cross_entropy": 0.6392832393716047,
+      "perplexity": 1.8951220435163325,
+      "semantic_similarity": 0.6094086654484272,
+      "generated_examples": 8,
+      "generation_seconds": 0.0,
+      "generated_tokens": 207,
+      "completed_generations": 8,
+      "token_limited_generations": 0,
+      "shuffled_audio_cross_entropy": null,
+      "zero_audio_cross_entropy": null,
+      "no_history_cross_entropy": null,
+      "no_history_shuffled_cross_entropy": null,
+      "evaluation_seconds": 0.0
+    }
+  },
+  "old_emotional_preference": {
+    "pairs": 20,
+    "distinct_target_pairs": 19,
+    "family_clusters": 20,
+    "matching_margin": {
+      "examples": 20,
+      "dialogues": 20,
+      "draws": 2000,
+      "confidence": 0.95,
+      "estimate": 0.03150010108947754,
+      "lower": 0.0054519977420568536,
+      "upper": 0.05860265254974364
+    },
+    "resized_matching_margin": {
+      "examples": 20,
+      "dialogues": 20,
+      "draws": 2000,
+      "confidence": 0.95,
+      "estimate": 0.05230318158864975,
+      "lower": 0.025957852937281138,
+      "upper": 0.08086102809756993
+    },
+    "matching_win_rate": {
+      "examples": 20,
+      "dialogues": 20,
+      "draws": 2000,
+      "confidence": 0.95,
+      "estimate": 0.6,
+      "lower": 0.4,
+      "upper": 0.8
+    },
+    "tie_rate": 0.05,
+    "first_direction_win_rate": 0.6,
+    "second_direction_win_rate": 0.75,
+    "numerical_tie_tolerance": 1e-6
+  },
+  "new_neu_preference": {
+    "pairs": 20,
+    "distinct_target_pairs": 20,
+    "family_clusters": 20,
+    "matching_margin": {
+      "examples": 20,
+      "dialogues": 20,
+      "draws": 2000,
+      "confidence": 0.95,
+      "estimate": 0.12077904231846333,
+      "lower": 0.06678507905453446,
+      "upper": 0.1852662973385304
+    },
+    "resized_matching_margin": {
+      "examples": 20,
+      "dialogues": 20,
+      "draws": 2000,
+      "confidence": 0.95,
+      "estimate": 0.10458395220339298,
+      "lower": 0.057786838067695495,
+      "upper": 0.15869343954138457
+    },
+    "matching_win_rate": {
+      "examples": 20,
+      "dialogues": 20,
+      "draws": 2000,
+      "confidence": 0.95,
+      "estimate": 0.95,
+      "lower": 0.85,
+      "upper": 1.0
+    },
+    "tie_rate": 0.0,
+    "first_direction_win_rate": 0.75,
+    "second_direction_win_rate": 0.75,
+    "numerical_tie_tolerance": 1e-6
+  },
+  "pseudo_tokens_per_second": 10.0,
+  "training_seconds_per_update": 1.1445574448508902
+}

@@ -1,0 +1,34 @@
+{
+  "source_files": [
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\teacher_fidelity.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\teacher_fidelity.jsonl",
+      "bytes": 176556,
+      "sha256": "6c34b723b55db803820d3ec3ccfeece746692d36fe9b8817f540dc6a29ffe3ae"
+    },
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\neu_emotional_preference\\paired_emotion_losses.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\neu_emotional_preference\\paired_emotion_losses.jsonl",
+      "bytes": 21121,
+      "sha256": "f7a761e33d79a00285cfd8e1029ce904e33820da9cee7b1a6150deee1bd71e77"
+    }
+  ],
+  "output_files": [
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\parent4775_comparison\\old_record_reaggregation\\teacher_fidelity_summary.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\parent4775_comparison\\old_record_reaggregation\\teacher_fidelity_summary.jsonl",
+      "bytes": 1652,
+      "sha256": "0c55bc2a3e70d6ae8b1861412b748eb3d276c18e569e5fd3fd37294d586ee10b"
+    },
+    {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\parent4775_comparison\\old_record_reaggregation\\neu_preference.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\parent4775_comparison\\old_record_reaggregation\\neu_preference.json",
+      "bytes": 878,
+      "sha256": "b45d7a637e8cf64c14e8213cd47d03a1ea7ecc003fae0bfb923bef3dd1c18888"
+    }
+  ],
+  "methods": [
+    "teacher_evaluation.summarize_fidelity",
+    "overnight_evaluation.summarize_preferences"
+  ]
+}

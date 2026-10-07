@@ -1,0 +1,7 @@
+system,cohort,examples,target_tokens,ce,semantic,generated,completed,capped
+followup_mean_10hz_ce_control_6775,ordinary,96,20883,1.6105808631182916,0.6326307070751985,48,34,14
+followup_mean_10hz_ce_control_6775,qwen_emotional,80,1892,0.7640656376096083,0.6308536653717359,24,24,0
+followup_mean_10hz_ce_control_6775,neu_emotional,80,2232,0.6464216578417995,0.7058305903337896,64,64,0
+followup_mean_10hz_ce_control_9550,ordinary,96,20883,1.605254132069602,0.6264993163446585,48,28,20
+followup_mean_10hz_ce_control_9550,qwen_emotional,80,1892,0.7550624591272804,0.6558947538336118,24,24,0
+followup_mean_10hz_ce_control_9550,neu_emotional,80,2232,0.6386060705174789,0.67472243309021,64,64,0

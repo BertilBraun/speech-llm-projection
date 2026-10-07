@@ -1,0 +1,6 @@
+{
+  "endpoint_updates": 9550,
+  "ordinary_ce_tolerance": 0.01,
+  "neu_margin_tolerance": 0.02,
+  "minimum_material_regressions": 3
+}

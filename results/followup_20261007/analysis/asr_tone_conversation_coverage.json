@@ -1,0 +1,49 @@
+{
+  "inputs": [
+    {
+      "path": "results_preview\\followup10hz_20261007\\conversation_asr_tone\\provenance.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_asr_tone\\provenance.json",
+      "bytes": 512362,
+      "sha256": "3b2c97c3efeaa07c9e359588360bc067a4813ac3072343ce44334fd88b34cfd6"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\conversation_asr_tone\\replies.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_asr_tone\\replies.jsonl",
+      "bytes": 46373,
+      "sha256": "4a04ca48a4ee5950e7ca5fb4f7cedd217c61ec3a203497b789a4eb6826abb1e0"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\conversation_asr_tone\\summary.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_asr_tone\\summary.json",
+      "bytes": 165,
+      "sha256": "76c1ca131d2547d5c17c3d81b77f82a04a4404c6a585c8c6e6734f3f6c13e9a4"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\conversation_epoch1\\asr\\replies.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_epoch1\\asr\\replies.jsonl",
+      "bytes": 46751,
+      "sha256": "e9a1a6bf6ed0da0f2d2f547afe1f7b3586ceed4b32ec51bc91a1c9610a71abce"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\conversation_epoch1\\text\\replies.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_epoch1\\text\\replies.jsonl",
+      "bytes": 46395,
+      "sha256": "f2ec88ceed09963dfa5b6d8420cd0d57f3041af6051120714d23a06e320ab976"
+    }
+  ],
+  "measured": {
+    "condition": "asr",
+    "controlled_responses": 12,
+    "rollout_responses": 24,
+    "completed": 36,
+    "token_limited": 0,
+    "generation_seconds": 44.97175056254491
+  },
+  "initial_cases": 6,
+  "families": 3,
+  "controlled_pair_comparisons": 6,
+  "identical_controlled_pairs": 3,
+  "rollout_pair_comparisons": 12,
+  "identical_rollout_pairs": 0,
+  "same_response_as_plain_asr": 3
+}

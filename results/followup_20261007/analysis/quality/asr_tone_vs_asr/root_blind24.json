@@ -1,0 +1,269 @@
+{
+  "seed": 42,
+  "cases": [
+    {
+      "example_id": "neu:neu_base_02344_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02344",
+      "family_id": "family_food_23",
+      "intended_delivery": "happy",
+      "user_text": "I’ll pass on the table for three and go with a couple of seats instead.",
+      "history": [],
+      "response_a": "I hear you're ready to move forward with a different seating arrangement, and I'm glad you're comfortable making that choice.",
+      "response_b": "I'm glad you're making a decision that works for you, and I'm happy to help you find a spot for those two."
+    },
+    {
+      "example_id": "neu:neu_base_02344_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02344",
+      "family_id": "family_food_23",
+      "intended_delivery": "sad",
+      "user_text": "I’ll pass on the table for three and go with a couple of seats instead.",
+      "history": [],
+      "response_a": "I hear you're ready to move forward with a different seating arrangement, and I'm glad you're comfortable making that choice.",
+      "response_b": "I understand you're choosing a more comfortable seating arrangement, and I'm glad you're prioritizing your own comfort over the table."
+    },
+    {
+      "example_id": "neu:neu_base_01404_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01404",
+      "family_id": "family_home_14",
+      "intended_delivery": "happy",
+      "user_text": "I won't let anyone fix the upstairs window; it's not worth the effort.",
+      "history": [],
+      "response_a": "I hear your frustration about the window, and I want to acknowledge how much effort you've put into making sure it stays secure.",
+      "response_b": "I hear your frustration about the window, and I understand why you feel it's not worth the effort."
+    },
+    {
+      "example_id": "neu:neu_base_01404_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01404",
+      "family_id": "family_home_14",
+      "intended_delivery": "sad",
+      "user_text": "I won't let anyone fix the upstairs window; it's not worth the effort.",
+      "history": [],
+      "response_a": "I hear your frustration about the window, and I want to acknowledge how much effort you've put into making sure it stays secure.",
+      "response_b": "I hear your frustration about the window, and I want to acknowledge how much effort you've put into making sure it stays secure."
+    },
+    {
+      "example_id": "neu:neu_base_01196_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01196",
+      "family_id": "family_appointments_11",
+      "intended_delivery": "happy",
+      "user_text": "I checked the email and the new time is listed correctly.",
+      "history": [],
+      "response_a": "That's wonderful to hear! It's great to know the new time is now listed correctly.",
+      "response_b": "It sounds like you've found the correct time, and I'm glad to hear that the email reflects the updated schedule accurately."
+    },
+    {
+      "example_id": "neu:neu_base_01196_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01196",
+      "family_id": "family_appointments_11",
+      "intended_delivery": "sad",
+      "user_text": "I checked the email and the new time is listed correctly.",
+      "history": [],
+      "response_a": "I can see that the email has been updated with the correct time, which is good news.",
+      "response_b": "It sounds like you've found the correct time, and I'm glad to hear that the email reflects the updated schedule accurately."
+    },
+    {
+      "example_id": "neu:neu_base_01717_fearful",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01717",
+      "family_id": "family_work_17",
+      "intended_delivery": "fearful",
+      "user_text": "I'll check the presentation slide again in an hour if you haven't already reviewed it.",
+      "history": [],
+      "response_a": "I understand you're worried about the presentation, so I'll keep an eye on it and let you know if I've already reviewed it.",
+      "response_b": "I'll be ready to review the presentation slide in an hour, so please take your time."
+    },
+    {
+      "example_id": "neu:neu_base_01717_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01717",
+      "family_id": "family_work_17",
+      "intended_delivery": "happy",
+      "user_text": "I'll check the presentation slide again in an hour if you haven't already reviewed it.",
+      "history": [],
+      "response_a": "I'll be ready to review the presentation slide for you in an hour if you haven't already.",
+      "response_b": "I'll be ready to review the presentation slide in an hour, so please take your time."
+    },
+    {
+      "example_id": "neu:neu_base_02081_fearful",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02081",
+      "family_id": "family_hobbies_20",
+      "intended_delivery": "fearful",
+      "user_text": "The half-finished drawing has a lot of detail and some parts look like they were drawn quickly.",
+      "history": [],
+      "response_a": "I can see how much care you put into that drawing, even though some parts feel rushed. It's clear you're working hard to bring this piece to life, and I'm here to help you finish it.",
+      "response_b": "I can see how much effort you've put into that drawing, even though some parts feel rushed. It's clear you care deeply about the details, and I'm glad you took the time to create something so thoughtful."
+    },
+    {
+      "example_id": "neu:neu_base_02081_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02081",
+      "family_id": "family_hobbies_20",
+      "intended_delivery": "happy",
+      "user_text": "The half-finished drawing has a lot of detail and some parts look like they were drawn quickly.",
+      "history": [],
+      "response_a": "I can see how much effort you've put into that drawing, even though some parts feel rushed. It's clear you're working hard to bring this piece to life.",
+      "response_b": "I can see how much effort you've put into that drawing, even though some parts feel rushed. It's clear you're working hard to capture the details, and I'm glad you're taking your time to finish it."
+    },
+    {
+      "example_id": "neu:neu_base_02349_fearful",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02349",
+      "family_id": "family_food_23",
+      "intended_delivery": "fearful",
+      "user_text": "We need a table for three and would like to sit close to the entrance.",
+      "history": [],
+      "response_a": "I'm glad you're thinking about making the space feel welcoming for three people. Let's work together to create a table that fits your needs and ensures everyone can sit close to the entrance comfortably.",
+      "response_b": "I understand you are looking for a table for three people and want to sit near the entrance, and I will make sure to find that arrangement for you."
+    },
+    {
+      "example_id": "neu:neu_base_02349_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02349",
+      "family_id": "family_food_23",
+      "intended_delivery": "happy",
+      "user_text": "We need a table for three and would like to sit close to the entrance.",
+      "history": [],
+      "response_a": "I'd be happy to create a table layout for you that accommodates three people, and I can certainly help you find a spot near the entrance.",
+      "response_b": "I'm glad you're excited about the new table, and I'm happy to help you secure a spot right near the entrance."
+    },
+    {
+      "example_id": "neu:neu_base_04310_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_04310",
+      "family_id": "family_work_43",
+      "intended_delivery": "angry",
+      "user_text": "I'll send the updated version of the shared spreadsheet by 5 PM today.",
+      "history": [],
+      "response_a": "I will await your updated spreadsheet by the end of the day, and I'm ready to review it as soon as it arrives.",
+      "response_b": "I'm glad to hear you have the updated spreadsheet ready to share with me today."
+    },
+    {
+      "example_id": "neu:neu_base_04310_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_04310",
+      "family_id": "family_work_43",
+      "intended_delivery": "happy",
+      "user_text": "I'll send the updated version of the shared spreadsheet by 5 PM today.",
+      "history": [],
+      "response_a": "I'm glad to hear you're ready to share the updated spreadsheet with Pemeeme today.",
+      "response_b": "I'm glad to hear you'll be sending the updated spreadsheet today; I'll be here whenever you're ready to share it."
+    },
+    {
+      "example_id": "neu:neu_base_01198_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01198",
+      "family_id": "family_appointments_11",
+      "intended_delivery": "angry",
+      "user_text": "I’m setting a boundary and will only attend if the time changes.",
+      "history": [],
+      "response_a": "I hear your frustration and respect your need for control, so I'll wait until the time changes before attending.",
+      "response_b": "I hear you're setting a clear boundary to protect your time, and I'm here to support you in making that decision feel safe and respected."
+    },
+    {
+      "example_id": "neu:neu_base_01198_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01198",
+      "family_id": "family_appointments_11",
+      "intended_delivery": "happy",
+      "user_text": "I’m setting a boundary and will only attend if the time changes.",
+      "history": [],
+      "response_a": "I hear you're setting a clear boundary to protect your time, and I'm here to support you in making that decision feel safe and respected.",
+      "response_b": "I hear you clearly and respect your need to set this boundary, so I'll wait until the time changes before attending."
+    },
+    {
+      "example_id": "neu:neu_base_01094_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01094",
+      "family_id": "family_appointments_10",
+      "intended_delivery": "angry",
+      "user_text": "I can’t go to the morning slot; I have a prior commitment at noon.",
+      "history": [],
+      "response_a": "I hear that you have a prior commitment at noon, and I understand you can't make it to the morning slot.",
+      "response_b": "I understand that your prior commitment at noon is blocking your morning slot, and I'm sorry you're feeling that way."
+    },
+    {
+      "example_id": "neu:neu_base_01094_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01094",
+      "family_id": "family_appointments_10",
+      "intended_delivery": "happy",
+      "user_text": "I can’t go to the morning slot; I have a prior commitment at noon.",
+      "history": [],
+      "response_a": "I hear that you have a prior commitment at noon, and I understand you can't make it to the morning slot.",
+      "response_b": "I understand that your morning slot is taken, and I'm sorry you have a prior commitment at noon."
+    },
+    {
+      "example_id": "neu:neu_base_04475_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_04475",
+      "family_id": "family_technology_44",
+      "intended_delivery": "angry",
+      "user_text": "Thanks for helping me find the login after I misplaced it.",
+      "history": [],
+      "response_a": "I'm glad I could help you locate your login credentials, and I hope you're able to get back into your account without further trouble.",
+      "response_b": "I'm glad I could help you locate your login, and I'm here if you need anything else."
+    },
+    {
+      "example_id": "neu:neu_base_04475_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_04475",
+      "family_id": "family_technology_44",
+      "intended_delivery": "sad",
+      "user_text": "Thanks for helping me find the login after I misplaced it.",
+      "history": [],
+      "response_a": "I'm glad I could help you locate your login, and I'm here if you need anything else.",
+      "response_b": "I'm glad I could help you locate your login, and I hope you're able to get back into your account without any more trouble."
+    },
+    {
+      "example_id": "neu:neu_base_02967_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02967",
+      "family_id": "family_study_29",
+      "intended_delivery": "angry",
+      "user_text": "I’m waiting for my partner to finish the final example in the worksheet before we move on.",
+      "history": [],
+      "response_a": "I understand you're waiting for your partner to complete the final example, and I'm here to help you move forward once they're done.",
+      "response_b": "I can see you're focused on finishing that worksheet example, and I'm here to help you get through it when you're ready."
+    },
+    {
+      "example_id": "neu:neu_base_02967_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02967",
+      "family_id": "family_study_29",
+      "intended_delivery": "sad",
+      "user_text": "I’m waiting for my partner to finish the final example in the worksheet before we move on.",
+      "history": [],
+      "response_a": "I can see you're focused on finishing that worksheet example, and I'm here to help you get through it when you're ready.",
+      "response_b": "I understand you're feeling a bit stuck, so I'll keep the worksheet moving forward once you're ready to share the final example."
+    },
+    {
+      "example_id": "neu:neu_base_00011_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_00011",
+      "family_id": "family_work_00",
+      "intended_delivery": "angry",
+      "user_text": "The revised deadline for the project was pushed to next week, which affects the timeline.",
+      "history": [],
+      "response_a": "I hear that the deadline has been moved to next week, and I want to acknowledge how that shift impacts your current schedule.",
+      "response_b": "I understand that the new deadline is a significant change, and I'm sorry to hear that it's affecting your schedule."
+    },
+    {
+      "example_id": "neu:neu_base_00011_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_00011",
+      "family_id": "family_work_00",
+      "intended_delivery": "sad",
+      "user_text": "The revised deadline for the project was pushed to next week, which affects the timeline.",
+      "history": [],
+      "response_a": "I hear the concern about the new deadline, and I want to acknowledge how stressful this change must be for you.",
+      "response_b": "I hear that the deadline has been moved to next week, and I want to acknowledge how that shift impacts your current schedule."
+    }
+  ]
+}

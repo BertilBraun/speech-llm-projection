@@ -1,0 +1,45 @@
+{
+  "name": "followup_mean_10hz_ce_control_6775",
+  "stage": "V2",
+  "seed": 42,
+  "train_examples": 38193,
+  "validation_examples": 128,
+  "test_examples": 128,
+  "training_validation_examples": null,
+  "epochs": 3,
+  "max_optimizer_updates": 6775,
+  "learning_rate": 0.0002,
+  "microbatch_size": 1,
+  "gradient_accumulation": 8,
+  "history_turns": 2,
+  "max_history_tokens": 256,
+  "max_target_tokens": 4097,
+  "max_new_tokens": 256,
+  "sequence_length_multiple": 64,
+  "gradient_checkpointing": true,
+  "evaluation_interval": 250,
+  "checkpoint_interval": 100,
+  "qualitative_examples": 24,
+  "semantic_examples": 24,
+  "generation_batch_size": 8,
+  "conditioning_examples": 24,
+  "model_name": "Qwen/Qwen3.5-2B",
+  "speech_model_name": "openai/whisper-small",
+  "prompt": {
+    "kind": "chat"
+  },
+  "decoding": {
+    "kind": "greedy"
+  },
+  "objective": {
+    "kind": "response_ce"
+  },
+  "projector": {
+    "compression_factor": 5,
+    "encoder_dimension": 768,
+    "embedding_dimension": 2048,
+    "native_rate": 50.0,
+    "architecture": "mlp",
+    "hidden_dimension": 1024
+  }
+}

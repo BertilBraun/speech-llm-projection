@@ -1,0 +1,269 @@
+{
+  "seed": 42,
+  "cases": [
+    {
+      "example_id": "qwen:utterance_00216_frustrated",
+      "cohort": "qwen_emotional",
+      "base_id": "utterance_00216",
+      "family_id": "family_work_02",
+      "intended_delivery": "frustrated",
+      "user_text": "The project went well, but the two missing attachments really impacted the final outcome.",
+      "history": [],
+      "response_a": "That's a great point! It's always good to know that the project's success was largely due to your hard work, even if some details were missed.",
+      "response_b": "I'm sorry to hear that the missing attachments affected the project's outcome; let me know if you need help finding them or if there's anything else I can assist with."
+    },
+    {
+      "example_id": "qwen:utterance_00216_happy",
+      "cohort": "qwen_emotional",
+      "base_id": "utterance_00216",
+      "family_id": "family_work_02",
+      "intended_delivery": "happy",
+      "user_text": "The project went well, but the two missing attachments really impacted the final outcome.",
+      "history": [],
+      "response_a": "That's great to hear! It sounds like your project is going really well.",
+      "response_b": "I'm sorry to hear that the missing attachments affected the project's outcome; let me know if you need help finding them or if there's anything else I can assist with."
+    },
+    {
+      "example_id": "qwen:utterance_00076_frustrated",
+      "cohort": "qwen_emotional",
+      "base_id": "utterance_00076",
+      "family_id": "family_technology_00",
+      "intended_delivery": "frustrated",
+      "user_text": "The Wi-Fi connects now, but I still have trouble accessing the streaming service.",
+      "history": [],
+      "response_a": "It sounds like you're facing a common connectivity hiccup; could you share a few more details about what exactly is happening?",
+      "response_b": "That's frustrating, but I'm here to help you get that connection working again."
+    },
+    {
+      "example_id": "qwen:utterance_00076_happy",
+      "cohort": "qwen_emotional",
+      "base_id": "utterance_00076",
+      "family_id": "family_technology_00",
+      "intended_delivery": "happy",
+      "user_text": "The Wi-Fi connects now, but I still have trouble accessing the streaming service.",
+      "history": [],
+      "response_a": "It sounds like you're facing a common connectivity hiccup; could you share a few more details about what exactly is happening?",
+      "response_b": "That's frustrating, but you should try restarting your router or checking if the password is case-sensitive."
+    },
+    {
+      "example_id": "qwen:utterance_00014_frustrated",
+      "cohort": "qwen_emotional",
+      "base_id": "utterance_00014",
+      "family_id": "family_work_00",
+      "intended_delivery": "frustrated",
+      "user_text": "I can't work on the project with the new deadline of Thursday at 3 PM—my schedule already fills up that day.",
+      "history": [],
+      "response_a": "I completely understand how tight your schedule is, and I'm sorry you can't make it to the deadline. Let me know if you need any help finding an alternative time or if you'd like to discuss other options.",
+      "response_b": "I completely understand your situation, and I'm sorry you're already so busy."
+    },
+    {
+      "example_id": "qwen:utterance_00014_neutral",
+      "cohort": "qwen_emotional",
+      "base_id": "utterance_00014",
+      "family_id": "family_work_00",
+      "intended_delivery": "neutral",
+      "user_text": "I can't work on the project with the new deadline of Thursday at 3 PM—my schedule already fills up that day.",
+      "history": [],
+      "response_a": "I understand, and I'll do my best to accommodate your schedule.",
+      "response_b": "I completely understand how tight your schedule is, and I'm sorry you can't make it to the deadline. Let me know if you need any help finding an alternative time or if you'd like to discuss other options."
+    },
+    {
+      "example_id": "qwen:utterance_00356_happy",
+      "cohort": "qwen_emotional",
+      "base_id": "utterance_00356",
+      "family_id": "family_friends_03",
+      "intended_delivery": "happy",
+      "user_text": "Meeting at the usual cafe was a total hit—everyone seemed really happy and engaged.",
+      "history": [],
+      "response_a": "That sounds like a wonderful experience! It's always great to see people so engaged and happy.",
+      "response_b": "That sounds like a wonderful time! It's always great to see everyone having such a great time."
+    },
+    {
+      "example_id": "qwen:utterance_00356_sarcastic",
+      "cohort": "qwen_emotional",
+      "base_id": "utterance_00356",
+      "family_id": "family_friends_03",
+      "intended_delivery": "sarcastic",
+      "user_text": "Meeting at the usual cafe was a total hit—everyone seemed really happy and engaged.",
+      "history": [],
+      "response_a": "That sounds like a wonderful way to spend your time, and I'm glad you had such a great experience!",
+      "response_b": "That sounds like a wonderful experience! It's always great to see people so engaged and happy."
+    },
+    {
+      "example_id": "neu:neu_base_02064_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02064",
+      "family_id": "family_study_20",
+      "intended_delivery": "happy",
+      "user_text": "I’m not going to study with them on the practice questions anymore.",
+      "history": [],
+      "response_a": "I hear that you're feeling overwhelmed by the practice questions, so I want to support you by reminding you that you can still find success in your own way.",
+      "response_b": "I hear that you're feeling a bit stuck or overwhelmed by the practice questions, and I'm here to help you work through them if you'd like."
+    },
+    {
+      "example_id": "neu:neu_base_02064_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02064",
+      "family_id": "family_study_20",
+      "intended_delivery": "sad",
+      "user_text": "I’m not going to study with them on the practice questions anymore.",
+      "history": [],
+      "response_a": "I hear that you've decided to step away from the practice questions, and I'm here to support you in that moment.",
+      "response_b": "I hear that you're feeling overwhelmed by the practice questions, so I want to support you by reminding you that you can still find success in your own way."
+    },
+    {
+      "example_id": "neu:neu_base_01404_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01404",
+      "family_id": "family_home_14",
+      "intended_delivery": "happy",
+      "user_text": "I won't let anyone fix the upstairs window; it's not worth the effort.",
+      "history": [],
+      "response_a": "I hear your frustration about the window, and I want to acknowledge how much effort you've put into making sure it stays secure.",
+      "response_b": "I hear your frustration about the window, and I want to acknowledge that you're right to feel it's not worth the effort."
+    },
+    {
+      "example_id": "neu:neu_base_01404_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01404",
+      "family_id": "family_home_14",
+      "intended_delivery": "sad",
+      "user_text": "I won't let anyone fix the upstairs window; it's not worth the effort.",
+      "history": [],
+      "response_a": "I hear your frustration about the window, and I want to acknowledge how much effort you've put into making sure it stays secure.",
+      "response_b": "I hear your frustration with the current situation, and I want to acknowledge that you are right to feel that the current approach isn't working for you."
+    },
+    {
+      "example_id": "neu:neu_base_02081_fearful",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02081",
+      "family_id": "family_hobbies_20",
+      "intended_delivery": "fearful",
+      "user_text": "The half-finished drawing has a lot of detail and some parts look like they were drawn quickly.",
+      "history": [],
+      "response_a": "I can see how much effort you've put into that drawing, even though some parts feel rushed. It's clear you care deeply about the details, and I'm glad you took the time to create something so thoughtful.",
+      "response_b": "I can see how much you're invested in this project, and I'm glad to hear that the details are coming together so well."
+    },
+    {
+      "example_id": "neu:neu_base_02081_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02081",
+      "family_id": "family_hobbies_20",
+      "intended_delivery": "happy",
+      "user_text": "The half-finished drawing has a lot of detail and some parts look like they were drawn quickly.",
+      "history": [],
+      "response_a": "I can see how you're feeling about the drawing, and I'm glad you're noticing the details that need a bit more work.",
+      "response_b": "I can see how much effort you've put into that drawing, even though some parts feel rushed. It's clear you're working hard to capture the details, and I'm glad you're taking your time to finish it."
+    },
+    {
+      "example_id": "neu:neu_base_01717_fearful",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01717",
+      "family_id": "family_work_17",
+      "intended_delivery": "fearful",
+      "user_text": "I'll check the presentation slide again in an hour if you haven't already reviewed it.",
+      "history": [],
+      "response_a": "I will review the presentation slide again in an hour, and I will let you know if I have already seen it.",
+      "response_b": "I'll be ready to review the presentation slide in an hour, so please take your time."
+    },
+    {
+      "example_id": "neu:neu_base_01717_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01717",
+      "family_id": "family_work_17",
+      "intended_delivery": "happy",
+      "user_text": "I'll check the presentation slide again in an hour if you haven't already reviewed it.",
+      "history": [],
+      "response_a": "I'll be ready to review the presentation slide in an hour, so please take your time.",
+      "response_b": "I'll take a quick look at the slide to make sure it's ready for you."
+    },
+    {
+      "example_id": "neu:neu_base_04310_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_04310",
+      "family_id": "family_work_43",
+      "intended_delivery": "angry",
+      "user_text": "I'll send the updated version of the shared spreadsheet by 5 PM today.",
+      "history": [],
+      "response_a": "I understand you're eager to get the updated spreadsheet to me by 3 PM, and I'll do my best to ensure it's ready for you then.",
+      "response_b": "I'm glad to hear you have the updated spreadsheet ready to share with me today."
+    },
+    {
+      "example_id": "neu:neu_base_04310_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_04310",
+      "family_id": "family_work_43",
+      "intended_delivery": "happy",
+      "user_text": "I'll send the updated version of the shared spreadsheet by 5 PM today.",
+      "history": [],
+      "response_a": "I'm glad to hear you'll be sending the updated spreadsheet today; I'll be here whenever you're ready to share it.",
+      "response_b": "I'm glad to hear you're ready to share the updated spreadsheet by 5 PM today."
+    },
+    {
+      "example_id": "neu:neu_base_01198_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01198",
+      "family_id": "family_appointments_11",
+      "intended_delivery": "angry",
+      "user_text": "I’m setting a boundary and will only attend if the time changes.",
+      "history": [],
+      "response_a": "I hear you're setting a clear boundary to protect your time, and I'm here to support you in making that decision feel safe and respected.",
+      "response_b": "I hear your frustration and respect your need to protect your time, so I'll take that boundary seriously."
+    },
+    {
+      "example_id": "neu:neu_base_01198_happy",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_01198",
+      "family_id": "family_appointments_11",
+      "intended_delivery": "happy",
+      "user_text": "I’m setting a boundary and will only attend if the time changes.",
+      "history": [],
+      "response_a": "I hear you and respect your decision to set this boundary, and I'm glad you're taking care of your time.",
+      "response_b": "I hear you're setting a clear boundary to protect your time, and I'm here to support you in making that decision feel safe and respected."
+    },
+    {
+      "example_id": "neu:neu_base_02347_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02347",
+      "family_id": "family_food_23",
+      "intended_delivery": "angry",
+      "user_text": "I need a table for three and have been waiting for twenty minutes without a response.",
+      "history": [],
+      "response_a": "I understand you've been waiting for a response for 20 minutes, and I want to acknowledge that patience can feel frustrating. Please let me know if you need anything specific or if you'd like to discuss what's been going on.",
+      "response_b": "I understand how frustrating it is to wait so long for a response, and I'm sorry you're dealing with this delay."
+    },
+    {
+      "example_id": "neu:neu_base_02347_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02347",
+      "family_id": "family_food_23",
+      "intended_delivery": "sad",
+      "user_text": "I need a table for three and have been waiting for twenty minutes without a response.",
+      "history": [],
+      "response_a": "I understand how frustrating it must be to wait that long, and I'm sorry you're dealing with this delay.",
+      "response_b": "I understand you've been waiting for a response for 20 minutes, and I want to acknowledge that patience can feel frustrating. Please let me know if you need anything specific or if you'd like to discuss what's been going on."
+    },
+    {
+      "example_id": "neu:neu_base_02127_angry",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02127",
+      "family_id": "family_travel_21",
+      "intended_delivery": "angry",
+      "user_text": "I'm staying on platform four until the next scheduled arrival.",
+      "history": [],
+      "response_a": "I hear you're waiting on Platform 4, and I'm here to help you find the next train or any other assistance you need while you wait.",
+      "response_b": "I understand you're waiting at Platform Four, and I'm here to help you find the next arrival."
+    },
+    {
+      "example_id": "neu:neu_base_02127_sad",
+      "cohort": "neu_emotional",
+      "base_id": "neu_base_02127",
+      "family_id": "family_travel_21",
+      "intended_delivery": "sad",
+      "user_text": "I'm staying on platform four until the next scheduled arrival.",
+      "history": [],
+      "response_a": "I hear you're waiting on Platform 4, and I'm here to help you find the next train or any other assistance you need while you wait.",
+      "response_b": "I understand you're waiting at Platform Four, and I'm here to help you stay calm while you wait for the next arrival."
+    }
+  ]
+}

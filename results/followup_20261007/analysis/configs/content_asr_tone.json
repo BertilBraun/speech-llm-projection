@@ -1,0 +1,12 @@
+{
+  "selection": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+  "sources": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+  "responses": [
+    {
+      "name": "asr_predicted_tone",
+      "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation_generations.jsonl",
+      "condition": "text"
+    }
+  ],
+  "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\content\\asr_tone"
+}

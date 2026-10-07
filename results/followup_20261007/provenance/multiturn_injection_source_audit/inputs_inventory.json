@@ -1,0 +1,84 @@
+{
+  "captured_at": "2026-10-07T13:15:57.863568Z",
+  "source_root": "C:\\Projects\\Voice-Full-Duplex-Light",
+  "artifacts": [
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\conversation_fixtures.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\conversation_fixtures.json",
+      "bytes": 18983,
+      "sha256": "67d0742338a9fb901fc5ddb2bd7e7fe885d63595ed3921d183748aefa7f60ae8"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\additional_audio_cache.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\additional_audio_cache.json",
+      "bytes": 2770,
+      "sha256": "8a1d301ace8320db50274e2757a698557cee609a38f2357c5cf366df6a412742"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\conversation_epoch1\\speech\\provenance.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_epoch1\\speech\\provenance.json",
+      "bytes": 1443,
+      "sha256": "a4fd15b6b3bb49e6eaf3f1596f57e1f439d98a12bbcc0d44aa7a5224850527a4"
+    },
+    {
+      "path": "results_preview\\followup10hz_20261007\\conversation_epoch1\\speech\\replies.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_epoch1\\speech\\replies.jsonl",
+      "bytes": 48407,
+      "sha256": "448d617bfe1a2d0679b56abbe11367766b41dfe06d5b5fc366b6349124482440"
+    },
+    {
+      "path": "speech_projector\\llm.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\speech_projector\\llm.py",
+      "bytes": 18087,
+      "sha256": "d21a7e2be349de9818ebe276786fcce0cd75dec4d85cf3ec7e0a310d87366e03"
+    },
+    {
+      "path": "speech_projector\\prompts.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\speech_projector\\prompts.py",
+      "bytes": 519,
+      "sha256": "ccd727fa60adf0715b08b8f31a6dbaa453706c9d9461b7037534d53b78e0171e"
+    },
+    {
+      "path": "speech_projector\\projectors.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\speech_projector\\projectors.py",
+      "bytes": 4705,
+      "sha256": "cc4a2fc91d71a59c9e2ca31e53b7dd882fc6e6da6d8fae45e96ef231936f222c"
+    },
+    {
+      "path": "speech_projector\\overnight_conversation_execution.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\speech_projector\\overnight_conversation_execution.py",
+      "bytes": 11507,
+      "sha256": "48be2afee1884491ab67b1317ee5f7b24cac44acc2bd0756be95abf1bb5ad30c"
+    },
+    {
+      "path": "speech_projector\\overnight_conversation.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\speech_projector\\overnight_conversation.py",
+      "bytes": 5527,
+      "sha256": "e8a7e429d67141d26cfa0211e8530ab21d43bb3ef0a813101f4322ba08967ab0"
+    },
+    {
+      "path": "scripts\\prepare_overnight_conversation.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\scripts\\prepare_overnight_conversation.py",
+      "bytes": 4033,
+      "sha256": "6228ac1f85345a7e9a20d86b0c1c3b2ec7567c75dd30972453c29e702c899e03"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\followup_features\\9b1476f3d94b321d8e4278b2594f5b8fb9613f2309a0973ff2fafb9128a168ba.pt",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\followup_features\\9b1476f3d94b321d8e4278b2594f5b8fb9613f2309a0973ff2fafb9128a168ba.pt",
+      "bytes": 291961,
+      "sha256": "33921f63b1cc0f78d00e5545624f682b8bd795b2804eadfab9bf04a056dcc5e1"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\followup_features\\7604e036fe13a501488ecbf0c94cdc6790818ce79b7f149405d80204f272e608.pt",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\followup_features\\7604e036fe13a501488ecbf0c94cdc6790818ce79b7f149405d80204f272e608.pt",
+      "bytes": 275065,
+      "sha256": "51c7055c040f5a408d5b5e959f9d89471990e7ea54a38a150b30c4b577a53eae"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\followup_features\\de240b8a81cd2cc952d83974f71ad1a16d5d62174a416b4ca7da410e7eeca698.pt",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\followup_features\\de240b8a81cd2cc952d83974f71ad1a16d5d62174a416b4ca7da410e7eeca698.pt",
+      "bytes": 330361,
+      "sha256": "c65e5487f113427b73c81690c9888b2f26595e88a58fbb40ef6df0d3306999b5"
+    }
+  ]
+}

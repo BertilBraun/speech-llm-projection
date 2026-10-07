@@ -1,0 +1,984 @@
+{
+  "captured_at": "2026-10-07T14:11:41.862757Z",
+  "source_root": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007",
+  "artifacts": [
+    {
+      "path": "analysis\\asr_tone_conversation_coverage.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\asr_tone_conversation_coverage.json",
+      "bytes": 2249,
+      "sha256": "00b72883b80ac9a1fb7e39c7846a91e237e93ce5370a6153892a08cfce2bdb63"
+    },
+    {
+      "path": "analysis\\asr_tone_conversation_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\asr_tone_conversation_review.md",
+      "bytes": 6366,
+      "sha256": "97065ab953391b3d137f81d90ba02a6b9757b0ec5efcce30754c94e50c6369d8"
+    },
+    {
+      "path": "analysis\\configs\\content_asr_tone.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\content_asr_tone.json",
+      "bytes": 748,
+      "sha256": "3ec3e8a5e03faa64419e2683cf7867e8f041cc18f08c0af4b0601bbec7ce5e6d"
+    },
+    {
+      "path": "analysis\\configs\\content_final_core.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\content_final_core.json",
+      "bytes": 1811,
+      "sha256": "fc4faf9a98fc422d7afb5e52eb2794c3cc1558a4888b44b42414b1e9f6545928"
+    },
+    {
+      "path": "analysis\\configs\\descriptive6775_test_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\descriptive6775_test_comparison.json",
+      "bytes": 3778,
+      "sha256": "3515727172e203eef7411cdf7db142c97507c1e153410d9be4d6d6921eaa88e1"
+    },
+    {
+      "path": "analysis\\configs\\final_checkpoint_selection.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\final_checkpoint_selection.json",
+      "bytes": 121,
+      "sha256": "f3a0140b4690249d0e53f7f79019cf0161419c0076b4c8dea85b5dfe6430ebe0"
+    },
+    {
+      "path": "analysis\\configs\\final_core_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\final_core_comparison.json",
+      "bytes": 3992,
+      "sha256": "4a2c5408571ed31f860a1070996c73558c0e27907720ac0ca02ce54244689f60"
+    },
+    {
+      "path": "analysis\\configs\\final_neu64_matched.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\final_neu64_matched.json",
+      "bytes": 1883,
+      "sha256": "d21769fb9bcc833c16693ffa6afca291691da8f6b855f0a37721c1244c1b77dd"
+    },
+    {
+      "path": "analysis\\configs\\parent4775_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\parent4775_comparison.json",
+      "bytes": 3339,
+      "sha256": "1ae31b408bf882c4145bb8bacfa5614f9e64f9f4525a68fc8acabcbdc61048ae"
+    },
+    {
+      "path": "analysis\\configs\\parent4775_neu64_matched.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\parent4775_neu64_matched.json",
+      "bytes": 1724,
+      "sha256": "c0e03c513ec3ff7ef3f9a913678e5160e63274636ac5b8481a168c0a0212413f"
+    },
+    {
+      "path": "analysis\\configs\\quality_asr_tone_vs_asr.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\quality_asr_tone_vs_asr.json",
+      "bytes": 1067,
+      "sha256": "954fd31044b5dbd77276d37348d21e3d8a7a35d1fc2165480521172d795fcd53"
+    },
+    {
+      "path": "analysis\\configs\\quality_selected_speech_vs_asr.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\quality_selected_speech_vs_asr.json",
+      "bytes": 1104,
+      "sha256": "fe996fc0337fa10b686776db57fccc4e919b7aeb2ce14f4c5eb59606b3fa5d9a"
+    },
+    {
+      "path": "analysis\\configs\\rejected9550_test_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\configs\\rejected9550_test_comparison.json",
+      "bytes": 2155,
+      "sha256": "02ce9fa35e248f5358aab21177b0b26834e0db5b3221f1ac05209b7a146af867"
+    },
+    {
+      "path": "analysis\\content\\final_core\\observations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\content\\final_core\\observations.jsonl",
+      "bytes": 558507,
+      "sha256": "87103afc79c000f15d026ba5fa92976d91c07ea888c21cbbda3a684c7743d47c"
+    },
+    {
+      "path": "analysis\\content\\final_core\\review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\content\\final_core\\review.md",
+      "bytes": 178770,
+      "sha256": "c8b68aa0cf377dc6a0177cdc4c4af2ad84a0e4900c9005de184b455b9d09e0e6"
+    },
+    {
+      "path": "analysis\\content\\final_core\\summary.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\content\\final_core\\summary.json",
+      "bytes": 6495,
+      "sha256": "5d73773f5ca3200352ab449dd874efbe6ee4e6c1d6a02d8a40905d9bcc43df6a"
+    },
+    {
+      "path": "analysis\\control6775_validation_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\control6775_validation_review.md",
+      "bytes": 9181,
+      "sha256": "629562e2ff30e43b4b54e0f6254d593b6a2cbd8be68baa070acce16474bb843c"
+    },
+    {
+      "path": "analysis\\control6775_vs_control9550_replies.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\control6775_vs_control9550_replies.json",
+      "bytes": 1770,
+      "sha256": "3fb4e43e9bc02d7d42eca43525197fbc91ca1c7df024febe4a4a9a784116173e"
+    },
+    {
+      "path": "analysis\\control6775_vs_control9550_replies.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\control6775_vs_control9550_replies.md",
+      "bytes": 19484,
+      "sha256": "2528a1082475b2e849f53b662857746ebd07f42711dd37cb15e2936383913813"
+    },
+    {
+      "path": "analysis\\control6775_vs_ordinarykl_replies.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\control6775_vs_ordinarykl_replies.json",
+      "bytes": 1770,
+      "sha256": "0480daa3411bb0c1226c2d359c8fcf0fcf8b05c2dca02d45d23ec1cd0e86b498"
+    },
+    {
+      "path": "analysis\\control6775_vs_ordinarykl_replies.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\control6775_vs_ordinarykl_replies.md",
+      "bytes": 18973,
+      "sha256": "5e4d5d91a3106b4c59a7fde36fababcc17a8f07338c6301a56ef9a840fd32ba6"
+    },
+    {
+      "path": "analysis\\control6775_vs_transcript30_replies.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\control6775_vs_transcript30_replies.json",
+      "bytes": 1814,
+      "sha256": "371f41ab5573d81e703f8557d0eb8190743300780187d8e4e0952602c655590a"
+    },
+    {
+      "path": "analysis\\control6775_vs_transcript30_replies.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\control6775_vs_transcript30_replies.md",
+      "bytes": 18262,
+      "sha256": "585e5f6184653eabfec68786803ab8c2c2a1ad772ca5062aaeba143347d4e975"
+    },
+    {
+      "path": "analysis\\descriptive6775_test_comparison\\cohort_metrics.csv",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\descriptive6775_test_comparison\\cohort_metrics.csv",
+      "bytes": 1480,
+      "sha256": "aa5e4493d403582928354064000505a80cf9652753d2c72d93fe7550d993f947"
+    },
+    {
+      "path": "analysis\\descriptive6775_test_comparison\\heldout_comparison.pdf",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\descriptive6775_test_comparison\\heldout_comparison.pdf",
+      "bytes": 26702,
+      "sha256": "1f58c522c6333d5fe4da0b085115258dfce4a5553a7e9ae1be57906ad178912d"
+    },
+    {
+      "path": "analysis\\descriptive6775_test_comparison\\heldout_comparison.png",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\descriptive6775_test_comparison\\heldout_comparison.png",
+      "bytes": 198615,
+      "sha256": "8194d7ed986f1f2c20ff842e5df6d121d43e52d00ed89692de7d92419ce2a256"
+    },
+    {
+      "path": "analysis\\descriptive6775_test_comparison\\measured_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\descriptive6775_test_comparison\\measured_comparison.json",
+      "bytes": 71965,
+      "sha256": "0d95d62a66e859904f8736c1fdbccdc1584af2ebc538074a1843438bf545eddb"
+    },
+    {
+      "path": "analysis\\descriptive6775_test_comparison\\measured_comparison.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\descriptive6775_test_comparison\\measured_comparison.md",
+      "bytes": 5362,
+      "sha256": "586e7077927d03f0ef620f2af961c19aebba15a1005ca71301feee031309e9c1"
+    },
+    {
+      "path": "analysis\\extension_selection\\configuration.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\extension_selection\\configuration.json",
+      "bytes": 850,
+      "sha256": "9edbfc3b78f4b4c6d46d8a8c9c6e4d21125e669c3ddca0f31a17f8a15016d323"
+    },
+    {
+      "path": "analysis\\extension_selection\\decision.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\extension_selection\\decision.json",
+      "bytes": 61316,
+      "sha256": "b78ca9c5856c85adb1f598e42be1042a1b411ef2d2e3ed4fc606c84f7c89cdcb"
+    },
+    {
+      "path": "analysis\\extension_selection\\decision.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\extension_selection\\decision.md",
+      "bytes": 5373,
+      "sha256": "0266508c6f351de8cc2f02488ba05f91314d6629e83ee5bcff76f17117286289"
+    },
+    {
+      "path": "analysis\\extension_selection\\policy.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\extension_selection\\policy.json",
+      "bytes": 137,
+      "sha256": "d293f4bb7a4332a58b394e1ef79a29385f89c7611c3d29de434276c2d5b9120d"
+    },
+    {
+      "path": "analysis\\extension_selection\\reviews\\followup_mean_10hz_ce_control_9550.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\extension_selection\\reviews\\followup_mean_10hz_ce_control_9550.json",
+      "bytes": 8066,
+      "sha256": "5f3c1ff6eedbbbecf87e8b8d0664e6ad3400419aed60ee51ea68cb746caa6de6"
+    },
+    {
+      "path": "analysis\\extension_selection\\reviews\\followup_mean_10hz_ce_control_9550.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\extension_selection\\reviews\\followup_mean_10hz_ce_control_9550.md",
+      "bytes": 5339,
+      "sha256": "323a18c6d6928f2fa8f85186344b59c26c88cf3fc17d24857e373f96626aea18"
+    },
+    {
+      "path": "analysis\\final_conversation_all168_compact.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_conversation_all168_compact.md",
+      "bytes": 28047,
+      "sha256": "d942e532236e6a75a83e0c02cde101b93d5304d030358275ce552b20ea7f8814"
+    },
+    {
+      "path": "analysis\\final_core_comparison\\cohort_metrics.csv",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_core_comparison\\cohort_metrics.csv",
+      "bytes": 1367,
+      "sha256": "3195f44bc1bd639f7c46986d3f0187145d1870d5841bce9175ee60e5bd9a7536"
+    },
+    {
+      "path": "analysis\\final_core_comparison\\heldout_comparison.pdf",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_core_comparison\\heldout_comparison.pdf",
+      "bytes": 26259,
+      "sha256": "9cb3101a8da5221f92635c47cec8e03d3a02fc34093527168dd199b44509d14b"
+    },
+    {
+      "path": "analysis\\final_core_comparison\\heldout_comparison.png",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_core_comparison\\heldout_comparison.png",
+      "bytes": 206025,
+      "sha256": "bda7d1f19f26bfec8307521a7b415c732f93d4d24279b3987187aee887526fdc"
+    },
+    {
+      "path": "analysis\\final_core_comparison\\measured_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_core_comparison\\measured_comparison.json",
+      "bytes": 334498,
+      "sha256": "bc90662facf90a3248a7e1174d633c663312e5b59cdf1876d973eb507bdcdf94"
+    },
+    {
+      "path": "analysis\\final_core_comparison\\measured_comparison.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_core_comparison\\measured_comparison.md",
+      "bytes": 5734,
+      "sha256": "ea549469a000a7214315798bee996a90b7988b117acc84da27d6120f2abc7439"
+    },
+    {
+      "path": "analysis\\final_cross_pipeline_examples.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_cross_pipeline_examples.md",
+      "bytes": 47049,
+      "sha256": "5b008f095a04e0707fcc0e8cf884a0347b302ba39ecf89cabafe794df160a559"
+    },
+    {
+      "path": "analysis\\final_cross_pipeline_examples_inputs.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_cross_pipeline_examples_inputs.json",
+      "bytes": 3544,
+      "sha256": "ee95b1a8c1759e8a611b5396e90e88522d92ae2ee803c039f8799db1e2d6580c"
+    },
+    {
+      "path": "analysis\\FINAL_EVALUATION_SUMMARY.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\FINAL_EVALUATION_SUMMARY.md",
+      "bytes": 8355,
+      "sha256": "f06b8239aa09eff68f9c8c5be0bd28cb61a2da64f9480047251383d421807524"
+    },
+    {
+      "path": "analysis\\final_neu64_matched\\matched_metrics.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_neu64_matched\\matched_metrics.json",
+      "bytes": 19694,
+      "sha256": "2eb0b4ffbccd8a6d015649e8e79f93b1ebd78d27c576523c660adbae7aeeb632"
+    },
+    {
+      "path": "analysis\\final_neu64_matched\\matched_metrics.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_neu64_matched\\matched_metrics.md",
+      "bytes": 1097,
+      "sha256": "260fbb27243416623b06faff533f7b9d9af370093c762580c4624f05dc32c421"
+    },
+    {
+      "path": "analysis\\final_ordinary48_panel.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_ordinary48_panel.json",
+      "bytes": 675339,
+      "sha256": "10dcc3d3f620656529fa7f9ee0ed777269b8861446055ea47f37cb5634997fde"
+    },
+    {
+      "path": "analysis\\final_ordinary48_review.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_ordinary48_review.json",
+      "bytes": 1456727,
+      "sha256": "99eaf30c8ff92c492a3432fe6c7b4d6a2f41d23248797eda791b352277a6eddf"
+    },
+    {
+      "path": "analysis\\final_ordinary48_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_ordinary48_review.md",
+      "bytes": 173796,
+      "sha256": "217bc8fdd7b1c94666ed4162380ce8dd294ccec30c95c488094ea6c1918acef7"
+    },
+    {
+      "path": "analysis\\final_selected_conversation_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\final_selected_conversation_review.md",
+      "bytes": 6350,
+      "sha256": "e044f914a0e69ee651d3b07a15b0a0f5c3216e03dd334d398f709e09cd9b0989"
+    },
+    {
+      "path": "analysis\\learning_progression\\progression.csv",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\learning_progression\\progression.csv",
+      "bytes": 643,
+      "sha256": "d2745e7785106c6bed70e9781df9f946142124a382848f6de17663b19e5aca69"
+    },
+    {
+      "path": "analysis\\learning_progression\\progression.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\learning_progression\\progression.json",
+      "bytes": 52677,
+      "sha256": "8ea5403da3ba93f4f34564f20da3fe812a9c91e5169ed3ce203e9505c6fcfb3e"
+    },
+    {
+      "path": "analysis\\learning_progression\\progression.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\learning_progression\\progression.md",
+      "bytes": 863,
+      "sha256": "b68aae51d9bf2831b96d39f147f878906c3083564cb024fe51e40928d94f3f4d"
+    },
+    {
+      "path": "analysis\\learning_progression\\progression.pdf",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\learning_progression\\progression.pdf",
+      "bytes": 23726,
+      "sha256": "a158d7d3cb941a2998c1c6aec1ec2f13ce0007df318abd400608a556a5a7a110"
+    },
+    {
+      "path": "analysis\\learning_progression\\progression.png",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\learning_progression\\progression.png",
+      "bytes": 146335,
+      "sha256": "6a15f78b39441084ace6d46a08b4f7c22ee34a608d92b21332856918f06e05a0"
+    },
+    {
+      "path": "analysis\\matched_fidelity24\\evaluation_ce_control.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\matched_fidelity24\\evaluation_ce_control.json",
+      "bytes": 3827,
+      "sha256": "f727d09cb953f69a745e03309065e4f1ade14213b6e581bbbbb5f1076f3a1792"
+    },
+    {
+      "path": "analysis\\matched_fidelity24\\evaluation_epoch1.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\matched_fidelity24\\evaluation_epoch1.json",
+      "bytes": 3841,
+      "sha256": "a2dbfda4aa1ff2ee3b42d6a376392f259ea510fe424e0fd2c116742b178a5700"
+    },
+    {
+      "path": "analysis\\matched_fidelity24\\evaluation_ordinarykl.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\matched_fidelity24\\evaluation_ordinarykl.json",
+      "bytes": 3815,
+      "sha256": "41e47b6ff5ed235f29e8496036bcdf14fa553c30faf776b92840c99f0b72724d"
+    },
+    {
+      "path": "analysis\\matched_fidelity24\\evaluation_transcript30.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\matched_fidelity24\\evaluation_transcript30.json",
+      "bytes": 3872,
+      "sha256": "d228c05bb9027c4b1d648623576f6c0f7b51eaf9ca2d3d29534574b7db5949e2"
+    },
+    {
+      "path": "analysis\\matched_fidelity24\\summary.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\matched_fidelity24\\summary.md",
+      "bytes": 1675,
+      "sha256": "6ca3a6ca3c2e72cc8fcb40a09d76d54b37e31741f8f2eac89e283e15bc3f38eb"
+    },
+    {
+      "path": "analysis\\ordinarykl_validation_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\ordinarykl_validation_review.md",
+      "bytes": 3937,
+      "sha256": "24e92a07ee8f24f61db45194f71c8bb185515beec6e1408922a5016f5c5a737d"
+    },
+    {
+      "path": "analysis\\parent4775_comparison\\cohort_metrics.csv",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_comparison\\cohort_metrics.csv",
+      "bytes": 1057,
+      "sha256": "69f60526408574c01a4e0d1f8b979351265432cd710579255ceb5f15db4ad39d"
+    },
+    {
+      "path": "analysis\\parent4775_comparison\\heldout_comparison.pdf",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_comparison\\heldout_comparison.pdf",
+      "bytes": 25398,
+      "sha256": "71de9a2283a98f344315dc7d42a88380d9c84bf7f9997a11fd607621525f5bb5"
+    },
+    {
+      "path": "analysis\\parent4775_comparison\\heldout_comparison.png",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_comparison\\heldout_comparison.png",
+      "bytes": 184044,
+      "sha256": "659a4014a1332d9ecf32e2543f067344a14c88c2faac9fcfb7493d6cc0535d8a"
+    },
+    {
+      "path": "analysis\\parent4775_comparison\\measured_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_comparison\\measured_comparison.json",
+      "bytes": 321164,
+      "sha256": "23eded8c9659b0acc8d28294bf15bbd98dabd1fd1536f74a1b849a98ed501f20"
+    },
+    {
+      "path": "analysis\\parent4775_comparison\\measured_comparison.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_comparison\\measured_comparison.md",
+      "bytes": 4885,
+      "sha256": "3f202988dfb24f6a4419c6c817c741d53d21ae46693232715f3c09e3637c6028"
+    },
+    {
+      "path": "analysis\\parent4775_comparison\\old_record_reaggregation\\neu_preference.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_comparison\\old_record_reaggregation\\neu_preference.json",
+      "bytes": 878,
+      "sha256": "b45d7a637e8cf64c14e8213cd47d03a1ea7ecc003fae0bfb923bef3dd1c18888"
+    },
+    {
+      "path": "analysis\\parent4775_comparison\\old_record_reaggregation\\receipt.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_comparison\\old_record_reaggregation\\receipt.json",
+      "bytes": 2363,
+      "sha256": "8cb41b7c558281473df5db0419beaf0e2c80cdfae6eaf42a83ee7f2d1af89b51"
+    },
+    {
+      "path": "analysis\\parent4775_comparison\\old_record_reaggregation\\teacher_fidelity_summary.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_comparison\\old_record_reaggregation\\teacher_fidelity_summary.jsonl",
+      "bytes": 1652,
+      "sha256": "0c55bc2a3e70d6ae8b1861412b748eb3d276c18e569e5fd3fd37294d586ee10b"
+    },
+    {
+      "path": "analysis\\parent4775_conversation_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_conversation_review.md",
+      "bytes": 5899,
+      "sha256": "9c008833a3d75ca6d743f0ed18f5a74e6b0c9521fdd8127904430bb4a88e4d77"
+    },
+    {
+      "path": "analysis\\parent4775_neu64_matched\\matched_metrics.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_neu64_matched\\matched_metrics.json",
+      "bytes": 17445,
+      "sha256": "a14fc5e9a7938d65a1d4ed60ff0e32e7a9f95e568e7d32d23bd4d8f6005910a4"
+    },
+    {
+      "path": "analysis\\parent4775_neu64_matched\\matched_metrics.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_neu64_matched\\matched_metrics.md",
+      "bytes": 1004,
+      "sha256": "80ac5d6bc1d75fa42642d88a0eceabc2dbe3b3e066b1c44813acb761beaa7317"
+    },
+    {
+      "path": "analysis\\parent4775_validation_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_validation_review.md",
+      "bytes": 6898,
+      "sha256": "ebf6ea6b893887f7dd0743f5874a433f01d6849b3edc6112f5cb8ea2c7ecc071"
+    },
+    {
+      "path": "analysis\\parent4775_vs_control6775_replies.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_vs_control6775_replies.json",
+      "bytes": 1798,
+      "sha256": "70e31f23a59df76d9bb28e97bf07f08139aefa60e017e9dcfbe3d56787063d77"
+    },
+    {
+      "path": "analysis\\parent4775_vs_control6775_replies.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\parent4775_vs_control6775_replies.md",
+      "bytes": 19144,
+      "sha256": "294d0b30c7a8f23b2ac5281ce5705579a284cab447caa04c8ad953a285a0175b"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\blind_cases.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\blind_cases.json",
+      "bytes": 41747,
+      "sha256": "ab4cc53adea092f6f69256ca9a15644b1edd93ed971090f91402d4e5ab4a65a6"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\blind_cases.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\blind_cases.md",
+      "bytes": 31152,
+      "sha256": "04f1e2a07ab3c88b68e0f8de36ce6ca75a97d544466af1f0a92ddcf18f3eeb86"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\figures\\quality_comparison.csv",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\figures\\quality_comparison.csv",
+      "bytes": 431,
+      "sha256": "f154a8184da58cb24d2fd532675dfc66d1c5b08fa4991af7d35e8d11b64c1a38"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\figures\\quality_comparison.pdf",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\figures\\quality_comparison.pdf",
+      "bytes": 24035,
+      "sha256": "1f49bef9bcafd79c03eccb4859bf9b73d59c7b5dacc1e92468c93058138b11d9"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\figures\\quality_comparison.png",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\figures\\quality_comparison.png",
+      "bytes": 149877,
+      "sha256": "87dc7aa12251ae8850d4d1d3aea4feb8368ad52ca7deb26ffa3547f9cc7b266c"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\independent\\ratings_locked.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\independent\\ratings_locked.jsonl",
+      "bytes": 24628,
+      "sha256": "3b4b892c4e5c6aab6ba90c9427b83799223b0a17702bd4167cea13cbf8167448"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\independent\\ratings_working.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\independent\\ratings_working.jsonl",
+      "bytes": 24628,
+      "sha256": "3b4b892c4e5c6aab6ba90c9427b83799223b0a17702bd4167cea13cbf8167448"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\independent\\review_inputs.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\independent\\review_inputs.json",
+      "bytes": 424,
+      "sha256": "49265a8517d40c5d2828349f6e89999215ba1c4cadb933e4349c46c134f403cc"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\provenance.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\provenance.json",
+      "bytes": 3081,
+      "sha256": "fada22d5ddb296c659264efd788b048091320ec42108c15cf86d066a69988dc0"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\quality_report.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\quality_report.md",
+      "bytes": 43241,
+      "sha256": "2360fd5df37a4c51f3d7892800648d439b8de300c1db3ddf7bb17e34b9db077f"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\quality_summary.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\quality_summary.json",
+      "bytes": 6886,
+      "sha256": "daa65b2c58612051d16685e015ecd967404190582052e604c82879dd25c1ad4b"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\reviewer_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\reviewer_comparison.json",
+      "bytes": 5052,
+      "sha256": "e3630cb56f63b27a3212ae0b826e4a2b79633ad18bb36ce53eb9118125e1d5c6"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\reviewer_comparison.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\reviewer_comparison.md",
+      "bytes": 753,
+      "sha256": "164a8d37b84802a3378e6e754c47b45a717b9f6cac15cff3ca786aba537617bc"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\root_blind24.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\root_blind24.json",
+      "bytes": 14979,
+      "sha256": "bff89dc5c5622ad56f714c4337eb1247a43c60005bbfd628b4c97d62d0db09e5"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\root_blind24.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\root_blind24.md",
+      "bytes": 11344,
+      "sha256": "64351aaada32bec4233b5c99e81e8a91b56e42c2c8fbbe6324cce2653dab62c4"
+    },
+    {
+      "path": "analysis\\quality\\asr_tone_vs_asr\\slot_mapping.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\asr_tone_vs_asr\\slot_mapping.jsonl",
+      "bytes": 6250,
+      "sha256": "b17431066e28ccc61c4d9f825ff33ad4b192745ec440f223cb2b930ed68137b5"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\blind_cases.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\blind_cases.json",
+      "bytes": 54684,
+      "sha256": "cbf361f5b642cdac258b0bb3e65dd3586f52b77e67aaf364023a1479eb018237"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\blind_cases.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\blind_cases.md",
+      "bytes": 40861,
+      "sha256": "1cc5affc6b1ce3c5f36106cab2140d9aa9bf4ffda8e94570936b3a7976cf9d81"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\figures\\quality_comparison.csv",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\figures\\quality_comparison.csv",
+      "bytes": 1177,
+      "sha256": "ba7be505c392c5ba83a5187e8392d9f4842a0d77e29409568a546ee3ab948199"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\figures\\quality_comparison.pdf",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\figures\\quality_comparison.pdf",
+      "bytes": 26502,
+      "sha256": "7229a30ddc0c5c44b057e4337a75fc3c208b914dd6d3cc8e74ae4cd9f7b9acd5"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\figures\\quality_comparison.png",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\figures\\quality_comparison.png",
+      "bytes": 198105,
+      "sha256": "209c933360312c9ffd4a5349005df24a10a3e6f5b75690c36de4ea0ba62f66c3"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\independent\\ratings_locked.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\independent\\ratings_locked.jsonl",
+      "bytes": 30833,
+      "sha256": "f3235211d8b340f7212f06974520857e14c184ca5eb537c7a0ff564b2211c6e5"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\independent\\ratings_working.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\independent\\ratings_working.jsonl",
+      "bytes": 30833,
+      "sha256": "f3235211d8b340f7212f06974520857e14c184ca5eb537c7a0ff564b2211c6e5"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\independent\\review_inputs.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\independent\\review_inputs.json",
+      "bytes": 521,
+      "sha256": "5ce57e86b97ba06137c013eb27fc34650baaa32fc7d7aa82769096e62f685361"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\provenance.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\provenance.json",
+      "bytes": 3058,
+      "sha256": "9dc0dc1b9f3310420d03db1beb06f8c349f3fa2c82a4471a595f3a649168ee8a"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\quality_report.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\quality_report.md",
+      "bytes": 54283,
+      "sha256": "f0deaba5aa1ed0ea5bc98494515256887876d9490684605f3e3d296caf4c39d4"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\quality_summary.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\quality_summary.json",
+      "bytes": 8585,
+      "sha256": "f6102848b52240392db576131b5ad468958ed34de5324b9e60a9b7c72bcfee63"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\reviewer_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\reviewer_comparison.json",
+      "bytes": 4947,
+      "sha256": "3be3a20775dd7d281504a66b6b818466065c5e7a8cc276b4f594cbefda86d164"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\reviewer_comparison.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\reviewer_comparison.md",
+      "bytes": 753,
+      "sha256": "fdc1253835002ec86c128c21a06b327bb379741dfaac081b6639a047ad37bacb"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\root_blind24.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\root_blind24.json",
+      "bytes": 15104,
+      "sha256": "1024906d13a71cd735bf0d2393c462d1ace164875205512ffab1281497aa890c"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\root_blind24.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\root_blind24.md",
+      "bytes": 11729,
+      "sha256": "a2b98a8c8362795e673b4992c33319e36856d8646555c421516e2481b6821cb7"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\root_selected24_locked.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\root_selected24_locked.jsonl",
+      "bytes": 11202,
+      "sha256": "76d3487959dd11ed449762567faf6b7b5cebd36360fbfdc799821d2ec334fd0f"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\root_selected24_working.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\root_selected24_working.jsonl",
+      "bytes": 11178,
+      "sha256": "0eacef15bfa3762f7b34d77eb62996aeb0eda1823f81e2a1bcbaef166b346841"
+    },
+    {
+      "path": "analysis\\quality\\selected_speech_vs_asr\\slot_mapping.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\quality\\selected_speech_vs_asr\\slot_mapping.jsonl",
+      "bytes": 10104,
+      "sha256": "2f6d43b71cd49613880083e84ddd817e70cc807dc8729a923a3b8dd3e8930f59"
+    },
+    {
+      "path": "analysis\\QUALITY_PROTOCOL.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\QUALITY_PROTOCOL.md",
+      "bytes": 3852,
+      "sha256": "9910e248276e25129e1067a9b6f44f8e08fa72ffa0040f9bcce6a5e4824669b7"
+    },
+    {
+      "path": "analysis\\README_READY_CONVERSATION_PARENT.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\README_READY_CONVERSATION_PARENT.md",
+      "bytes": 2741,
+      "sha256": "6876ac8cd675ad0afc7026c47bc186225ba7ede9ab9457d91b432545204ee41e"
+    },
+    {
+      "path": "analysis\\README_READY_METRIC_SCOPE.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\README_READY_METRIC_SCOPE.md",
+      "bytes": 3822,
+      "sha256": "c07601df803b162812db1708d91327f32945638254854352a9572af10e09abe2"
+    },
+    {
+      "path": "analysis\\rejected9550_test_comparison\\cohort_metrics.csv",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\rejected9550_test_comparison\\cohort_metrics.csv",
+      "bytes": 694,
+      "sha256": "41f8038a803ea5225b3ff78f83c9a93eb7bbe56ae88ac03f887da2bdadb03406"
+    },
+    {
+      "path": "analysis\\rejected9550_test_comparison\\heldout_comparison.pdf",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\rejected9550_test_comparison\\heldout_comparison.pdf",
+      "bytes": 24758,
+      "sha256": "609782a0b4e082c4bca37acd022045cc87e75ab9251f31c357d1e499e200d998"
+    },
+    {
+      "path": "analysis\\rejected9550_test_comparison\\heldout_comparison.png",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\rejected9550_test_comparison\\heldout_comparison.png",
+      "bytes": 185683,
+      "sha256": "c3f72cf03c17d162c72642319dd1151f3537d57d97bde4aedefc096b112b466f"
+    },
+    {
+      "path": "analysis\\rejected9550_test_comparison\\measured_comparison.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\rejected9550_test_comparison\\measured_comparison.json",
+      "bytes": 40999,
+      "sha256": "84e3a7803711b5b01cd4e41f5ace7ca79926dc7823fb64eef1ebf759d0ffbcd0"
+    },
+    {
+      "path": "analysis\\rejected9550_test_comparison\\measured_comparison.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\rejected9550_test_comparison\\measured_comparison.md",
+      "bytes": 3974,
+      "sha256": "edd9d78c830ce185d8a207963208958a98f2d56f57e9ca86f850e11728e3eab1"
+    },
+    {
+      "path": "analysis\\root_control6775_vs9550_validation.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_control6775_vs9550_validation.json",
+      "bytes": 1770,
+      "sha256": "3fb4e43e9bc02d7d42eca43525197fbc91ca1c7df024febe4a4a9a784116173e"
+    },
+    {
+      "path": "analysis\\root_control6775_vs9550_validation.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_control6775_vs9550_validation.md",
+      "bytes": 19484,
+      "sha256": "2528a1082475b2e849f53b662857746ebd07f42711dd37cb15e2936383913813"
+    },
+    {
+      "path": "analysis\\root_control_vs_kl_validation.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_control_vs_kl_validation.json",
+      "bytes": 1770,
+      "sha256": "0480daa3411bb0c1226c2d359c8fcf0fcf8b05c2dca02d45d23ec1cd0e86b498"
+    },
+    {
+      "path": "analysis\\root_control_vs_kl_validation.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_control_vs_kl_validation.md",
+      "bytes": 18973,
+      "sha256": "5e4d5d91a3106b4c59a7fde36fababcc17a8f07338c6301a56ef9a840fd32ba6"
+    },
+    {
+      "path": "analysis\\root_control_vs_transcript_validation.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_control_vs_transcript_validation.json",
+      "bytes": 1814,
+      "sha256": "371f41ab5573d81e703f8557d0eb8190743300780187d8e4e0952602c655590a"
+    },
+    {
+      "path": "analysis\\root_control_vs_transcript_validation.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_control_vs_transcript_validation.md",
+      "bytes": 18262,
+      "sha256": "585e5f6184653eabfec68786803ab8c2c2a1ad772ca5062aaeba143347d4e975"
+    },
+    {
+      "path": "analysis\\root_final_multiturn_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_final_multiturn_review.md",
+      "bytes": 2181,
+      "sha256": "87c10e6e4ea27b7c77b6e5c952c62e97ef956b641619c93fa6a81004e9118abe"
+    },
+    {
+      "path": "analysis\\root_ordinarykl_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_ordinarykl_review.md",
+      "bytes": 1620,
+      "sha256": "2cbfdba1bb646b2fa246e11e0153c972cc0536aee533fed1c79319d60e413d41"
+    },
+    {
+      "path": "analysis\\root_secondpass_validation_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_secondpass_validation_review.md",
+      "bytes": 3890,
+      "sha256": "40c1be2bd6fde5bc03603301ef4466bcbe3ef1e832762533a1d6463d0b8ae2df"
+    },
+    {
+      "path": "analysis\\root_tone24_lock.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_tone24_lock.json",
+      "bytes": 443,
+      "sha256": "2638d79f77ce2e44f4558528e9c4c658fb346740eac0e1d7bef75d29b8ccbad2"
+    },
+    {
+      "path": "analysis\\root_tone24_locked.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_tone24_locked.jsonl",
+      "bytes": 9047,
+      "sha256": "e07a3c86a3853abcfbfb26ece5f838b6f26d7234d9f4d7ce452bb071e48dcf98"
+    },
+    {
+      "path": "analysis\\root_transcript30_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\root_transcript30_review.md",
+      "bytes": 1824,
+      "sha256": "8c618f6c11ead054dc5929ee4af771a3418b3fc67c858f97b84d53268b0869ba"
+    },
+    {
+      "path": "analysis\\selection\\configuration.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\configuration.json",
+      "bytes": 1067,
+      "sha256": "657e64c204c936a099040fb2e824a45b73de91776d724646cc113e5207560f61"
+    },
+    {
+      "path": "analysis\\selection\\decision.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\decision.json",
+      "bytes": 18828,
+      "sha256": "46087fe51bf56e3913fbc064740c1e1806b604378740e66f5880795b8adbdc55"
+    },
+    {
+      "path": "analysis\\selection\\decision.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\decision.md",
+      "bytes": 1785,
+      "sha256": "6b96b6ac846d45c305ea125b8427d9511471c6d0d7d893a922842273a22bd0ff"
+    },
+    {
+      "path": "analysis\\selection\\figures\\validation_branches.csv",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\figures\\validation_branches.csv",
+      "bytes": 1158,
+      "sha256": "abd12dc11965e9bc52be0a6a0ff28e98c96c11b404670e5f67ca9e0f8da4945d"
+    },
+    {
+      "path": "analysis\\selection\\figures\\validation_branches.pdf",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\figures\\validation_branches.pdf",
+      "bytes": 24150,
+      "sha256": "ca1a1491f3a5805ec77304f6f8a2d02d37c93a5142fb3463f22e1edad9136bbc"
+    },
+    {
+      "path": "analysis\\selection\\figures\\validation_branches.png",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\figures\\validation_branches.png",
+      "bytes": 124686,
+      "sha256": "20283f6a344e317400fe851b783538d85173b630be0b3f6273156a4ad9a8c19a"
+    },
+    {
+      "path": "analysis\\selection\\policy.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\policy.json",
+      "bytes": 163,
+      "sha256": "2ef8f4b6a68f384b950f02d867db50b8b091f5030b1a3fa777ea896f79536b98"
+    },
+    {
+      "path": "analysis\\selection\\provenance.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\provenance.json",
+      "bytes": 7260,
+      "sha256": "aed581bc65fdc3221774f3a0be54203aeb214092d681362535806fc790dfe293"
+    },
+    {
+      "path": "analysis\\selection\\reviews\\followup_mean_10hz_ordinarykl_6775.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\reviews\\followup_mean_10hz_ordinarykl_6775.json",
+      "bytes": 7348,
+      "sha256": "3b6b7efaf362a12f633c1af1d1445c1445428ddbaeb98a52afbb120514b0cbc5"
+    },
+    {
+      "path": "analysis\\selection\\reviews\\followup_mean_10hz_ordinarykl_6775.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\reviews\\followup_mean_10hz_ordinarykl_6775.md",
+      "bytes": 4866,
+      "sha256": "f0667078764f5c94de3f4c12add2084c5f6340245b981faf7a3b21ab82cd8c2b"
+    },
+    {
+      "path": "analysis\\selection\\reviews\\followup_mean_10hz_transcript30_6775.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\reviews\\followup_mean_10hz_transcript30_6775.json",
+      "bytes": 7703,
+      "sha256": "7e8c93f97ed8905be906990eef3b4f157c5058edbdfe92b62e4422c8a376c568"
+    },
+    {
+      "path": "analysis\\selection\\reviews\\followup_mean_10hz_transcript30_6775.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\selection\\reviews\\followup_mean_10hz_transcript30_6775.md",
+      "bytes": 5165,
+      "sha256": "c213efb0eafbfabed2fbba62ab045567d8a12153da977786186a34072e87a796"
+    },
+    {
+      "path": "analysis\\SELECTION_AND_PUBLICATION_WORKFLOW.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\SELECTION_AND_PUBLICATION_WORKFLOW.md",
+      "bytes": 10284,
+      "sha256": "7cd053b999999e31431ae70db9dd80a5b26a3aa61934d67a60cde30af25e8eb4"
+    },
+    {
+      "path": "analysis\\transcript30_validation_review.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\analysis\\transcript30_validation_review.md",
+      "bytes": 4193,
+      "sha256": "84ed6d9ed79512ff236a1f87ef426fe10647ca600dbd34bd0e4f7c1135c3c576"
+    },
+    {
+      "path": "provenance\\dataset_facts\\dataset_facts.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\dataset_facts\\dataset_facts.json",
+      "bytes": 25141,
+      "sha256": "620fb5822814f0ddf940710aac3ed4716792e00af4aac4f0a81695622b947e0f"
+    },
+    {
+      "path": "provenance\\dataset_facts\\dataset_facts.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\dataset_facts\\dataset_facts.md",
+      "bytes": 9603,
+      "sha256": "18acc586d3cb0a874c2157661efd6ffaf5d0dc6522dc3a3f0da41e88531058a6"
+    },
+    {
+      "path": "provenance\\dataset_facts\\hardware_facts.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\dataset_facts\\hardware_facts.json",
+      "bytes": 505,
+      "sha256": "35adcf284ea596de95667e0f1d621923c825634b2443e6941de7d29776778a6e"
+    },
+    {
+      "path": "provenance\\dataset_facts\\render_dataset_facts.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\dataset_facts\\render_dataset_facts.py",
+      "bytes": 15792,
+      "sha256": "bd7eb66549c538e0079c831ee91e9f83df58dfd436641ee6a514d1c719c849de"
+    },
+    {
+      "path": "provenance\\model_contract.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\model_contract.md",
+      "bytes": 6041,
+      "sha256": "f49f63fb31f2cdcef2cf92d455e830b3340d70a82b3d89e91b8011951e3c44db"
+    },
+    {
+      "path": "provenance\\multiturn_injection_source_audit\\inputs_inventory.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\multiturn_injection_source_audit\\inputs_inventory.json",
+      "bytes": 5047,
+      "sha256": "9c0753ab56519e6b824701351eafac2508788dd21422aa6f234cc7b2c157884d"
+    },
+    {
+      "path": "provenance\\multiturn_injection_source_audit\\source_audit.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\multiturn_injection_source_audit\\source_audit.md",
+      "bytes": 4385,
+      "sha256": "bfbc8de86455173801190ba4710c8fd20111971eb215208209c5ae2107f2a8c0"
+    },
+    {
+      "path": "provenance\\resource_ledger\\final_nvidia_point.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\resource_ledger\\final_nvidia_point.md",
+      "bytes": 802,
+      "sha256": "068a7968fbb3d9e8c9212022c5d17dd063ca32ee1c8502fd53ecbfbb1f3d9558"
+    },
+    {
+      "path": "provenance\\resource_ledger\\resource_closure.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\resource_ledger\\resource_closure.json",
+      "bytes": 20967,
+      "sha256": "d66a9c86a04eb314d04208dd66b700932f11803af57e1ffedfb4e0a42ece01a3"
+    },
+    {
+      "path": "provenance\\resource_ledger\\resource_closure.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\resource_ledger\\resource_closure.md",
+      "bytes": 4239,
+      "sha256": "2c7e062c2f54db743c0d78a9b2ebc15b27e79bb402ab6fa4a75388106b612887"
+    },
+    {
+      "path": "provenance\\resource_ledger\\resource_closure.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\resource_ledger\\resource_closure.py",
+      "bytes": 11004,
+      "sha256": "da2bfaf2417204149875dbf6400052730874643622d6bb780778aa9828fb4dd3"
+    },
+    {
+      "path": "provenance\\resource_ledger\\resource_ledger.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\resource_ledger\\resource_ledger.json",
+      "bytes": 8951,
+      "sha256": "f634bee74da60d5ebc06c773cfac5a268dbded9bb6b8490501275700797171d2"
+    },
+    {
+      "path": "provenance\\resource_ledger\\resource_ledger.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\resource_ledger\\resource_ledger.md",
+      "bytes": 2428,
+      "sha256": "445f30a230eb8ac4754fc86afd0bfc8f2d30f7760d8b6d63d41ab514396b36e0"
+    },
+    {
+      "path": "provenance\\resource_ledger\\resource_ledger.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\resource_ledger\\resource_ledger.py",
+      "bytes": 8329,
+      "sha256": "f2384b96486b880b7707f49c712f1bf2cfd738c167ff9fe7f2ee565ec14ab087"
+    },
+    {
+      "path": "provenance\\resource_ledger\\test_resource_closure.py",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\resource_ledger\\test_resource_closure.py",
+      "bytes": 2610,
+      "sha256": "877aaeb3aae1233957cbab580c1f3bc1f1a3debc1c75b8c135d5fbda0023bd7f"
+    },
+    {
+      "path": "provenance\\selected_checkpoint\\candidate.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\selected_checkpoint\\candidate.json",
+      "bytes": 4888,
+      "sha256": "2a90ac4f9ead2d1b54aebbcd6f2fa865baa850963e2371fa2bdf6ea9d05a783c"
+    },
+    {
+      "path": "provenance\\selected_checkpoint\\config.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\selected_checkpoint\\config.json",
+      "bytes": 1087,
+      "sha256": "2c2da44fab9aec978faea81c72a35ddacf70e0082df081c5ca78594bc7871cc6"
+    },
+    {
+      "path": "provenance\\selected_checkpoint\\result.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\selected_checkpoint\\result.json",
+      "bytes": 2631,
+      "sha256": "202d49d42698cbae1209c3149a908bd74bc60d2606528dbc410e4bd4b95d77e5"
+    },
+    {
+      "path": "provenance\\tone_classifier\\report.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\tone_classifier\\report.json",
+      "bytes": 4783218,
+      "sha256": "0e2cd6054861252a7dc57d0074ea8d0a484fcbdc8c82df55ffb4822102bbaf6b"
+    },
+    {
+      "path": "provenance\\tone_classifier\\summary.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\provenance\\tone_classifier\\summary.md",
+      "bytes": 2771,
+      "sha256": "32aa350152dcf8ec54cd017855e0f266a348a4555a8baff252b72ae509b3fc22"
+    },
+    {
+      "path": "README.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results\\followup_20261007\\README.md",
+      "bytes": 2422,
+      "sha256": "304d6280aebe10ca44913bcf3a5cbe83e369edffca7d55b232b7a97761325268"
+    }
+  ]
+}

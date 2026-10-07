@@ -1,0 +1,494 @@
+{
+  "created_at": "2026-10-07T14:01:23.883015Z",
+  "training_ledger": {
+    "path": "results_preview\\followup10hz_20261007\\provenance\\resource_ledger\\resource_ledger.json",
+    "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\provenance\\resource_ledger\\resource_ledger.json",
+    "bytes": 8951,
+    "sha256": "f634bee74da60d5ebc06c773cfac5a268dbded9bb6b8490501275700797171d2"
+  },
+  "distinct_training_loop_seconds": 13619.013831995893,
+  "lifecycle_log": {
+    "path": "results_preview\\followup10hz_20261007\\provenance\\operational_final\\payload\\supervisor\\lifecycle_events.log",
+    "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\provenance\\operational_final\\payload\\supervisor\\lifecycle_events.log",
+    "bytes": 5456,
+    "sha256": "53e1ef9b3dab397f5b30695983f6a3427f557ba4663afeebcb4aa584fd9318d0"
+  },
+  "processes": [
+    {
+      "name": "followup10hz-tone-classifier",
+      "scope": "cpu",
+      "started_at": "2026-10-07T09:04:58.716000Z",
+      "exited_at": "2026-10-07T09:05:26.499000Z",
+      "wall_seconds": 27.783,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-code-check",
+      "scope": "cpu",
+      "started_at": "2026-10-07T09:29:44.399000Z",
+      "exited_at": "2026-10-07T09:29:55.873000Z",
+      "wall_seconds": 11.474,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-fullpass",
+      "scope": "training",
+      "started_at": "2026-10-07T08:58:01.411000Z",
+      "exited_at": "2026-10-07T09:53:39.636000Z",
+      "wall_seconds": 3338.225,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-ordinarykl-smoke",
+      "scope": "smoke",
+      "started_at": "2026-10-07T09:56:18.640000Z",
+      "exited_at": "2026-10-07T09:57:40.512000Z",
+      "wall_seconds": 81.872,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-tone-baseline",
+      "scope": "evaluation",
+      "started_at": "2026-10-07T09:58:09.841000Z",
+      "exited_at": "2026-10-07T09:58:47.388000Z",
+      "wall_seconds": 37.547,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-test-epoch1",
+      "scope": "evaluation",
+      "started_at": "2026-10-07T09:59:27.664000Z",
+      "exited_at": "2026-10-07T10:02:39.706000Z",
+      "wall_seconds": 192.042,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-conversation-epoch1",
+      "scope": "evaluation",
+      "started_at": "2026-10-07T10:03:53.018000Z",
+      "exited_at": "2026-10-07T10:05:36.558000Z",
+      "wall_seconds": 103.54,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-ce-control",
+      "scope": "training",
+      "started_at": "2026-10-07T10:05:50.287000Z",
+      "exited_at": "2026-10-07T10:45:02.185000Z",
+      "wall_seconds": 2351.898,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-conversation-tone",
+      "scope": "evaluation",
+      "started_at": "2026-10-07T10:46:22.190000Z",
+      "exited_at": "2026-10-07T10:47:14.657000Z",
+      "wall_seconds": 52.467,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-transcript30",
+      "scope": "training",
+      "started_at": "2026-10-07T10:48:27.867000Z",
+      "exited_at": "2026-10-07T11:28:29.144000Z",
+      "wall_seconds": 2401.277,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-ordinarykl",
+      "scope": "training",
+      "started_at": "2026-10-07T11:29:17.225000Z",
+      "exited_at": "2026-10-07T12:14:53.515000Z",
+      "wall_seconds": 2736.29,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-test-ordinarykl",
+      "scope": "evaluation",
+      "started_at": "2026-10-07T12:23:55.034000Z",
+      "exited_at": "2026-10-07T12:27:05.393000Z",
+      "wall_seconds": 190.359,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-selected9550-training",
+      "scope": "training",
+      "started_at": "2026-10-07T12:34:32.243000Z",
+      "exited_at": "2026-10-07T13:30:00.262000Z",
+      "wall_seconds": 3328.019,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-selected9550-test",
+      "scope": "evaluation",
+      "started_at": "2026-10-07T13:31:38.649000Z",
+      "exited_at": "2026-10-07T13:34:54.983000Z",
+      "wall_seconds": 196.334,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-test-ce_control",
+      "scope": "evaluation",
+      "started_at": "2026-10-07T13:35:43.436000Z",
+      "exited_at": "2026-10-07T13:38:53.632000Z",
+      "wall_seconds": 190.196,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-test-transcript30",
+      "scope": "evaluation",
+      "started_at": "2026-10-07T13:45:37.984000Z",
+      "exited_at": "2026-10-07T13:48:46.188000Z",
+      "wall_seconds": 188.204,
+      "exit_status": 0
+    },
+    {
+      "name": "followup10hz-conversation-ce_control",
+      "scope": "evaluation",
+      "started_at": "2026-10-07T13:49:16.727000Z",
+      "exited_at": "2026-10-07T13:50:08.770000Z",
+      "wall_seconds": 52.043,
+      "exit_status": 0
+    }
+  ],
+  "evaluators": [
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech\\evaluation.json",
+        "bytes": 590,
+        "sha256": "8d75860429f8971f1484d9d9e35ae78e37d5704291aa3c14c3953858fd216e44"
+      },
+      "metrics": {
+        "examples": 256,
+        "target_tokens": 25007,
+        "cross_entropy": 1.4604784856703945,
+        "perplexity": 4.308020361277013,
+        "semantic_similarity": 0.6667641153668656,
+        "generated_examples": 136,
+        "generation_seconds": 78.14184040017426,
+        "generated_tokens": 10492,
+        "completed_generations": 122,
+        "token_limited_generations": 14,
+        "shuffled_audio_cross_entropy": 1.8116970828422714,
+        "zero_audio_cross_entropy": 1.888763537261461,
+        "no_history_cross_entropy": 1.6828131663219716,
+        "no_history_shuffled_cross_entropy": 1.8899279598285177,
+        "evaluation_seconds": 146.68985689198598
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation.json",
+        "bytes": 590,
+        "sha256": "27263891fb379c7251c5a206bf8877f38b27a36dda3da1214b0f4423cb6a2dc2"
+      },
+      "metrics": {
+        "examples": 256,
+        "target_tokens": 25007,
+        "cross_entropy": 1.4827614353498426,
+        "perplexity": 4.405093281098942,
+        "semantic_similarity": 0.6331436366719358,
+        "generated_examples": 136,
+        "generation_seconds": 77.46818344504572,
+        "generated_tokens": 10592,
+        "completed_generations": 121,
+        "token_limited_generations": 15,
+        "shuffled_audio_cross_entropy": 1.7935923536126106,
+        "zero_audio_cross_entropy": 1.888763537261461,
+        "no_history_cross_entropy": 1.6911604554682715,
+        "no_history_shuffled_cross_entropy": 1.8716162874541815,
+        "evaluation_seconds": 147.60013022599742
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\evaluation_followup_mean_10hz_ce_control_9550\\speech\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_followup_mean_10hz_ce_control_9550\\speech\\evaluation.json",
+        "bytes": 588,
+        "sha256": "38dcd0a54791b0564b26750b1dda444a03ea88820e34863e31d73227c6e69217"
+      },
+      "metrics": {
+        "examples": 256,
+        "target_tokens": 25007,
+        "cross_entropy": 1.454651456075232,
+        "perplexity": 4.282990395134847,
+        "semantic_similarity": 0.6543799778994392,
+        "generated_examples": 136,
+        "generation_seconds": 82.95188984507695,
+        "generated_tokens": 10891,
+        "completed_generations": 116,
+        "token_limited_generations": 20,
+        "shuffled_audio_cross_entropy": 1.8173099455319779,
+        "zero_audio_cross_entropy": 1.888763537261461,
+        "no_history_cross_entropy": 1.6779796152369424,
+        "no_history_shuffled_cross_entropy": 1.897160682164566,
+        "evaluation_seconds": 152.17733006807975
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\evaluation_ordinarykl\\speech\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_ordinarykl\\speech\\evaluation.json",
+        "bytes": 590,
+        "sha256": "a5dc9531c3b2c3f1ed990d4a1400135d49ac32928c7e51d3c82734376f4dc17d"
+      },
+      "metrics": {
+        "examples": 256,
+        "target_tokens": 25007,
+        "cross_entropy": 1.5069784308999827,
+        "perplexity": 4.513073607879023,
+        "semantic_similarity": 0.6523343346574727,
+        "generated_examples": 136,
+        "generation_seconds": 77.60613426286727,
+        "generated_tokens": 11039,
+        "completed_generations": 120,
+        "token_limited_generations": 16,
+        "shuffled_audio_cross_entropy": 1.8598756038313031,
+        "zero_audio_cross_entropy": 1.888763537261461,
+        "no_history_cross_entropy": 1.7441465469856734,
+        "no_history_shuffled_cross_entropy": 1.9386071416511208,
+        "evaluation_seconds": 146.56259945686907
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\evaluation_transcript30\\speech\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_transcript30\\speech\\evaluation.json",
+        "bytes": 588,
+        "sha256": "a746f2a2ee5660368bc8524ee322a5fa73eafee8f133569230640a2476f8e960"
+      },
+      "metrics": {
+        "examples": 256,
+        "target_tokens": 25007,
+        "cross_entropy": 1.464593097603907,
+        "perplexity": 4.325782710793227,
+        "semantic_similarity": 0.6415153901804896,
+        "generated_examples": 136,
+        "generation_seconds": 75.68978836503811,
+        "generated_tokens": 10549,
+        "completed_generations": 121,
+        "token_limited_generations": 15,
+        "shuffled_audio_cross_entropy": 1.8167474499876097,
+        "zero_audio_cross_entropy": 1.8888169865476392,
+        "no_history_cross_entropy": 1.689236993512389,
+        "no_history_shuffled_cross_entropy": 1.897688908867886,
+        "evaluation_seconds": 144.52278099604882
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\validation\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\validation\\evaluation.json",
+        "bytes": 585,
+        "sha256": "d2f9b7e668623eeb3f6b730430cb7ace7db7495c21a799611d5a6f078b78ebe9"
+      },
+      "metrics": {
+        "examples": 128,
+        "target_tokens": 12811,
+        "cross_entropy": 1.4432576731383573,
+        "perplexity": 4.234467884652596,
+        "semantic_similarity": 0.5945328883826733,
+        "generated_examples": 24,
+        "generation_seconds": 16.89185262611136,
+        "generated_tokens": 1365,
+        "completed_generations": 22,
+        "token_limited_generations": 2,
+        "shuffled_audio_cross_entropy": 2.123918534450628,
+        "zero_audio_cross_entropy": 2.069581068159448,
+        "no_history_cross_entropy": 1.4607455274096934,
+        "no_history_shuffled_cross_entropy": 2.2475659663727425,
+        "evaluation_seconds": 42.791334840934724
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\validation\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\validation\\evaluation.json",
+        "bytes": 583,
+        "sha256": "b002a6eea77b4a42aeab652751ec17dde58494b2c76996d64b259350950b930f"
+      },
+      "metrics": {
+        "examples": 128,
+        "target_tokens": 12811,
+        "cross_entropy": 1.4352967498634843,
+        "perplexity": 4.200891437800637,
+        "semantic_similarity": 0.6065690616766611,
+        "generated_examples": 24,
+        "generation_seconds": 17.251700723078102,
+        "generated_tokens": 1483,
+        "completed_generations": 22,
+        "token_limited_generations": 2,
+        "shuffled_audio_cross_entropy": 2.148625654592493,
+        "zero_audio_cross_entropy": 2.069581068159448,
+        "no_history_cross_entropy": 1.4500951552269852,
+        "no_history_shuffled_cross_entropy": 2.28157767231428,
+        "evaluation_seconds": 43.48974723299034
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\validation\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\validation\\evaluation.json",
+        "bytes": 585,
+        "sha256": "411155bbf10ff50f5a1f35eb71ad1eb0781ae5099e2d2e5e63e3cb810932af08"
+      },
+      "metrics": {
+        "examples": 128,
+        "target_tokens": 12811,
+        "cross_entropy": 1.4632730083953729,
+        "perplexity": 4.320076059191561,
+        "semantic_similarity": 0.5755724298457304,
+        "generated_examples": 24,
+        "generation_seconds": 17.250157224945724,
+        "generated_tokens": 1439,
+        "completed_generations": 23,
+        "token_limited_generations": 1,
+        "shuffled_audio_cross_entropy": 2.054337290983401,
+        "zero_audio_cross_entropy": 2.06897660970861,
+        "no_history_cross_entropy": 1.5026694176936375,
+        "no_history_shuffled_cross_entropy": 2.1742315366810097,
+        "evaluation_seconds": 43.955103933112696
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ordinarykl_6775\\validation\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ordinarykl_6775\\validation\\evaluation.json",
+        "bytes": 584,
+        "sha256": "b3354dd4cb97be3efd2078358a9bc1813a3d5be4b4acf7a1bad7cf00895f894e"
+      },
+      "metrics": {
+        "examples": 128,
+        "target_tokens": 12811,
+        "cross_entropy": 1.4950431593674964,
+        "perplexity": 4.459529019146232,
+        "semantic_similarity": 0.5981696161131064,
+        "generated_examples": 24,
+        "generation_seconds": 17.172001449158415,
+        "generated_tokens": 1436,
+        "completed_generations": 22,
+        "token_limited_generations": 2,
+        "shuffled_audio_cross_entropy": 2.137704906726801,
+        "zero_audio_cross_entropy": 2.069581068159448,
+        "no_history_cross_entropy": 1.492925006612194,
+        "no_history_shuffled_cross_entropy": 2.2566372258297847,
+        "evaluation_seconds": 43.41529074800201
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_transcript30_6775\\validation\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_transcript30_6775\\validation\\evaluation.json",
+        "bytes": 585,
+        "sha256": "cd45cebbf82904c3bce910adcbc70b024258436a54dd565e5248b85c2df4756e"
+      },
+      "metrics": {
+        "examples": 128,
+        "target_tokens": 12811,
+        "cross_entropy": 1.4478387853764472,
+        "perplexity": 4.253910958749484,
+        "semantic_similarity": 0.5559957437217236,
+        "generated_examples": 24,
+        "generation_seconds": 12.573975845007226,
+        "generated_tokens": 1234,
+        "completed_generations": 24,
+        "token_limited_generations": 0,
+        "shuffled_audio_cross_entropy": 2.121705311922033,
+        "zero_audio_cross_entropy": 2.069581068159448,
+        "no_history_cross_entropy": 1.4583929604759402,
+        "no_history_shuffled_cross_entropy": 2.243530196475221,
+        "evaluation_seconds": 38.838507945183665
+      }
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\evaluation.json",
+        "bytes": 530,
+        "sha256": "e54c3da099b9b279901ebc22102c78fe454169f14dc4459ae9cab279f40baec5"
+      },
+      "metrics": {
+        "examples": 64,
+        "target_tokens": 1802,
+        "cross_entropy": 0.6865503352371093,
+        "perplexity": 1.986849732185506,
+        "semantic_similarity": 0.9080769470892847,
+        "generated_examples": 64,
+        "generation_seconds": 16.959976634010673,
+        "generated_tokens": 1778,
+        "completed_generations": 64,
+        "token_limited_generations": 0,
+        "shuffled_audio_cross_entropy": null,
+        "zero_audio_cross_entropy": null,
+        "no_history_cross_entropy": null,
+        "no_history_shuffled_cross_entropy": null,
+        "evaluation_seconds": 30.034005053108558
+      }
+    }
+  ],
+  "reused_oracle_receipt": {
+    "path": "results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\reuse.json",
+    "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\reuse.json",
+    "bytes": 4654,
+    "sha256": "6de511c1dd303d6a877a1af8397a2ccf0d5399b6d356556ed9fde63f1019d64d"
+  },
+  "conversation_generations": [
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\conversation_epoch1\\speech\\summary.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_epoch1\\speech\\summary.json",
+        "bytes": 199,
+        "sha256": "af246070b4a7b85ba3498797c14ddbb6d22ece69fe352b43da0c6fb55e6ed23e"
+      },
+      "generation_seconds": 51.78237365512177
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\conversation_ce_control\\speech\\summary.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_ce_control\\speech\\summary.json",
+        "bytes": 199,
+        "sha256": "ea8840db061c3c0adee5ebc1f4dfdf11fa773539ca252d8734516f3401ca0a35"
+      },
+      "generation_seconds": 44.69743602513336
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\conversation_epoch1\\text\\summary.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_epoch1\\text\\summary.json",
+        "bytes": 166,
+        "sha256": "725aaa9d8f955dd1356bc9dd366deac070e527fb0782489b2e917171ae9a52d8"
+      },
+      "generation_seconds": 20.97948507568799
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\conversation_epoch1\\asr\\summary.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_epoch1\\asr\\summary.json",
+        "bytes": 166,
+        "sha256": "6df7da73334947f99fab03cde818f8bfd31b5556585c3e7c38d8ee463c493833"
+      },
+      "generation_seconds": 21.055818057153374
+    },
+    {
+      "source": {
+        "path": "results_preview\\followup10hz_20261007\\conversation_asr_tone\\summary.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\conversation_asr_tone\\summary.json",
+        "bytes": 165,
+        "sha256": "76c1ca131d2547d5c17c3d81b77f82a04a4404c6a585c8c6e6734f3f6c13e9a4"
+      },
+      "generation_seconds": 44.97175056254491
+    }
+  ],
+  "scope_notes": [
+    "Whole-process wall includes startup, training/evaluation and shutdown; it is not CUDA compute or utilization.",
+    "Training-loop increments and component evaluation timers overlap whole-process wall and are not added to it.",
+    "Evaluator generation timers are nested; periodic training validation lies within recorded training-loop time.",
+    "Oracle-tone evaluation was reused from predicted-tone output; its copied timer is excluded.",
+    "Conversation summaries and their per-reply timers are nested; matched subsets/reused comparators are not counted again.",
+    "Three neutral follow-up ASRs occurred once within the original conversation process; no new training feature extraction.",
+    "Saved PyTorch allocated peak is a lineage maximum; reserved memory and point NVIDIA usage are separate.",
+    "Provider billing duration/rate and GPU utilization-hours were not measured; no rental cost is inferred."
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "pairs": 40,
+  "distinct_target_pairs": 39,
+  "family_clusters": 22,
+  "matching_margin": {
+    "examples": 40,
+    "dialogues": 22,
+    "draws": 2000,
+    "confidence": 0.95,
+    "estimate": 0.07861593030393124,
+    "lower": 0.05601490027167732,
+    "upper": 0.1049825620483968
+  },
+  "resized_matching_margin": {
+    "examples": 40,
+    "dialogues": 22,
+    "draws": 2000,
+    "confidence": 0.95,
+    "estimate": 0.06239327304065227,
+    "lower": 0.03817063630677952,
+    "upper": 0.08554950863126173
+  },
+  "matching_win_rate": {
+    "examples": 40,
+    "dialogues": 22,
+    "draws": 2000,
+    "confidence": 0.95,
+    "estimate": 0.875,
+    "lower": 0.795906771799629,
+    "upper": 0.9687736742424241
+  },
+  "tie_rate": 0.025,
+  "first_direction_win_rate": 0.65,
+  "second_direction_win_rate": 0.725,
+  "numerical_tie_tolerance": 1e-6
+}

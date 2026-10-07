@@ -1,0 +1,83 @@
+{
+  "config": {
+    "name": "followup_mean_10hz_ce_control_6775",
+    "stage": "V2",
+    "seed": 42,
+    "train_examples": 38193,
+    "validation_examples": 128,
+    "test_examples": 128,
+    "training_validation_examples": null,
+    "epochs": 3,
+    "max_optimizer_updates": 6775,
+    "learning_rate": 0.0002,
+    "microbatch_size": 1,
+    "gradient_accumulation": 8,
+    "history_turns": 2,
+    "max_history_tokens": 256,
+    "max_target_tokens": 4097,
+    "max_new_tokens": 256,
+    "sequence_length_multiple": 64,
+    "gradient_checkpointing": true,
+    "evaluation_interval": 250,
+    "checkpoint_interval": 100,
+    "qualitative_examples": 24,
+    "semantic_examples": 24,
+    "generation_batch_size": 8,
+    "conditioning_examples": 24,
+    "model_name": "Qwen/Qwen3.5-2B",
+    "speech_model_name": "openai/whisper-small",
+    "prompt": {
+      "kind": "chat"
+    },
+    "decoding": {
+      "kind": "greedy"
+    },
+    "objective": {
+      "kind": "response_ce"
+    },
+    "projector": {
+      "compression_factor": 5,
+      "encoder_dimension": 768,
+      "embedding_dimension": 2048,
+      "native_rate": 50.0,
+      "architecture": "mlp",
+      "hidden_dimension": 1024
+    }
+  },
+  "git_commit": "04eb486e4a892e8968fe2a636c7ca174cb1893c8",
+  "train_examples": 38193,
+  "validation_examples": 128,
+  "test_examples": 0,
+  "projector_parameters": 2888192,
+  "pseudo_tokens_per_second": 10.0,
+  "mean_pseudo_tokens": 63.5078125,
+  "optimizer": "AdamW",
+  "steps": 6775,
+  "runtime_seconds": 7754.376688864781,
+  "peak_vram_gb": 7.739920896,
+  "examples_per_second": 6.988698405356125,
+  "target_tokens_per_second": 789.9661372907569,
+  "initial_validation_loss": 1.9577372002942195,
+  "initial_training_loss": 1.9064776103005054,
+  "final_fixed_training_loss": 1.6098895128146953,
+  "final_training_loss": 1.0944718861952425,
+  "validation": {
+    "examples": 128,
+    "target_tokens": 12811,
+    "cross_entropy": 1.4432576731383573,
+    "perplexity": 4.234467884652596,
+    "semantic_similarity": 0.5945328883826733,
+    "generated_examples": 24,
+    "generation_seconds": 16.89185262611136,
+    "generated_tokens": 1365,
+    "completed_generations": 22,
+    "token_limited_generations": 2,
+    "shuffled_audio_cross_entropy": 2.123918534450628,
+    "zero_audio_cross_entropy": 2.069581068159448,
+    "no_history_cross_entropy": 1.4607455274096934,
+    "no_history_shuffled_cross_entropy": 2.2475659663727425,
+    "evaluation_seconds": 42.791334840934724
+  },
+  "test": null,
+  "checkpoint_path": "/workspace/speech-projector/results_followup_20261007/followup_mean_10hz_ce_control_6775/checkpoint/projector.safetensors"
+}

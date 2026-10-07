@@ -1,0 +1,32 @@
+{
+  "selection": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+  "sources": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+  "responses": [
+    {
+      "name": "speech_2.5Hz_4775",
+      "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\evaluation_generations.jsonl",
+      "condition": "speech"
+    },
+    {
+      "name": "speech_10Hz_4775",
+      "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech\\evaluation_generations.jsonl",
+      "condition": "speech"
+    },
+    {
+      "name": "followup_mean_10hz_ce_control_6775",
+      "generations": "results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech\\evaluation_generations.jsonl",
+      "condition": "speech"
+    },
+    {
+      "name": "true_TEXT",
+      "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text\\evaluation_generations.jsonl",
+      "condition": "text"
+    },
+    {
+      "name": "plain_ASR",
+      "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+      "condition": "asr"
+    }
+  ],
+  "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\content\\final_core"
+}

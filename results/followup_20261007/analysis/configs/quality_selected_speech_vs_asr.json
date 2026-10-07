@@ -1,0 +1,21 @@
+{
+  "selection": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+  "sources": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+  "first": {
+    "name": "followup_mean_10hz_ce_control_6775",
+    "generations": "results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech\\evaluation_generations.jsonl",
+    "condition": "speech"
+  },
+  "second": {
+    "name": "plain_asr",
+    "generations": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr\\evaluation_generations.jsonl",
+    "condition": "asr"
+  },
+  "cohorts": [
+    "qwen_emotional",
+    "neu_emotional"
+  ],
+  "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\quality\\selected_speech_vs_asr",
+  "seed": 42,
+  "slot_salt": "followup-selected-speech-v1"
+}

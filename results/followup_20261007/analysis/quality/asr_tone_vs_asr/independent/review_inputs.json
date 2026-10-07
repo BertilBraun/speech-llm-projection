@@ -1,0 +1,6 @@
+{
+  "cards_sha256": "ab4cc53adea092f6f69256ca9a15644b1edd93ed971090f91402d4e5ab4a65a6",
+  "ratings_sha256": "3b4b892c4e5c6aab6ba90c9427b83799223b0a17702bd4167cea13cbf8167448",
+  "assessed_cases": 64,
+  "methodology": "All64 cases read and rated by Codex in A/B-blinded slots before mapping or root ratings. Broader experiment context known. Intended synthetic labels, no listening and no teacher-resemblance scoring."
+}

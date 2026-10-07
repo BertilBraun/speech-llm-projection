@@ -1,0 +1,41 @@
+{
+  "selection": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+  "sources": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+  "inputs": [
+    {
+      "name": "speech_2.5Hz_4775",
+      "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test",
+      "kind": "checkpoint",
+      "run_result": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\result.json",
+      "validation_candidate": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\candidate.json",
+      "fidelity_summary": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\parent4775_comparison\\old_record_reaggregation\\teacher_fidelity_summary.jsonl",
+      "neu_preference": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\parent4775_comparison\\old_record_reaggregation\\neu_preference.json"
+    },
+    {
+      "name": "speech_10Hz_4775",
+      "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech",
+      "kind": "checkpoint",
+      "run_result": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\result.json",
+      "validation_candidate": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\candidate.json",
+      "fidelity_summary": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\fidelity\\teacher_fidelity_summary.jsonl",
+      "neu_preference": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\neu_emotional\\summary.json"
+    },
+    {
+      "name": "true_TEXT",
+      "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text",
+      "kind": "baseline",
+      "condition": "text"
+    },
+    {
+      "name": "plain_ASR",
+      "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr",
+      "kind": "baseline",
+      "condition": "asr"
+    }
+  ],
+  "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\parent4775_comparison",
+  "tone_baseline_summaries": [
+    "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone\\summary.json",
+    "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone\\summary.json"
+  ]
+}

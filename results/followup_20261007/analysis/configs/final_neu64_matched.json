@@ -1,0 +1,38 @@
+{
+  "selection": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\final_evaluation_selection.json",
+  "sources": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+  "cohort": "neu_emotional",
+  "systems": [
+    {
+      "name": "speech_10hz_parent4775",
+      "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\evaluation_epoch1\\speech",
+      "condition": "speech"
+    },
+    {
+      "name": "followup_mean_10hz_ce_control_6775",
+      "evaluation_directory": "results_preview\\followup10hz_20261007\\evaluation_ce_control\\speech",
+      "condition": "speech"
+    },
+    {
+      "name": "true_text",
+      "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\text",
+      "condition": "text"
+    },
+    {
+      "name": "plain_asr",
+      "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\baseline\\test\\asr",
+      "condition": "asr"
+    },
+    {
+      "name": "asr_predicted_tone",
+      "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_predicted_tone",
+      "condition": "text"
+    },
+    {
+      "name": "asr_oracle_tone_reused",
+      "evaluation_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\baseline\\asr_oracle_tone",
+      "condition": "text"
+    }
+  ],
+  "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\final_neu64_matched"
+}

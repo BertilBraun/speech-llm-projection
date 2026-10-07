@@ -1,0 +1,14 @@
+{
+  "measured_at": "2026-10-07T09:22:02Z",
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "gpu_memory_mib": 24576,
+  "nvidia_driver": "550.107.02",
+  "workspace_capacity_bytes": 214748364800,
+  "workspace_free_bytes": 44051517440,
+  "container_memory_limit_bytes": 48412753920,
+  "container_memory_charged_bytes": 41957748736,
+  "container_memory_limit_path": "/sys/fs/cgroup/memory/memory.limit_in_bytes",
+  "host_memory_bytes": 50430664704,
+  "host_memory_available_bytes": 44175462400,
+  "swap_bytes": 0
+}

@@ -1,0 +1,150 @@
+{
+  "captured_at": "2026-10-07T13:31:02.661328Z",
+  "completed_training": [
+    {
+      "name": "followup_mean_10hz_ce_control_6775",
+      "source_commit": "04eb486e4a892e8968fe2a636c7ca174cb1893c8",
+      "cumulative_updates": 6775,
+      "added_updates": 2000,
+      "cumulative_examples": 54193,
+      "added_examples": 16000,
+      "cumulative_target_tokens": 6125695,
+      "added_target_tokens": 1811174,
+      "cumulative_training_seconds": 7754.376688864781,
+      "added_training_seconds": 2220.0778486318886,
+      "peak_pytorch_allocated_gb": 7.739920896,
+      "capture": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_ce_control_6775_capture.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_ce_control_6775_capture.json",
+        "bytes": 15975,
+        "sha256": "3aa597d368cf434b1561b104885eb75bb92019a88756d04a403f2c3a9723788a"
+      },
+      "parent_state": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\checkpoint\\state.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\checkpoint\\state.json",
+        "bytes": 384,
+        "sha256": "d29723c8182c1d62a3dac792622222b5137203f2492176702841c91613e39d67"
+      }
+    },
+    {
+      "name": "followup_mean_10hz_ce_control_9550",
+      "source_commit": "9ba489853174dafa85215aa2eeb870700514e2e0",
+      "cumulative_updates": 9550,
+      "added_updates": 2775,
+      "cumulative_examples": 76386,
+      "added_examples": 22193,
+      "cumulative_target_tokens": 8629042,
+      "added_target_tokens": 2503347,
+      "cumulative_training_seconds": 10947.650283351773,
+      "added_training_seconds": 3193.273594486993,
+      "peak_pytorch_allocated_gb": 7.739920896,
+      "capture": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_ce_control_9550_capture.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_ce_control_9550_capture.json",
+        "bytes": 16295,
+        "sha256": "fde77d72551f3dc3d7dc645bfab1dea13a768896e5d23130cc3eb4c1bae916d1"
+      },
+      "parent_state": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\checkpoint\\state.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\checkpoint\\state.json",
+        "bytes": 389,
+        "sha256": "bafeb59a45cf0214a83b3a856efeb5a3a0bb81bae15563abaaec076e9829b199"
+      }
+    },
+    {
+      "name": "followup_mean_10hz_epoch1_ce",
+      "source_commit": "46ed24257606a72ace17c54064e56344d989088c",
+      "cumulative_updates": 4775,
+      "added_updates": 2775,
+      "cumulative_examples": 38193,
+      "added_examples": 22193,
+      "cumulative_target_tokens": 4314521,
+      "added_target_tokens": 2507795,
+      "cumulative_training_seconds": 5534.298840232892,
+      "added_training_seconds": 3247.8007581089623,
+      "peak_pytorch_allocated_gb": 7.739920896,
+      "capture": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_epoch1_ce_capture.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_epoch1_ce_capture.json",
+        "bytes": 15969,
+        "sha256": "ce6de408f193c190c70eedcfb3724ef6733e15ea0978f3131f787951cef7c073"
+      },
+      "parent_state": {
+        "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_10hz\\checkpoint\\state.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_10hz\\checkpoint\\state.json",
+        "bytes": 389,
+        "sha256": "fadc860173fee4b5f37742c1a318b8d87c26866fd3d55feaf519704700da8287"
+      }
+    },
+    {
+      "name": "followup_mean_10hz_ordinarykl_6775",
+      "source_commit": "04eb486e4a892e8968fe2a636c7ca174cb1893c8",
+      "cumulative_updates": 6775,
+      "added_updates": 2000,
+      "cumulative_examples": 54193,
+      "added_examples": 16000,
+      "cumulative_target_tokens": 6125695,
+      "added_target_tokens": 1811174,
+      "cumulative_training_seconds": 8204.34366527386,
+      "added_training_seconds": 2670.044825040968,
+      "peak_pytorch_allocated_gb": 7.739920896,
+      "capture": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_ordinarykl_6775_capture.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_ordinarykl_6775_capture.json",
+        "bytes": 16279,
+        "sha256": "69752e722cc18e4941c39434498fcd94b16723dbb33fb1f94b0f61f898d59798"
+      },
+      "parent_state": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\checkpoint\\state.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\checkpoint\\state.json",
+        "bytes": 384,
+        "sha256": "d29723c8182c1d62a3dac792622222b5137203f2492176702841c91613e39d67"
+      }
+    },
+    {
+      "name": "followup_mean_10hz_transcript30_6775",
+      "source_commit": "04eb486e4a892e8968fe2a636c7ca174cb1893c8",
+      "cumulative_updates": 6775,
+      "added_updates": 2000,
+      "cumulative_examples": 54193,
+      "added_examples": 16000,
+      "cumulative_target_tokens": 5678049,
+      "added_target_tokens": 1363528,
+      "cumulative_training_seconds": 7822.115645959973,
+      "added_training_seconds": 2287.8168057270814,
+      "peak_pytorch_allocated_gb": 7.739920896,
+      "capture": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_transcript30_6775_capture.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\transfer\\followup_mean_10hz_transcript30_6775_capture.json",
+        "bytes": 16753,
+        "sha256": "82e96ed9910d372dd9173802a72466e928baad94ea2a66b68d20d2e0c1a31b97"
+      },
+      "parent_state": {
+        "path": "results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\checkpoint\\state.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_epoch1_ce\\checkpoint\\state.json",
+        "bytes": 384,
+        "sha256": "d29723c8182c1d62a3dac792622222b5137203f2492176702841c91613e39d67"
+      }
+    }
+  ],
+  "classifier_report": {
+    "path": "results_preview\\followup10hz_20261007\\tone_classifier\\report.json",
+    "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\tone_classifier\\report.json",
+    "bytes": 4783218,
+    "sha256": "0e2cd6054861252a7dc57d0074ea8d0a484fcbdc8c82df55ffb4822102bbaf6b"
+  },
+  "classifier_cpu_wall_seconds": 22.71770404209383,
+  "classifier_feature_loading_seconds": 14.913937086937949,
+  "classifier_fitting_seconds": 3.720706667052582,
+  "scope_notes": [
+    "Training increments subtract the exact SHA-bound parent checkpoint elapsed time; cumulative counters are references and must not be summed again.",
+    "Training-loop wall includes recorded training overhead; it is not measured GPU utilization, CUDA kernel time, or the whole process including startup/evaluation.",
+    "Classifier total CPU wall contains feature loading and fitting; nested timers must not be added to its total.",
+    "Classifier memory observation was RSS 1,876,056 KiB at one instant, not a peak; its 10000×4608 float64 feature matrix occupies 368,640,000 bytes before copies.",
+    "PyTorch allocated decimal GB is distinct from reserved memory and NVIDIA/NVML usage.",
+    "Saved training peak is a lineage maximum: continuation copies training_resources.json and preserves max(previous peak, newly observed peak), so it can include the parent rather than measuring only the new branch.",
+    "No new training-feature cache extraction, audio synthesis or teacher generation; three existing neutral follow-up clips (followup_short, next_step, stop) were transcribed once for the conversation comparator and reused thereafter. Their Whisper encoder/decoder runtime is contained in the conversation-job scope, not a separate extraction benchmark.",
+    "Final inference/evaluation, smoke/startup/debug and rental-time measurements remain separate or unmeasured here. No rental rate or cost is inferred.",
+    "Only completed immutable run captures are read; active branches are pending."
+  ]
+}

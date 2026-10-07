@@ -1,0 +1,8 @@
+{
+  "branch_decision": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\selection\\decision.json",
+  "policy": "C:\\Projects\\Voice-Full-Duplex-Light\\artifacts\\followup10hz\\extension_policy.json",
+  "parent_run_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775",
+  "extension_run_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550",
+  "review": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\extension_selection\\reviews\\followup_mean_10hz_ce_control_9550.json",
+  "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\extension_selection"
+}

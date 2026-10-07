@@ -1,0 +1,692 @@
+{
+  "evidence": [
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\provenance\\combined_dataset\\summary.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\provenance\\combined_dataset\\summary.json",
+      "bytes": 12892,
+      "sha256": "5142c8294791ee3e9137f392830b56e49e5aa06c4817a2c5ca2f6e2f4fa261d7"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\cache_stats_38193.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\cache_stats_38193.json",
+      "bytes": 963,
+      "sha256": "aeaf8560fc43ef83673d7789cb9fcbfad3cba3342ac2b21d967b3ee861e2e208"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\provenance\\checkpoint_operations\\token_exposure_and_continuation_audit.md",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\provenance\\checkpoint_operations\\token_exposure_and_continuation_audit.md",
+      "bytes": 6280,
+      "sha256": "7be84fdcb889aa4c236ccc5743298b20d0fff5473fe719d0af21defd405e8aa4"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+      "bytes": 9604728,
+      "sha256": "8471f5cde9cdd2d5c3f721d5829fe3ec6380bd81c5c21eeba35eda6262e19ae9"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_teacher\\preparation.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_teacher\\preparation.json",
+      "bytes": 744656,
+      "sha256": "b2c6da3e6202044617c6d744a1ab32ccc35eac1127c3ea26c9f92cbf51c6c23c"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\fixed_validation.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\fixed_validation.jsonl",
+      "bytes": 163209,
+      "sha256": "6e4aafe88eb94f5944341ae60f65e6cf75a476f484aa38a6b9a74726c2a79397"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\fixed_test.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\data_overnight_20261006\\fixed_test.jsonl",
+      "bytes": 320823,
+      "sha256": "a67964172fc7648c5780184c88a2021f69d078d0046737cb201183669107eb23"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\evaluation_losses.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\evaluation_losses.jsonl",
+      "bytes": 61114,
+      "sha256": "e9cff05073044951a17f0000e1b6343039b52d6738ba48b4787878c03b165b87"
+    },
+    {
+      "path": "results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\evaluation_generations.jsonl",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\overnight_40k_20261007\\replay\\speech-projector\\results_overnight_20261006\\overnight_mean_2p5hz_updates4000_epoch1\\test\\evaluation_generations.jsonl",
+      "bytes": 283882,
+      "sha256": "9ab7be29e463a99c6affa0f1b9540d4ac1d0298314467004000e751aa5df0537"
+    }
+  ],
+  "prepared": {
+    "manifest": {
+      "path": "\\workspace\\speech-projector\\data_overnight_20261006\\examples.jsonl",
+      "source_path": "\\workspace\\speech-projector\\data_overnight_20261006\\examples.jsonl",
+      "bytes": 54009487,
+      "sha256": "6756d3e9f90b5d3cbae4e2e83efa1044435560d58fb56fc602f64047b2bf5204"
+    },
+    "sidecar": {
+      "path": "\\workspace\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+      "source_path": "\\workspace\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+      "bytes": 9604728,
+      "sha256": "8471f5cde9cdd2d5c3f721d5829fe3ec6380bd81c5c21eeba35eda6262e19ae9"
+    },
+    "preparation": {
+      "path": "\\workspace\\speech-projector\\data_overnight_20261006\\preparation.json",
+      "source_path": "\\workspace\\speech-projector\\data_overnight_20261006\\preparation.json",
+      "bytes": 11042,
+      "sha256": "d54824ca34eeeb18dfb0cfc6753883c71f6f0a1d2eb02ee3a01d689c352135d5"
+    },
+    "cohorts": [
+      {
+        "cohort": "ordinary",
+        "split": "train",
+        "examples": 19999,
+        "distinct_dialogue_or_family_clusters": 15930,
+        "duration_seconds": {
+          "minimum": 0.556,
+          "p10": 5.249,
+          "median": 6.987,
+          "p90": 9.3254,
+          "p99": 12.875,
+          "maximum": 27.115,
+          "mean": 7.189957197859893
+        },
+        "user_words": {
+          "minimum": 2.0,
+          "p10": 16.0,
+          "median": 20.0,
+          "p90": 25.0,
+          "p99": 32.0,
+          "maximum": 74.0,
+          "mean": 20.242462123106154
+        },
+        "teacher_words": {
+          "minimum": 3.0,
+          "p10": 57.0,
+          "median": 108.0,
+          "p90": 277.0,
+          "p99": 529.0200000000004,
+          "maximum": 841.0,
+          "mean": 143.52497624881244
+        },
+        "history_turn_counts": [
+          [
+            0,
+            7251
+          ],
+          [
+            2,
+            12748
+          ]
+        ],
+        "complete_same_word_pairs": 0,
+        "exact_identical_target_pairs": 0,
+        "normalized_identical_target_pairs": 0
+      },
+      {
+        "cohort": "ordinary",
+        "split": "validation",
+        "examples": 512,
+        "distinct_dialogue_or_family_clusters": 445,
+        "duration_seconds": {
+          "minimum": 0.821,
+          "p10": 5.408,
+          "median": 7.0115,
+          "p90": 9.315700000000001,
+          "p99": 12.844509999999993,
+          "maximum": 16.181,
+          "mean": 7.206060546875
+        },
+        "user_words": {
+          "minimum": 2.0,
+          "p10": 16.1,
+          "median": 21.0,
+          "p90": 25.0,
+          "p99": 31.0,
+          "maximum": 40.0,
+          "mean": 20.73046875
+        },
+        "teacher_words": {
+          "minimum": 25.0,
+          "p10": 60.0,
+          "median": 108.0,
+          "p90": 334.50000000000017,
+          "p99": 569.2699999999994,
+          "maximum": 670.0,
+          "mean": 155.21484375
+        },
+        "history_turn_counts": [
+          [
+            0,
+            202
+          ],
+          [
+            2,
+            310
+          ]
+        ],
+        "complete_same_word_pairs": 0,
+        "exact_identical_target_pairs": 0,
+        "normalized_identical_target_pairs": 0
+      },
+      {
+        "cohort": "ordinary",
+        "split": "test",
+        "examples": 512,
+        "distinct_dialogue_or_family_clusters": 432,
+        "duration_seconds": {
+          "minimum": 1.204,
+          "p10": 5.313000000000001,
+          "median": 7.135,
+          "p90": 9.711700000000002,
+          "p99": 13.735129999999995,
+          "maximum": 18.239,
+          "mean": 7.338126953125
+        },
+        "user_words": {
+          "minimum": 2.0,
+          "p10": 16.0,
+          "median": 21.0,
+          "p90": 25.0,
+          "p99": 33.0,
+          "maximum": 46.0,
+          "mean": 20.705078125
+        },
+        "teacher_words": {
+          "minimum": 10.0,
+          "p10": 56.1,
+          "median": 100.5,
+          "p90": 311.2000000000003,
+          "p99": 538.0,
+          "maximum": 571.0,
+          "mean": 142.89453125
+        },
+        "history_turn_counts": [
+          [
+            0,
+            184
+          ],
+          [
+            2,
+            328
+          ]
+        ],
+        "complete_same_word_pairs": 0,
+        "exact_identical_target_pairs": 0,
+        "normalized_identical_target_pairs": 0
+      },
+      {
+        "cohort": "qwen_emotional",
+        "split": "train",
+        "examples": 9094,
+        "distinct_dialogue_or_family_clusters": 455,
+        "duration_seconds": {
+          "minimum": 2.4,
+          "p10": 4.4,
+          "median": 6.08,
+          "p90": 9.2,
+          "p99": 13.691199999999952,
+          "maximum": 27.28,
+          "mean": 6.51004178579283
+        },
+        "user_words": {
+          "minimum": 8.0,
+          "p10": 12.0,
+          "median": 15.0,
+          "p90": 19.0,
+          "p99": 23.0,
+          "maximum": 26.0,
+          "mean": 15.332307015614692
+        },
+        "teacher_words": {
+          "minimum": 5.0,
+          "p10": 13.0,
+          "median": 19.0,
+          "p90": 29.0,
+          "p99": 38.0,
+          "maximum": 52.0,
+          "mean": 19.808555091268968
+        },
+        "history_turn_counts": [
+          [
+            0,
+            9094
+          ]
+        ],
+        "complete_same_word_pairs": 4547,
+        "exact_identical_target_pairs": 103,
+        "normalized_identical_target_pairs": 116
+      },
+      {
+        "cohort": "qwen_emotional",
+        "split": "validation",
+        "examples": 460,
+        "distinct_dialogue_or_family_clusters": 23,
+        "duration_seconds": {
+          "minimum": 3.12,
+          "p10": 4.56,
+          "median": 6.16,
+          "p90": 8.808000000000003,
+          "p99": 13.538399999999992,
+          "maximum": 16.32,
+          "mean": 6.532000000000001
+        },
+        "user_words": {
+          "minimum": 9.0,
+          "p10": 12.0,
+          "median": 15.0,
+          "p90": 20.0,
+          "p99": 24.0,
+          "maximum": 28.0,
+          "mean": 15.643478260869566
+        },
+        "teacher_words": {
+          "minimum": 8.0,
+          "p10": 13.0,
+          "median": 18.0,
+          "p90": 29.0,
+          "p99": 37.40999999999997,
+          "maximum": 46.0,
+          "mean": 19.680434782608696
+        },
+        "history_turn_counts": [
+          [
+            0,
+            460
+          ]
+        ],
+        "complete_same_word_pairs": 230,
+        "exact_identical_target_pairs": 5,
+        "normalized_identical_target_pairs": 5
+      },
+      {
+        "cohort": "qwen_emotional",
+        "split": "test",
+        "examples": 440,
+        "distinct_dialogue_or_family_clusters": 22,
+        "duration_seconds": {
+          "minimum": 2.8,
+          "p10": 4.56,
+          "median": 6.32,
+          "p90": 9.76,
+          "p99": 13.524000000000004,
+          "maximum": 17.84,
+          "mean": 6.848909090909091
+        },
+        "user_words": {
+          "minimum": 8.0,
+          "p10": 11.900000000000006,
+          "median": 15.0,
+          "p90": 19.0,
+          "p99": 23.0,
+          "maximum": 25.0,
+          "mean": 15.545454545454545
+        },
+        "teacher_words": {
+          "minimum": 8.0,
+          "p10": 13.0,
+          "median": 19.0,
+          "p90": 28.0,
+          "p99": 39.610000000000014,
+          "maximum": 44.0,
+          "mean": 19.931818181818183
+        },
+        "history_turn_counts": [
+          [
+            0,
+            440
+          ]
+        ],
+        "complete_same_word_pairs": 220,
+        "exact_identical_target_pairs": 4,
+        "normalized_identical_target_pairs": 4
+      },
+      {
+        "cohort": "neu_emotional",
+        "split": "train",
+        "examples": 9100,
+        "distinct_dialogue_or_family_clusters": 455,
+        "duration_seconds": {
+          "minimum": 1.06,
+          "p10": 3.94,
+          "median": 5.14,
+          "p90": 6.76,
+          "p99": 8.7,
+          "maximum": 26.44,
+          "mean": 5.30763956043956
+        },
+        "user_words": {
+          "minimum": 7.0,
+          "p10": 11.0,
+          "median": 13.0,
+          "p90": 17.0,
+          "p99": 19.0,
+          "maximum": 23.0,
+          "mean": 13.605274725274725
+        },
+        "teacher_words": {
+          "minimum": 8.0,
+          "p10": 16.0,
+          "median": 22.0,
+          "p90": 31.0,
+          "p99": 45.0,
+          "maximum": 72.0,
+          "mean": 23.0089010989011
+        },
+        "history_turn_counts": [
+          [
+            0,
+            9100
+          ]
+        ],
+        "complete_same_word_pairs": 4550,
+        "exact_identical_target_pairs": 83,
+        "normalized_identical_target_pairs": 88
+      },
+      {
+        "cohort": "neu_emotional",
+        "split": "validation",
+        "examples": 460,
+        "distinct_dialogue_or_family_clusters": 23,
+        "duration_seconds": {
+          "minimum": 3.1,
+          "p10": 3.978,
+          "median": 5.28,
+          "p90": 7.2440000000000015,
+          "p99": 8.668199999999999,
+          "maximum": 11.58,
+          "mean": 5.455608695652174
+        },
+        "user_words": {
+          "minimum": 9.0,
+          "p10": 10.0,
+          "median": 14.0,
+          "p90": 17.0,
+          "p99": 21.0,
+          "maximum": 23.0,
+          "mean": 13.773913043478261
+        },
+        "teacher_words": {
+          "minimum": 11.0,
+          "p10": 15.0,
+          "median": 23.0,
+          "p90": 32.0,
+          "p99": 47.40999999999997,
+          "maximum": 56.0,
+          "mean": 23.41304347826087
+        },
+        "history_turn_counts": [
+          [
+            0,
+            460
+          ]
+        ],
+        "complete_same_word_pairs": 230,
+        "exact_identical_target_pairs": 4,
+        "normalized_identical_target_pairs": 4
+      },
+      {
+        "cohort": "neu_emotional",
+        "split": "test",
+        "examples": 440,
+        "distinct_dialogue_or_family_clusters": 22,
+        "duration_seconds": {
+          "minimum": 2.24,
+          "p10": 4.018,
+          "median": 5.32,
+          "p90": 7.002000000000001,
+          "p99": 8.54,
+          "maximum": 9.34,
+          "mean": 5.402863636363636
+        },
+        "user_words": {
+          "minimum": 8.0,
+          "p10": 11.0,
+          "median": 14.0,
+          "p90": 17.0,
+          "p99": 21.0,
+          "maximum": 23.0,
+          "mean": 13.945454545454545
+        },
+        "teacher_words": {
+          "minimum": 8.0,
+          "p10": 16.0,
+          "median": 23.0,
+          "p90": 31.0,
+          "p99": 40.610000000000014,
+          "maximum": 48.0,
+          "mean": 23.28409090909091
+        },
+        "history_turn_counts": [
+          [
+            0,
+            440
+          ]
+        ],
+        "complete_same_word_pairs": 220,
+        "exact_identical_target_pairs": 6,
+        "normalized_identical_target_pairs": 6
+      }
+    ],
+    "excluded_pairs": [
+      {
+        "cohort": "qwen_emotional",
+        "base_id": "utterance_00592",
+        "family_id": "family_appointments_05",
+        "split": "train",
+        "source_case_ids": [
+          "utterance_00592_neutral",
+          "utterance_00592_frustrated"
+        ],
+        "durations_seconds": [
+          33.28,
+          5.44
+        ],
+        "reason": "over_30_seconds"
+      },
+      {
+        "cohort": "qwen_emotional",
+        "base_id": "utterance_01064",
+        "family_id": "family_study_10",
+        "split": "train",
+        "source_case_ids": [
+          "utterance_01064_neutral",
+          "utterance_01064_sad"
+        ],
+        "durations_seconds": [
+          33.92,
+          5.04
+        ],
+        "reason": "over_30_seconds"
+      },
+      {
+        "cohort": "qwen_emotional",
+        "base_id": "utterance_03813",
+        "family_id": "family_work_38",
+        "split": "train",
+        "source_case_ids": [
+          "utterance_03813_neutral",
+          "utterance_03813_frustrated"
+        ],
+        "durations_seconds": [
+          33.04,
+          4.96
+        ],
+        "reason": "over_30_seconds"
+      }
+    ],
+    "ordinary_prompt_exclusions": [
+      {
+        "dialogue_id": "dialogues_qwen2.5-32B_gemma3-27B/history_18_7",
+        "example_ids": [
+          "ordinary:d43fccb9e91a50b28773"
+        ],
+        "overlaps": [
+          {
+            "prompt_sha256": "59bbfdd7abb8e16672d7bad919c52a6fe529ce3c11e8440f415d06bce3fa895b",
+            "protected_split": "test",
+            "protected_example_ids": [
+              "ordinary:635b2da34dc5d892f12c"
+            ]
+          }
+        ]
+      }
+    ],
+    "counting_method": "Words use whitespace splitting, consistent with original DatasetReport. Normalized pair agreement uses canonical normalized_utterance (casefold, curly-to-straight apostrophes, Unicode word tokens). Durations are canonical verified WAV durations. History counts describe stored visible text turns.",
+    "scope_notes": [
+      "This covers the whole prepared combined dataset, not only fixed evaluation samples.",
+      "Current teacher-word distributions use actual Example.target_text, not old gold replies.",
+      "These lengths describe full stored replies; configured target-token caps may truncate training supervision, so run supervised-token counts have another scope.",
+      "Excluded source pairs remain unchanged in their original audio/teacher packages.",
+      "Exact or normalized distinct targets do not establish meaningful emotional contrast.",
+      "Emotion labels are intended synthesis deliveries, not human-verified perceptual gold.",
+      "Ordinary user references are cleaned synthesis words; old raw dialogue text may differ.",
+      "The student gets generic cohort policy, no current transcript or delivery metadata.",
+      "Fixed validation/test selection counts and run mean pseudo-token lengths have separate denominators."
+    ]
+  },
+  "cache": {
+    "encoder_model": "openai/whisper-small",
+    "hidden_dimension": 768,
+    "native_states_per_second": 50.0,
+    "selected_hidden_state": "final encoder last_hidden_state after final LayerNorm",
+    "storage_dtype": "bfloat16",
+    "bytes_per_audio_second": 76800,
+    "feature_count": 41017,
+    "extracted_count": 19994,
+    "total_audio_seconds": 269645.498,
+    "extracted_audio_seconds": 118406.9200000002,
+    "feature_bytes": 20785399565,
+    "extraction_seconds": 127.24496523989365,
+    "cache_wall_seconds": 379.7446071470622,
+    "cache_examples_per_second": 52.651175385653346,
+    "extraction_audio_seconds_per_second": 930.5430653131842,
+    "asr_seconds": 12.160210413858294,
+    "peak_vram_gb": 2.654781952,
+    "masking": "Whisper standard log-mel padded/truncated to30s; encoder attends padded states as standard Whisper. Cache retains ceil(actual waveform duration*50) states; downstream compressor masks by actual cached sequence length. No transcript stored in features."
+  },
+  "panels": [
+    {
+      "scope": "fixed validation selection",
+      "cohort": "ordinary",
+      "examples": 48
+    },
+    {
+      "scope": "fixed validation selection",
+      "cohort": "qwen_emotional",
+      "examples": 40
+    },
+    {
+      "scope": "fixed validation selection",
+      "cohort": "neu_emotional",
+      "examples": 40
+    },
+    {
+      "scope": "prepared fixed test selection bank",
+      "cohort": "ordinary",
+      "examples": 96
+    },
+    {
+      "scope": "prepared fixed test selection bank",
+      "cohort": "qwen_emotional",
+      "examples": 80
+    },
+    {
+      "scope": "prepared fixed test selection bank",
+      "cohort": "neu_emotional",
+      "examples": 80
+    },
+    {
+      "scope": "prior completed primary test CE panel",
+      "cohort": "ordinary",
+      "examples": 96
+    },
+    {
+      "scope": "prior completed primary test CE panel",
+      "cohort": "qwen_emotional",
+      "examples": 80
+    },
+    {
+      "scope": "prior completed primary test CE panel",
+      "cohort": "neu_emotional",
+      "examples": 80
+    },
+    {
+      "scope": "prior completed primary test generation panel",
+      "cohort": "ordinary",
+      "examples": 48
+    },
+    {
+      "scope": "prior completed primary test generation panel",
+      "cohort": "qwen_emotional",
+      "examples": 24
+    },
+    {
+      "scope": "prior completed primary test generation panel",
+      "cohort": "neu_emotional",
+      "examples": 64
+    }
+  ],
+  "full_train_target_tokens_including_eos": 4314521,
+  "maximum_full_target_tokens_including_eos": 1260,
+  "hardware": {
+    "measured_at": "2026-10-07T09:22:02Z",
+    "gpu_name": "NVIDIA GeForce RTX 3090",
+    "gpu_memory_mib": 24576,
+    "nvidia_driver": "550.107.02",
+    "workspace_capacity_bytes": 214748364800,
+    "workspace_free_bytes": 44051517440,
+    "container_memory_limit_bytes": 48412753920,
+    "container_memory_charged_bytes": 41957748736,
+    "container_memory_limit_path": "/sys/fs/cgroup/memory/memory.limit_in_bytes",
+    "host_memory_bytes": 50430664704,
+    "host_memory_available_bytes": 44175462400,
+    "swap_bytes": 0
+  },
+  "ordinary_cleaning": [
+    {
+      "split": "train",
+      "candidate_examples": 30000,
+      "selected_examples": 20000,
+      "selected_distinct_dialogues": 15931,
+      "material_alignment_exclusions": 562,
+      "lexical_substitution_exclusions": 62,
+      "missing_synthesis_text_exclusions": 0,
+      "collision_dialogues_excluded": 0
+    },
+    {
+      "split": "validation",
+      "candidate_examples": 5647,
+      "selected_examples": 512,
+      "selected_distinct_dialogues": 445,
+      "material_alignment_exclusions": 106,
+      "lexical_substitution_exclusions": 12,
+      "missing_synthesis_text_exclusions": 0,
+      "collision_dialogues_excluded": 692
+    },
+    {
+      "split": "test",
+      "candidate_examples": 5128,
+      "selected_examples": 512,
+      "selected_distinct_dialogues": 432,
+      "material_alignment_exclusions": 83,
+      "lexical_substitution_exclusions": 8,
+      "missing_synthesis_text_exclusions": 0,
+      "collision_dialogues_excluded": 642
+    }
+  ],
+  "ordinary_transcript_reference": "audio_cleaned_text, documented synthesis input; not independently transcribed audio",
+  "ordinary_subset_definition": "TRAIN: first requested clean examples in original 30k seeded order; nested prefixes. Heldout: original seed-42 dialogue/hash splits and example order, lexical alignment and TTS substitutions removed; whole dialogues with cross-split path/pair or exact teacher prompt (cleaned user plus role/text history[-2:]) collisions excluded. Original data.build_examples test-pair exclusion also applies to the pool.",
+  "scope_notes": [
+    "No frozen-model inference, audio transfer, new labels or training in this audit.",
+    "Target token counts reuse actual Transformers 5.13.0/tokenizers 0.22.2 exposure evidence; per-cohort token quantiles/modes were not recorded and are unknown here.",
+    "Native cache bytes include reused ordinary plus newly extracted emotional files; do not count all files as new extraction.",
+    "Encoder extraction, cache wall and ASR timers have nested scopes; do not add them.",
+    "Hardware values are point observations, not training peaks or allocated rental duration.",
+    "Intended synthetic delivery labels are not human-verified emotional gold.",
+    "Neu classifier and Neu audio are one Paul voice; vocoder/prosody signatures may help classification and do not establish natural-speech or speaker generalization.",
+    "The production classifier has four synthetic intended classes: happy, sad, angry and fearful. It has no neutral/OOD class or calibrated abstention; perfect synthetic-label performance does not establish natural-emotion readiness.",
+    "Teacher targets are model-generated; role/physical-action/tone mistakes remain preserved.",
+    "Current ordinary inputs were selected after material alignment/substitution filters; historical raw V0 known mismatch rows are not deliberately carried into this clean ordinary cohort. Cleaning counters need not be mutually exclusive and must not be summed as unique excluded examples.",
+    "Exact cross-cohort design families share one split; domains and pragmatic intents are intentionally reused, so these are not unseen-domain or unseen-intent tests.",
+    "Prepared test bank and actual primary generation panel have separate denominators; the full-pass follow-up has now executed the same fixed TEST panel: 256 CE examples and 136 primary speech generations."
+  ]
+}

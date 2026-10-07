@@ -1,0 +1,1545 @@
+{
+  "kind": "rejected",
+  "evidence": {
+    "configuration": {
+      "branch_decision": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\selection\\decision.json",
+      "policy": "C:\\Projects\\Voice-Full-Duplex-Light\\artifacts\\followup10hz\\extension_policy.json",
+      "parent_run_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775",
+      "extension_run_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550",
+      "review": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\extension_selection\\reviews\\followup_mean_10hz_ce_control_9550.json",
+      "output_directory": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\extension_selection"
+    },
+    "policy": {
+      "endpoint_updates": 9550,
+      "ordinary_ce_tolerance": 0.01,
+      "neu_margin_tolerance": 0.02,
+      "minimum_material_regressions": 3
+    },
+    "branch_decision": {
+      "policy": {
+        "endpoint_updates": 6775,
+        "ordinary_ce_tolerance": 0.05,
+        "neu_margin_tolerance": 0.02,
+        "macro_ce_band": 0.03,
+        "minimum_material_regressions": 3
+      },
+      "control_run": "followup_mean_10hz_ce_control_6775",
+      "selected_run": "followup_mean_10hz_ce_control_6775",
+      "eligible_runs": [
+        "followup_mean_10hz_ce_control_6775",
+        "followup_mean_10hz_transcript30_6775"
+      ],
+      "macro_band_runs": [
+        "followup_mean_10hz_ce_control_6775",
+        "followup_mean_10hz_transcript30_6775"
+      ],
+      "content_changes": [
+        {
+          "kind": "corrected_material_failure",
+          "run_name": "followup_mean_10hz_transcript30_6775",
+          "example_id": "qwen:utterance_01649_frustrated",
+          "reason": "Removes almond milk→oat milk and chia seeds→cheese substitutions; generic acknowledgment avoids the material false ingredients, without establishing positive lexical recovery."
+        },
+        {
+          "kind": "new_material_failure",
+          "run_name": "followup_mean_10hz_transcript30_6775",
+          "example_id": "qwen:utterance_00286_happy",
+          "reason": "Introduces an unprovided overlook/view destination while dropping the control's grounded acknowledgment of uphill difficulty."
+        },
+        {
+          "kind": "new_material_failure",
+          "run_name": "followup_mean_10hz_ordinarykl_6775",
+          "example_id": "ordinary:cf5f5a90ab8079a0bbc4",
+          "reason": "Adds the incorrect claim that Darcy lost his sister while still missing the adaptation request; control did not contain this fabrication."
+        },
+        {
+          "kind": "new_material_failure",
+          "run_name": "followup_mean_10hz_ordinarykl_6775",
+          "example_id": "qwen:utterance_00766_frustrated",
+          "reason": "Replaces explicit user score90% with95%, a direct numeric contradiction absent from CE control."
+        }
+      ],
+      "validation_candidates": [
+        {
+          "configuration": {
+            "name": "followup_mean_10hz_ce_control_6775",
+            "stage": "V2",
+            "seed": 42,
+            "train_examples": 38193,
+            "validation_examples": 128,
+            "test_examples": 128,
+            "training_validation_examples": null,
+            "epochs": 3,
+            "max_optimizer_updates": 6775,
+            "learning_rate": 0.0002,
+            "microbatch_size": 1,
+            "gradient_accumulation": 8,
+            "history_turns": 2,
+            "max_history_tokens": 256,
+            "max_target_tokens": 4097,
+            "max_new_tokens": 256,
+            "sequence_length_multiple": 64,
+            "gradient_checkpointing": true,
+            "evaluation_interval": 250,
+            "checkpoint_interval": 100,
+            "qualitative_examples": 24,
+            "semantic_examples": 24,
+            "generation_batch_size": 8,
+            "conditioning_examples": 24,
+            "model_name": "Qwen/Qwen3.5-2B",
+            "speech_model_name": "openai/whisper-small",
+            "prompt": {
+              "kind": "chat"
+            },
+            "decoding": {
+              "kind": "greedy"
+            },
+            "objective": {
+              "kind": "response_ce"
+            },
+            "projector": {
+              "compression_factor": 5,
+              "encoder_dimension": 768,
+              "embedding_dimension": 2048,
+              "native_rate": 50.0,
+              "architecture": "mlp",
+              "hidden_dimension": 1024
+            }
+          },
+          "validation": {
+            "old_ordinary": {
+              "examples": 48,
+              "target_tokens": 10723,
+              "cross_entropy": 1.5882947180105058,
+              "perplexity": 4.895393779565218,
+              "semantic_similarity": 0.6426619328558445,
+              "generated_examples": 8,
+              "generation_seconds": 0.0,
+              "generated_tokens": 977,
+              "completed_generations": 6,
+              "token_limited_generations": 2,
+              "shuffled_audio_cross_entropy": null,
+              "zero_audio_cross_entropy": null,
+              "no_history_cross_entropy": null,
+              "no_history_shuffled_cross_entropy": null,
+              "evaluation_seconds": 0.0
+            },
+            "old_emotional": {
+              "examples": 40,
+              "target_tokens": 978,
+              "cross_entropy": 0.7655269873684657,
+              "perplexity": 2.150127166002717,
+              "semantic_similarity": 0.5315280668437481,
+              "generated_examples": 8,
+              "generation_seconds": 0.0,
+              "generated_tokens": 181,
+              "completed_generations": 8,
+              "token_limited_generations": 0,
+              "shuffled_audio_cross_entropy": null,
+              "zero_audio_cross_entropy": null,
+              "no_history_cross_entropy": null,
+              "no_history_shuffled_cross_entropy": null,
+              "evaluation_seconds": 0.0
+            },
+            "new_neu_emotional": {
+              "examples": 40,
+              "target_tokens": 1110,
+              "cross_entropy": 0.6392832393716047,
+              "perplexity": 1.8951220435163325,
+              "semantic_similarity": 0.6094086654484272,
+              "generated_examples": 8,
+              "generation_seconds": 0.0,
+              "generated_tokens": 207,
+              "completed_generations": 8,
+              "token_limited_generations": 0,
+              "shuffled_audio_cross_entropy": null,
+              "zero_audio_cross_entropy": null,
+              "no_history_cross_entropy": null,
+              "no_history_shuffled_cross_entropy": null,
+              "evaluation_seconds": 0.0
+            }
+          },
+          "old_emotional_preference": {
+            "pairs": 20,
+            "distinct_target_pairs": 19,
+            "family_clusters": 20,
+            "matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.03150010108947754,
+              "lower": 0.0054519977420568536,
+              "upper": 0.05860265254974364
+            },
+            "resized_matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.05230318158864975,
+              "lower": 0.025957852937281138,
+              "upper": 0.08086102809756993
+            },
+            "matching_win_rate": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.6,
+              "lower": 0.4,
+              "upper": 0.8
+            },
+            "tie_rate": 0.05,
+            "first_direction_win_rate": 0.6,
+            "second_direction_win_rate": 0.75,
+            "numerical_tie_tolerance": 1e-6
+          },
+          "new_neu_preference": {
+            "pairs": 20,
+            "distinct_target_pairs": 20,
+            "family_clusters": 20,
+            "matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.12077904231846333,
+              "lower": 0.06678507905453446,
+              "upper": 0.1852662973385304
+            },
+            "resized_matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.10458395220339298,
+              "lower": 0.057786838067695495,
+              "upper": 0.15869343954138457
+            },
+            "matching_win_rate": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.95,
+              "lower": 0.85,
+              "upper": 1.0
+            },
+            "tie_rate": 0.0,
+            "first_direction_win_rate": 0.75,
+            "second_direction_win_rate": 0.75,
+            "numerical_tie_tolerance": 1e-6
+          },
+          "pseudo_tokens_per_second": 10.0,
+          "training_seconds_per_update": 1.1445574448508902
+        },
+        {
+          "configuration": {
+            "name": "followup_mean_10hz_transcript30_6775",
+            "stage": "V2",
+            "seed": 42,
+            "train_examples": 38193,
+            "validation_examples": 128,
+            "test_examples": 128,
+            "training_validation_examples": null,
+            "epochs": 3,
+            "max_optimizer_updates": 6775,
+            "learning_rate": 0.0002,
+            "microbatch_size": 1,
+            "gradient_accumulation": 8,
+            "history_turns": 2,
+            "max_history_tokens": 256,
+            "max_target_tokens": 4097,
+            "max_new_tokens": 256,
+            "sequence_length_multiple": 64,
+            "gradient_checkpointing": true,
+            "evaluation_interval": 250,
+            "checkpoint_interval": 100,
+            "qualitative_examples": 24,
+            "semantic_examples": 24,
+            "generation_batch_size": 8,
+            "conditioning_examples": 24,
+            "model_name": "Qwen/Qwen3.5-2B",
+            "speech_model_name": "openai/whisper-small",
+            "prompt": {
+              "kind": "chat"
+            },
+            "decoding": {
+              "kind": "greedy"
+            },
+            "objective": {
+              "kind": "transcript_mixture",
+              "transcript_probability": 0.3,
+              "transcription_prompt": {
+                "kind": "system",
+                "system_text": "Transcribe the user's speech verbatim. Return only the transcript."
+              }
+            },
+            "projector": {
+              "compression_factor": 5,
+              "encoder_dimension": 768,
+              "embedding_dimension": 2048,
+              "native_rate": 50.0,
+              "architecture": "mlp",
+              "hidden_dimension": 1024
+            }
+          },
+          "validation": {
+            "old_ordinary": {
+              "examples": 48,
+              "target_tokens": 10723,
+              "cross_entropy": 1.5939120853568685,
+              "perplexity": 4.922970386180372,
+              "semantic_similarity": 0.6045203357934952,
+              "generated_examples": 8,
+              "generation_seconds": 0.0,
+              "generated_tokens": 863,
+              "completed_generations": 8,
+              "token_limited_generations": 0,
+              "shuffled_audio_cross_entropy": null,
+              "zero_audio_cross_entropy": null,
+              "no_history_cross_entropy": null,
+              "no_history_shuffled_cross_entropy": null,
+              "evaluation_seconds": 0.0
+            },
+            "old_emotional": {
+              "examples": 40,
+              "target_tokens": 978,
+              "cross_entropy": 0.7604249581877439,
+              "perplexity": 2.1391850915868047,
+              "semantic_similarity": 0.4621012322604656,
+              "generated_examples": 8,
+              "generation_seconds": 0.0,
+              "generated_tokens": 159,
+              "completed_generations": 8,
+              "token_limited_generations": 0,
+              "shuffled_audio_cross_entropy": null,
+              "zero_audio_cross_entropy": null,
+              "no_history_cross_entropy": null,
+              "no_history_shuffled_cross_entropy": null,
+              "evaluation_seconds": 0.0
+            },
+            "new_neu_emotional": {
+              "examples": 40,
+              "target_tokens": 1110,
+              "cross_entropy": 0.6423853865480638,
+              "perplexity": 1.9010101191293403,
+              "semantic_similarity": 0.6013656631112099,
+              "generated_examples": 8,
+              "generation_seconds": 0.0,
+              "generated_tokens": 212,
+              "completed_generations": 8,
+              "token_limited_generations": 0,
+              "shuffled_audio_cross_entropy": null,
+              "zero_audio_cross_entropy": null,
+              "no_history_cross_entropy": null,
+              "no_history_shuffled_cross_entropy": null,
+              "evaluation_seconds": 0.0
+            }
+          },
+          "old_emotional_preference": {
+            "pairs": 20,
+            "distinct_target_pairs": 19,
+            "family_clusters": 20,
+            "matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.031420355290174486,
+              "lower": 0.007820132113993182,
+              "upper": 0.054623540528118596
+            },
+            "resized_matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.04218131937086582,
+              "lower": 0.014566203942522409,
+              "upper": 0.06874619904905557
+            },
+            "matching_win_rate": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.7,
+              "lower": 0.5,
+              "upper": 0.9
+            },
+            "tie_rate": 0.05,
+            "first_direction_win_rate": 0.55,
+            "second_direction_win_rate": 0.75,
+            "numerical_tie_tolerance": 1e-6
+          },
+          "new_neu_preference": {
+            "pairs": 20,
+            "distinct_target_pairs": 20,
+            "family_clusters": 20,
+            "matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.1251522947102785,
+              "lower": 0.06980134366080165,
+              "upper": 0.18922218548133965
+            },
+            "resized_matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.10484913699328899,
+              "lower": 0.05447936712764205,
+              "upper": 0.1638487072009592
+            },
+            "matching_win_rate": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.85,
+              "lower": 0.7,
+              "upper": 1.0
+            },
+            "tie_rate": 0.0,
+            "first_direction_win_rate": 0.8,
+            "second_direction_win_rate": 0.8,
+            "numerical_tie_tolerance": 1e-6
+          },
+          "pseudo_tokens_per_second": 10.0,
+          "training_seconds_per_update": 1.1545558149018411
+        },
+        {
+          "configuration": {
+            "name": "followup_mean_10hz_ordinarykl_6775",
+            "stage": "V2",
+            "seed": 42,
+            "train_examples": 38193,
+            "validation_examples": 128,
+            "test_examples": 128,
+            "training_validation_examples": null,
+            "epochs": 3,
+            "max_optimizer_updates": 6775,
+            "learning_rate": 0.0002,
+            "microbatch_size": 1,
+            "gradient_accumulation": 8,
+            "history_turns": 2,
+            "max_history_tokens": 256,
+            "max_target_tokens": 4097,
+            "max_new_tokens": 256,
+            "sequence_length_multiple": 64,
+            "gradient_checkpointing": true,
+            "evaluation_interval": 250,
+            "checkpoint_interval": 100,
+            "qualitative_examples": 24,
+            "semantic_examples": 24,
+            "generation_batch_size": 8,
+            "conditioning_examples": 24,
+            "model_name": "Qwen/Qwen3.5-2B",
+            "speech_model_name": "openai/whisper-small",
+            "prompt": {
+              "kind": "chat"
+            },
+            "decoding": {
+              "kind": "greedy"
+            },
+            "objective": {
+              "kind": "ordinary_response_kl"
+            },
+            "projector": {
+              "compression_factor": 5,
+              "encoder_dimension": 768,
+              "embedding_dimension": 2048,
+              "native_rate": 50.0,
+              "architecture": "mlp",
+              "hidden_dimension": 1024
+            }
+          },
+          "validation": {
+            "old_ordinary": {
+              "examples": 48,
+              "target_tokens": 10723,
+              "cross_entropy": 1.6506066309319585,
+              "perplexity": 5.210139500485984,
+              "semantic_similarity": 0.6462399289011955,
+              "generated_examples": 8,
+              "generation_seconds": 0.0,
+              "generated_tokens": 1038,
+              "completed_generations": 6,
+              "token_limited_generations": 2,
+              "shuffled_audio_cross_entropy": null,
+              "zero_audio_cross_entropy": null,
+              "no_history_cross_entropy": null,
+              "no_history_shuffled_cross_entropy": null,
+              "evaluation_seconds": 0.0
+            },
+            "old_emotional": {
+              "examples": 40,
+              "target_tokens": 978,
+              "cross_entropy": 0.75580857828229,
+              "perplexity": 2.129332559528702,
+              "semantic_similarity": 0.5216915644705296,
+              "generated_examples": 8,
+              "generation_seconds": 0.0,
+              "generated_tokens": 186,
+              "completed_generations": 8,
+              "token_limited_generations": 0,
+              "shuffled_audio_cross_entropy": null,
+              "zero_audio_cross_entropy": null,
+              "no_history_cross_entropy": null,
+              "no_history_shuffled_cross_entropy": null,
+              "evaluation_seconds": 0.0
+            },
+            "new_neu_emotional": {
+              "examples": 40,
+              "target_tokens": 1110,
+              "cross_entropy": 0.6435695690211949,
+              "perplexity": 1.9032625954019011,
+              "semantic_similarity": 0.6265773549675941,
+              "generated_examples": 8,
+              "generation_seconds": 0.0,
+              "generated_tokens": 212,
+              "completed_generations": 8,
+              "token_limited_generations": 0,
+              "shuffled_audio_cross_entropy": null,
+              "zero_audio_cross_entropy": null,
+              "no_history_cross_entropy": null,
+              "no_history_shuffled_cross_entropy": null,
+              "evaluation_seconds": 0.0
+            }
+          },
+          "old_emotional_preference": {
+            "pairs": 20,
+            "distinct_target_pairs": 19,
+            "family_clusters": 20,
+            "matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.03132155947387218,
+              "lower": 0.00442549794912339,
+              "upper": 0.061246490692719806
+            },
+            "resized_matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.0525834895670414,
+              "lower": 0.025671049654483812,
+              "upper": 0.08210200987756251
+            },
+            "matching_win_rate": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.6,
+              "lower": 0.4,
+              "upper": 0.8
+            },
+            "tie_rate": 0.05,
+            "first_direction_win_rate": 0.55,
+            "second_direction_win_rate": 0.75,
+            "numerical_tie_tolerance": 1e-6
+          },
+          "new_neu_preference": {
+            "pairs": 20,
+            "distinct_target_pairs": 20,
+            "family_clusters": 20,
+            "matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.12249360792338848,
+              "lower": 0.06628527408465744,
+              "upper": 0.1879407461546361
+            },
+            "resized_matching_margin": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.10522558204829693,
+              "lower": 0.059786509312689314,
+              "upper": 0.15825565213337534
+            },
+            "matching_win_rate": {
+              "examples": 20,
+              "dialogues": 20,
+              "draws": 2000,
+              "confidence": 0.95,
+              "estimate": 0.85,
+              "lower": 0.7,
+              "upper": 1.0
+            },
+            "tie_rate": 0.0,
+            "first_direction_win_rate": 0.8,
+            "second_direction_win_rate": 0.75,
+            "numerical_tie_tolerance": 1e-6
+          },
+          "pseudo_tokens_per_second": 10.0,
+          "training_seconds_per_update": 1.210973234726769
+        }
+      ]
+    },
+    "branch_decision_file": {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\selection\\decision.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\selection\\decision.json",
+      "bytes": 18828,
+      "sha256": "46087fe51bf56e3913fbc064740c1e1806b604378740e66f5880795b8adbdc55"
+    },
+    "parent_result": {
+      "config": {
+        "name": "followup_mean_10hz_ce_control_6775",
+        "stage": "V2",
+        "seed": 42,
+        "train_examples": 38193,
+        "validation_examples": 128,
+        "test_examples": 128,
+        "training_validation_examples": null,
+        "epochs": 3,
+        "max_optimizer_updates": 6775,
+        "learning_rate": 0.0002,
+        "microbatch_size": 1,
+        "gradient_accumulation": 8,
+        "history_turns": 2,
+        "max_history_tokens": 256,
+        "max_target_tokens": 4097,
+        "max_new_tokens": 256,
+        "sequence_length_multiple": 64,
+        "gradient_checkpointing": true,
+        "evaluation_interval": 250,
+        "checkpoint_interval": 100,
+        "qualitative_examples": 24,
+        "semantic_examples": 24,
+        "generation_batch_size": 8,
+        "conditioning_examples": 24,
+        "model_name": "Qwen/Qwen3.5-2B",
+        "speech_model_name": "openai/whisper-small",
+        "prompt": {
+          "kind": "chat"
+        },
+        "decoding": {
+          "kind": "greedy"
+        },
+        "objective": {
+          "kind": "response_ce"
+        },
+        "projector": {
+          "compression_factor": 5,
+          "encoder_dimension": 768,
+          "embedding_dimension": 2048,
+          "native_rate": 50.0,
+          "architecture": "mlp",
+          "hidden_dimension": 1024
+        }
+      },
+      "git_commit": "04eb486e4a892e8968fe2a636c7ca174cb1893c8",
+      "train_examples": 38193,
+      "validation_examples": 128,
+      "test_examples": 0,
+      "projector_parameters": 2888192,
+      "pseudo_tokens_per_second": 10.0,
+      "mean_pseudo_tokens": 63.5078125,
+      "optimizer": "AdamW",
+      "steps": 6775,
+      "runtime_seconds": 7754.376688864781,
+      "peak_vram_gb": 7.739920896,
+      "examples_per_second": 6.988698405356125,
+      "target_tokens_per_second": 789.9661372907569,
+      "initial_validation_loss": 1.9577372002942195,
+      "initial_training_loss": 1.9064776103005054,
+      "final_fixed_training_loss": 1.6098895128146953,
+      "final_training_loss": 1.0944718861952425,
+      "validation": {
+        "examples": 128,
+        "target_tokens": 12811,
+        "cross_entropy": 1.4432576731383573,
+        "perplexity": 4.234467884652596,
+        "semantic_similarity": 0.5945328883826733,
+        "generated_examples": 24,
+        "generation_seconds": 16.89185262611136,
+        "generated_tokens": 1365,
+        "completed_generations": 22,
+        "token_limited_generations": 2,
+        "shuffled_audio_cross_entropy": 2.123918534450628,
+        "zero_audio_cross_entropy": 2.069581068159448,
+        "no_history_cross_entropy": 1.4607455274096934,
+        "no_history_shuffled_cross_entropy": 2.2475659663727425,
+        "evaluation_seconds": 42.791334840934724
+      },
+      "test": null,
+      "checkpoint_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\checkpoint\\projector.safetensors"
+    },
+    "parent_result_file": {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\result.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\result.json",
+      "bytes": 2631,
+      "sha256": "202d49d42698cbae1209c3149a908bd74bc60d2606528dbc410e4bd4b95d77e5"
+    },
+    "parent_candidate": {
+      "configuration": {
+        "name": "followup_mean_10hz_ce_control_6775",
+        "stage": "V2",
+        "seed": 42,
+        "train_examples": 38193,
+        "validation_examples": 128,
+        "test_examples": 128,
+        "training_validation_examples": null,
+        "epochs": 3,
+        "max_optimizer_updates": 6775,
+        "learning_rate": 0.0002,
+        "microbatch_size": 1,
+        "gradient_accumulation": 8,
+        "history_turns": 2,
+        "max_history_tokens": 256,
+        "max_target_tokens": 4097,
+        "max_new_tokens": 256,
+        "sequence_length_multiple": 64,
+        "gradient_checkpointing": true,
+        "evaluation_interval": 250,
+        "checkpoint_interval": 100,
+        "qualitative_examples": 24,
+        "semantic_examples": 24,
+        "generation_batch_size": 8,
+        "conditioning_examples": 24,
+        "model_name": "Qwen/Qwen3.5-2B",
+        "speech_model_name": "openai/whisper-small",
+        "prompt": {
+          "kind": "chat"
+        },
+        "decoding": {
+          "kind": "greedy"
+        },
+        "objective": {
+          "kind": "response_ce"
+        },
+        "projector": {
+          "compression_factor": 5,
+          "encoder_dimension": 768,
+          "embedding_dimension": 2048,
+          "native_rate": 50.0,
+          "architecture": "mlp",
+          "hidden_dimension": 1024
+        }
+      },
+      "validation": {
+        "old_ordinary": {
+          "examples": 48,
+          "target_tokens": 10723,
+          "cross_entropy": 1.5882947180105058,
+          "perplexity": 4.895393779565218,
+          "semantic_similarity": 0.6426619328558445,
+          "generated_examples": 8,
+          "generation_seconds": 0.0,
+          "generated_tokens": 977,
+          "completed_generations": 6,
+          "token_limited_generations": 2,
+          "shuffled_audio_cross_entropy": null,
+          "zero_audio_cross_entropy": null,
+          "no_history_cross_entropy": null,
+          "no_history_shuffled_cross_entropy": null,
+          "evaluation_seconds": 0.0
+        },
+        "old_emotional": {
+          "examples": 40,
+          "target_tokens": 978,
+          "cross_entropy": 0.7655269873684657,
+          "perplexity": 2.150127166002717,
+          "semantic_similarity": 0.5315280668437481,
+          "generated_examples": 8,
+          "generation_seconds": 0.0,
+          "generated_tokens": 181,
+          "completed_generations": 8,
+          "token_limited_generations": 0,
+          "shuffled_audio_cross_entropy": null,
+          "zero_audio_cross_entropy": null,
+          "no_history_cross_entropy": null,
+          "no_history_shuffled_cross_entropy": null,
+          "evaluation_seconds": 0.0
+        },
+        "new_neu_emotional": {
+          "examples": 40,
+          "target_tokens": 1110,
+          "cross_entropy": 0.6392832393716047,
+          "perplexity": 1.8951220435163325,
+          "semantic_similarity": 0.6094086654484272,
+          "generated_examples": 8,
+          "generation_seconds": 0.0,
+          "generated_tokens": 207,
+          "completed_generations": 8,
+          "token_limited_generations": 0,
+          "shuffled_audio_cross_entropy": null,
+          "zero_audio_cross_entropy": null,
+          "no_history_cross_entropy": null,
+          "no_history_shuffled_cross_entropy": null,
+          "evaluation_seconds": 0.0
+        }
+      },
+      "old_emotional_preference": {
+        "pairs": 20,
+        "distinct_target_pairs": 19,
+        "family_clusters": 20,
+        "matching_margin": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.03150010108947754,
+          "lower": 0.0054519977420568536,
+          "upper": 0.05860265254974364
+        },
+        "resized_matching_margin": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.05230318158864975,
+          "lower": 0.025957852937281138,
+          "upper": 0.08086102809756993
+        },
+        "matching_win_rate": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.6,
+          "lower": 0.4,
+          "upper": 0.8
+        },
+        "tie_rate": 0.05,
+        "first_direction_win_rate": 0.6,
+        "second_direction_win_rate": 0.75,
+        "numerical_tie_tolerance": 1e-6
+      },
+      "new_neu_preference": {
+        "pairs": 20,
+        "distinct_target_pairs": 20,
+        "family_clusters": 20,
+        "matching_margin": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.12077904231846333,
+          "lower": 0.06678507905453446,
+          "upper": 0.1852662973385304
+        },
+        "resized_matching_margin": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.10458395220339298,
+          "lower": 0.057786838067695495,
+          "upper": 0.15869343954138457
+        },
+        "matching_win_rate": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.95,
+          "lower": 0.85,
+          "upper": 1.0
+        },
+        "tie_rate": 0.0,
+        "first_direction_win_rate": 0.75,
+        "second_direction_win_rate": 0.75,
+        "numerical_tie_tolerance": 1e-6
+      },
+      "pseudo_tokens_per_second": 10.0,
+      "training_seconds_per_update": 1.1445574448508902
+    },
+    "parent_candidate_file": {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\candidate.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\candidate.json",
+      "bytes": 4888,
+      "sha256": "2a90ac4f9ead2d1b54aebbcd6f2fa865baa850963e2371fa2bdf6ea9d05a783c"
+    },
+    "extension_result": {
+      "config": {
+        "name": "followup_mean_10hz_ce_control_9550",
+        "stage": "V2",
+        "seed": 42,
+        "train_examples": 38193,
+        "validation_examples": 128,
+        "test_examples": 128,
+        "training_validation_examples": null,
+        "epochs": 3,
+        "max_optimizer_updates": 9550,
+        "learning_rate": 0.0002,
+        "microbatch_size": 1,
+        "gradient_accumulation": 8,
+        "history_turns": 2,
+        "max_history_tokens": 256,
+        "max_target_tokens": 4097,
+        "max_new_tokens": 256,
+        "sequence_length_multiple": 64,
+        "gradient_checkpointing": true,
+        "evaluation_interval": 250,
+        "checkpoint_interval": 100,
+        "qualitative_examples": 24,
+        "semantic_examples": 24,
+        "generation_batch_size": 8,
+        "conditioning_examples": 24,
+        "model_name": "Qwen/Qwen3.5-2B",
+        "speech_model_name": "openai/whisper-small",
+        "prompt": {
+          "kind": "chat"
+        },
+        "decoding": {
+          "kind": "greedy"
+        },
+        "objective": {
+          "kind": "response_ce"
+        },
+        "projector": {
+          "compression_factor": 5,
+          "encoder_dimension": 768,
+          "embedding_dimension": 2048,
+          "native_rate": 50.0,
+          "architecture": "mlp",
+          "hidden_dimension": 1024
+        }
+      },
+      "git_commit": "9ba489853174dafa85215aa2eeb870700514e2e0",
+      "train_examples": 38193,
+      "validation_examples": 128,
+      "test_examples": 0,
+      "projector_parameters": 2888192,
+      "pseudo_tokens_per_second": 10.0,
+      "mean_pseudo_tokens": 63.5078125,
+      "optimizer": "AdamW",
+      "steps": 9550,
+      "runtime_seconds": 10947.650283351773,
+      "peak_vram_gb": 7.739920896,
+      "examples_per_second": 6.9773876606344585,
+      "target_tokens_per_second": 788.209504017706,
+      "initial_validation_loss": 1.9577372002942195,
+      "initial_training_loss": 1.9064776103005054,
+      "final_fixed_training_loss": 1.6016869784059937,
+      "final_training_loss": 1.1128190065268426,
+      "validation": {
+        "examples": 128,
+        "target_tokens": 12811,
+        "cross_entropy": 1.4352967498634843,
+        "perplexity": 4.200891437800637,
+        "semantic_similarity": 0.6065690616766611,
+        "generated_examples": 24,
+        "generation_seconds": 17.251700723078102,
+        "generated_tokens": 1483,
+        "completed_generations": 22,
+        "token_limited_generations": 2,
+        "shuffled_audio_cross_entropy": 2.148625654592493,
+        "zero_audio_cross_entropy": 2.069581068159448,
+        "no_history_cross_entropy": 1.4500951552269852,
+        "no_history_shuffled_cross_entropy": 2.28157767231428,
+        "evaluation_seconds": 43.48974723299034
+      },
+      "test": null,
+      "checkpoint_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_9550\\checkpoint\\projector.safetensors"
+    },
+    "extension_result_file": {
+      "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\result.json",
+      "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\result.json",
+      "bytes": 2630,
+      "sha256": "ab3bee42207a27ea276dc366e40694f79035e71a79cd1b87764750f0f57c8c7d"
+    },
+    "extension_candidate": {
+      "configuration": {
+        "name": "followup_mean_10hz_ce_control_9550",
+        "stage": "V2",
+        "seed": 42,
+        "train_examples": 38193,
+        "validation_examples": 128,
+        "test_examples": 128,
+        "training_validation_examples": null,
+        "epochs": 3,
+        "max_optimizer_updates": 9550,
+        "learning_rate": 0.0002,
+        "microbatch_size": 1,
+        "gradient_accumulation": 8,
+        "history_turns": 2,
+        "max_history_tokens": 256,
+        "max_target_tokens": 4097,
+        "max_new_tokens": 256,
+        "sequence_length_multiple": 64,
+        "gradient_checkpointing": true,
+        "evaluation_interval": 250,
+        "checkpoint_interval": 100,
+        "qualitative_examples": 24,
+        "semantic_examples": 24,
+        "generation_batch_size": 8,
+        "conditioning_examples": 24,
+        "model_name": "Qwen/Qwen3.5-2B",
+        "speech_model_name": "openai/whisper-small",
+        "prompt": {
+          "kind": "chat"
+        },
+        "decoding": {
+          "kind": "greedy"
+        },
+        "objective": {
+          "kind": "response_ce"
+        },
+        "projector": {
+          "compression_factor": 5,
+          "encoder_dimension": 768,
+          "embedding_dimension": 2048,
+          "native_rate": 50.0,
+          "architecture": "mlp",
+          "hidden_dimension": 1024
+        }
+      },
+      "validation": {
+        "old_ordinary": {
+          "examples": 48,
+          "target_tokens": 10723,
+          "cross_entropy": 1.5807119623378265,
+          "perplexity": 4.858413587684089,
+          "semantic_similarity": 0.6730846986174583,
+          "generated_examples": 8,
+          "generation_seconds": 0.0,
+          "generated_tokens": 1080,
+          "completed_generations": 6,
+          "token_limited_generations": 2,
+          "shuffled_audio_cross_entropy": null,
+          "zero_audio_cross_entropy": null,
+          "no_history_cross_entropy": null,
+          "no_history_shuffled_cross_entropy": null,
+          "evaluation_seconds": 0.0
+        },
+        "old_emotional": {
+          "examples": 40,
+          "target_tokens": 978,
+          "cross_entropy": 0.7496366664188283,
+          "perplexity": 2.1162309791323293,
+          "semantic_similarity": 0.5136415027081966,
+          "generated_examples": 8,
+          "generation_seconds": 0.0,
+          "generated_tokens": 196,
+          "completed_generations": 8,
+          "token_limited_generations": 0,
+          "shuffled_audio_cross_entropy": null,
+          "zero_audio_cross_entropy": null,
+          "no_history_cross_entropy": null,
+          "no_history_shuffled_cross_entropy": null,
+          "evaluation_seconds": 0.0
+        },
+        "new_neu_emotional": {
+          "examples": 40,
+          "target_tokens": 1110,
+          "cross_entropy": 0.6346555230585305,
+          "perplexity": 1.8863722177912483,
+          "semantic_similarity": 0.6329809837043285,
+          "generated_examples": 8,
+          "generation_seconds": 0.0,
+          "generated_tokens": 207,
+          "completed_generations": 8,
+          "token_limited_generations": 0,
+          "shuffled_audio_cross_entropy": null,
+          "zero_audio_cross_entropy": null,
+          "no_history_cross_entropy": null,
+          "no_history_shuffled_cross_entropy": null,
+          "evaluation_seconds": 0.0
+        }
+      },
+      "old_emotional_preference": {
+        "pairs": 20,
+        "distinct_target_pairs": 19,
+        "family_clusters": 20,
+        "matching_margin": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.04659932814538479,
+          "lower": 0.014799629915505649,
+          "upper": 0.0786372650042176
+        },
+        "resized_matching_margin": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.06256232857704162,
+          "lower": 0.033873761370778084,
+          "upper": 0.09161613125354051
+        },
+        "matching_win_rate": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.75,
+          "lower": 0.55,
+          "upper": 0.95
+        },
+        "tie_rate": 0.05,
+        "first_direction_win_rate": 0.45,
+        "second_direction_win_rate": 0.85,
+        "numerical_tie_tolerance": 1e-6
+      },
+      "new_neu_preference": {
+        "pairs": 20,
+        "distinct_target_pairs": 20,
+        "family_clusters": 20,
+        "matching_margin": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.12806436344981192,
+          "lower": 0.07057776149362327,
+          "upper": 0.1998700859211385
+        },
+        "resized_matching_margin": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.1051091905683279,
+          "lower": 0.057391353761777286,
+          "upper": 0.16233188634738321
+        },
+        "matching_win_rate": {
+          "examples": 20,
+          "dialogues": 20,
+          "draws": 2000,
+          "confidence": 0.95,
+          "estimate": 0.9,
+          "lower": 0.75,
+          "upper": 1.0
+        },
+        "tie_rate": 0.0,
+        "first_direction_win_rate": 0.85,
+        "second_direction_win_rate": 0.85,
+        "numerical_tie_tolerance": 1e-6
+      },
+      "pseudo_tokens_per_second": 10.0,
+      "training_seconds_per_update": 1.146350815010657
+    },
+    "continuation": {
+      "job": {
+        "source_run": "/workspace/speech-projector/results_followup_20261007/followup_mean_10hz_ce_control_6775",
+        "data_root": "/workspace/speech-projector/data_overnight_20261006",
+        "output_root": "/workspace/speech-projector/results_followup_20261007",
+        "configuration": {
+          "name": "followup_mean_10hz_ce_control_9550",
+          "stage": "V2",
+          "seed": 42,
+          "train_examples": 38193,
+          "validation_examples": 128,
+          "test_examples": 128,
+          "training_validation_examples": null,
+          "epochs": 3,
+          "max_optimizer_updates": 9550,
+          "learning_rate": 0.0002,
+          "microbatch_size": 1,
+          "gradient_accumulation": 8,
+          "history_turns": 2,
+          "max_history_tokens": 256,
+          "max_target_tokens": 4097,
+          "max_new_tokens": 256,
+          "sequence_length_multiple": 64,
+          "gradient_checkpointing": true,
+          "evaluation_interval": 250,
+          "checkpoint_interval": 100,
+          "qualitative_examples": 24,
+          "semantic_examples": 24,
+          "generation_batch_size": 8,
+          "conditioning_examples": 24,
+          "model_name": "Qwen/Qwen3.5-2B",
+          "speech_model_name": "openai/whisper-small",
+          "prompt": {
+            "kind": "chat"
+          },
+          "decoding": {
+            "kind": "greedy"
+          },
+          "objective": {
+            "kind": "response_ce"
+          },
+          "projector": {
+            "compression_factor": 5,
+            "encoder_dimension": 768,
+            "embedding_dimension": 2048,
+            "native_rate": 50.0,
+            "architecture": "mlp",
+            "hidden_dimension": 1024
+          }
+        }
+      },
+      "continuation": {
+        "source_configuration": {
+          "name": "followup_mean_10hz_ce_control_6775",
+          "stage": "V2",
+          "seed": 42,
+          "train_examples": 38193,
+          "validation_examples": 128,
+          "test_examples": 128,
+          "training_validation_examples": null,
+          "epochs": 3,
+          "max_optimizer_updates": 6775,
+          "learning_rate": 0.0002,
+          "microbatch_size": 1,
+          "gradient_accumulation": 8,
+          "history_turns": 2,
+          "max_history_tokens": 256,
+          "max_target_tokens": 4097,
+          "max_new_tokens": 256,
+          "sequence_length_multiple": 64,
+          "gradient_checkpointing": true,
+          "evaluation_interval": 250,
+          "checkpoint_interval": 100,
+          "qualitative_examples": 24,
+          "semantic_examples": 24,
+          "generation_batch_size": 8,
+          "conditioning_examples": 24,
+          "model_name": "Qwen/Qwen3.5-2B",
+          "speech_model_name": "openai/whisper-small",
+          "prompt": {
+            "kind": "chat"
+          },
+          "decoding": {
+            "kind": "greedy"
+          },
+          "objective": {
+            "kind": "response_ce"
+          },
+          "projector": {
+            "compression_factor": 5,
+            "encoder_dimension": 768,
+            "embedding_dimension": 2048,
+            "native_rate": 50.0,
+            "architecture": "mlp",
+            "hidden_dimension": 1024
+          }
+        },
+        "continuation_configuration": {
+          "name": "followup_mean_10hz_ce_control_9550",
+          "stage": "V2",
+          "seed": 42,
+          "train_examples": 38193,
+          "validation_examples": 128,
+          "test_examples": 128,
+          "training_validation_examples": null,
+          "epochs": 3,
+          "max_optimizer_updates": 9550,
+          "learning_rate": 0.0002,
+          "microbatch_size": 1,
+          "gradient_accumulation": 8,
+          "history_turns": 2,
+          "max_history_tokens": 256,
+          "max_target_tokens": 4097,
+          "max_new_tokens": 256,
+          "sequence_length_multiple": 64,
+          "gradient_checkpointing": true,
+          "evaluation_interval": 250,
+          "checkpoint_interval": 100,
+          "qualitative_examples": 24,
+          "semantic_examples": 24,
+          "generation_batch_size": 8,
+          "conditioning_examples": 24,
+          "model_name": "Qwen/Qwen3.5-2B",
+          "speech_model_name": "openai/whisper-small",
+          "prompt": {
+            "kind": "chat"
+          },
+          "decoding": {
+            "kind": "greedy"
+          },
+          "objective": {
+            "kind": "response_ce"
+          },
+          "projector": {
+            "compression_factor": 5,
+            "encoder_dimension": 768,
+            "embedding_dimension": 2048,
+            "native_rate": 50.0,
+            "architecture": "mlp",
+            "hidden_dimension": 1024
+          }
+        },
+        "source_artifacts": [
+          {
+            "path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\config.json",
+            "source_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\config.json",
+            "bytes": 1087,
+            "sha256": "2c2da44fab9aec978faea81c72a35ddacf70e0082df081c5ca78594bc7871cc6"
+          },
+          {
+            "path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\checkpoint\\state.json",
+            "source_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\checkpoint\\state.json",
+            "bytes": 389,
+            "sha256": "bafeb59a45cf0214a83b3a856efeb5a3a0bb81bae15563abaaec076e9829b199"
+          },
+          {
+            "path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\checkpoint\\projector.safetensors",
+            "source_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\checkpoint\\projector.safetensors",
+            "bytes": 11553280,
+            "sha256": "ae0f59349e30d049b863b5174fe0e93d9bb4fcd899d448a96c460854f85b9e3a"
+          },
+          {
+            "path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\checkpoint\\optimizer.pt",
+            "source_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\checkpoint\\optimizer.pt",
+            "bytes": 23111548,
+            "sha256": "42da8707c1112d00e118159b7e6d1fd32e9209ad98a13fc8c5f308399e1434ef"
+          },
+          {
+            "path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\training_resources.json",
+            "source_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\training_resources.json",
+            "bytes": 33,
+            "sha256": "712c385cab03490b371acbd7377e46e907f6ee6fe5f504d477bc38180c1b58d2"
+          }
+        ]
+      },
+      "data_artifacts": [
+        {
+          "path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\subset.jsonl",
+          "source_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\subset.jsonl",
+          "bytes": 50538300,
+          "sha256": "99db9feaf3c088fc9223279ca2f3866e448692e8b1b190cfa3882e09e96698b5"
+        },
+        {
+          "path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\candidate.json",
+          "source_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\candidate.json",
+          "bytes": 4888,
+          "sha256": "2a90ac4f9ead2d1b54aebbcd6f2fa865baa850963e2371fa2bdf6ea9d05a783c"
+        },
+        {
+          "path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\result.json",
+          "source_path": "\\workspace\\speech-projector\\results_followup_20261007\\followup_mean_10hz_ce_control_6775\\result.json",
+          "bytes": 2631,
+          "sha256": "202d49d42698cbae1209c3149a908bd74bc60d2606528dbc410e4bd4b95d77e5"
+        },
+        {
+          "path": "\\workspace\\speech-projector\\data_overnight_20261006\\examples.jsonl",
+          "source_path": "\\workspace\\speech-projector\\data_overnight_20261006\\examples.jsonl",
+          "bytes": 54009487,
+          "sha256": "6756d3e9f90b5d3cbae4e2e83efa1044435560d58fb56fc602f64047b2bf5204"
+        },
+        {
+          "path": "\\workspace\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+          "source_path": "\\workspace\\speech-projector\\data_overnight_20261006\\sources.jsonl",
+          "bytes": 9604728,
+          "sha256": "8471f5cde9cdd2d5c3f721d5829fe3ec6380bd81c5c21eeba35eda6262e19ae9"
+        },
+        {
+          "path": "\\workspace\\speech-projector\\data_overnight_20261006\\fixed_validation.jsonl",
+          "source_path": "\\workspace\\speech-projector\\data_overnight_20261006\\fixed_validation.jsonl",
+          "bytes": 163209,
+          "sha256": "6e4aafe88eb94f5944341ae60f65e6cf75a476f484aa38a6b9a74726c2a79397"
+        },
+        {
+          "path": "\\workspace\\speech-projector\\data_overnight_20261006\\fixed_validation_sources.jsonl",
+          "source_path": "\\workspace\\speech-projector\\data_overnight_20261006\\fixed_validation_sources.jsonl",
+          "bytes": 31406,
+          "sha256": "44bfdc04b43e3154b88e9b8824a83f46381e95b9cd279f636302ae6a882a3ebc"
+        }
+      ]
+    },
+    "review": {
+      "run_name": "followup_mean_10hz_ce_control_9550",
+      "control_generations": {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\validation\\evaluation_generations.jsonl",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_6775\\validation\\evaluation_generations.jsonl",
+        "bytes": 89382,
+        "sha256": "a9bed2b34e50a72e5f8d0066697bf3cdc49b2d1ff25fb39dbf1cca7e8c6ae358"
+      },
+      "branch_generations": {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\validation\\evaluation_generations.jsonl",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\validation\\evaluation_generations.jsonl",
+        "bytes": 90860,
+        "sha256": "99dd8811bca200aa6e0ed5639ad028ed9d57fe8418d4376a649f51e397541270"
+      },
+      "cases": [
+        {
+          "example_id": "ordinary:cb12f37ac2ffb78c1585",
+          "finding": "Relevant language/culture acknowledgment; generic but no new material error.",
+          "changes": []
+        },
+        {
+          "example_id": "ordinary:14154499075c39d034f7",
+          "finding": "Relevant work-goal encouragement and longer menu of possibilities; no clear contradiction.",
+          "changes": []
+        },
+        {
+          "example_id": "ordinary:413d45dd5575ee18e8d9",
+          "finding": "Flipped-classroom explanation loses the explicit at-home boundary and ambiguously places independent learning in dedicated periods. Still capped. Flagged imprecision, not a clear new material reversal under the conservative rubric.",
+          "changes": []
+        },
+        {
+          "example_id": "ordinary:cf5f5a90ab8079a0bbc4",
+          "finding": "Still misses requested adaptations and gives character discussion. Adds an unsupported quoted realization and calls the work a series. Persistent missed request plus questionable new detail are disclosed; not counted as an additional clear regression.",
+          "changes": []
+        },
+        {
+          "example_id": "ordinary:de5cb2bc961bb73e4721",
+          "finding": "Relevant generic online-community discussion, without a clear new material error.",
+          "changes": []
+        },
+        {
+          "example_id": "ordinary:8c95076b5a004c6e0c1c",
+          "finding": "Still misses hamster agility courses and invents pet scenes. Leaf/shiny-rock, nuzzling and bunny imagery replace earlier invented pet scenes. Persistent material failure, not an additional newly failing case.",
+          "changes": []
+        },
+        {
+          "example_id": "ordinary:f912451e8fd38f297083",
+          "finding": "Still gives moonwalk history without recovering This Is It; partial contextual relevance and no clear new material contradiction.",
+          "changes": []
+        },
+        {
+          "example_id": "ordinary:d28987e37fb15c3cc9ff",
+          "finding": "Generic politician response avoids inventing a scandal; no material new change.",
+          "changes": []
+        },
+        {
+          "example_id": "qwen:utterance_00766_frustrated",
+          "finding": "Generic acknowledgment of exceeded quiz expectations; no explicit score recovery. Literal success versus frustrated annotation remains ambiguous.",
+          "changes": []
+        },
+        {
+          "example_id": "qwen:utterance_00766_happy",
+          "finding": "Now explicitly preserves 90 percent rather than generic score praise; useful precision improvement, not correction of a material control error.",
+          "changes": []
+        },
+        {
+          "example_id": "qwen:utterance_01649_frustrated",
+          "finding": "Removes false oat-milk/cheese substitutions with a generic organized-list reply. Clear correction by omission; almond milk/chia seeds are not positively recovered.",
+          "changes": [
+            {
+              "kind": "corrected_material_failure",
+              "run_name": "followup_mean_10hz_ce_control_9550",
+              "example_id": "qwen:utterance_01649_frustrated",
+              "reason": "Removes false oat milk and cheese substitutions with generic acknowledgment; avoids false ingredients without establishing recovery."
+            }
+          ]
+        },
+        {
+          "example_id": "qwen:utterance_01649_neutral",
+          "finding": "Generic shopping-list acknowledgment still omits ingredients; no material new error.",
+          "changes": []
+        },
+        {
+          "example_id": "qwen:utterance_02251_happy",
+          "finding": "New make-it-tonight claim directly contradicts next weekend instead of tonight. Clear timing reversal compared with control's generic concert excitement.",
+          "changes": [
+            {
+              "kind": "new_material_failure",
+              "run_name": "followup_mean_10hz_ce_control_9550",
+              "example_id": "qwen:utterance_02251_happy",
+              "reason": "Concert reply says tonight although user specifies next weekend instead of tonight; control did not make this false timing claim."
+            }
+          ]
+        },
+        {
+          "example_id": "qwen:utterance_02251_sad",
+          "finding": "Generic concert response avoids the wrong tonight claim. Literal happiness versus sad annotation remains ambiguous, without listened emotion ground truth.",
+          "changes": []
+        },
+        {
+          "example_id": "qwen:utterance_00286_happy",
+          "finding": "New looking-for-a-more-challenging-uphill-section premise reverses not-yet-mastered existing uphill difficulty into seeking a harder route. Clear new goal reversal.",
+          "changes": [
+            {
+              "kind": "new_material_failure",
+              "run_name": "followup_mean_10hz_ce_control_9550",
+              "example_id": "qwen:utterance_00286_happy",
+              "reason": "Not-yet-mastered uphill difficulty becomes seeking a more challenging uphill section; control correctly acknowledged current difficulty."
+            }
+          ]
+        },
+        {
+          "example_id": "qwen:utterance_00286_sarcastic",
+          "finding": "Generic fitness encouragement drops uphill detail; no explicit new mastery claim.",
+          "changes": []
+        },
+        {
+          "example_id": "neu:neu_base_04082_angry",
+          "finding": "Still treats an existing drawing/showing invitation as a search/retrieval task. Existing material misunderstanding persists.",
+          "changes": []
+        },
+        {
+          "example_id": "neu:neu_base_04082_happy",
+          "finding": "Now describes the group's work rather than the user's drawing. Ownership drift is flagged, while the control already misread the task as retrieval/group-file access; not counted as another newly failing case.",
+          "changes": []
+        },
+        {
+          "example_id": "neu:neu_base_04095_angry",
+          "finding": "Byte-identical appointment reply still reverses confirming agency; existing error.",
+          "changes": []
+        },
+        {
+          "example_id": "neu:neu_base_04095_sad",
+          "finding": "Generic morning appointment acknowledgment remains grounded; no material new error.",
+          "changes": []
+        },
+        {
+          "example_id": "neu:neu_base_03973_fearful",
+          "finding": "Introduces an airport shuttle absent from user words and history. Clear unsupported transport scenario compared with grounded calendar uncertainty in control.",
+          "changes": [
+            {
+              "kind": "new_material_failure",
+              "run_name": "followup_mean_10hz_ce_control_9550",
+              "example_id": "neu:neu_base_03973_fearful",
+              "reason": "Invents an airport shuttle in a shared-calendar auto-sync uncertainty exchange; control did not introduce a transport scenario."
+            }
+          ]
+        },
+        {
+          "example_id": "neu:neu_base_03973_happy",
+          "finding": "Byte-identical grounded calendar uncertainty reply, without invented transport.",
+          "changes": []
+        },
+        {
+          "example_id": "neu:neu_base_03052_happy",
+          "finding": "Byte-identical supportive camera-location uncertainty reply; no material new change.",
+          "changes": []
+        },
+        {
+          "example_id": "neu:neu_base_03052_sad",
+          "finding": "Byte-identical supportive camera-message uncertainty reply; no material new change.",
+          "changes": []
+        }
+      ]
+    },
+    "input_files": [
+      {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\artifacts\\followup10hz\\extension_policy.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\artifacts\\followup10hz\\extension_policy.json",
+        "bytes": 137,
+        "sha256": "d293f4bb7a4332a58b394e1ef79a29385f89c7611c3d29de434276c2d5b9120d"
+      },
+      {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\candidate.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\candidate.json",
+        "bytes": 4889,
+        "sha256": "3a3cbe43cb23d4f485bc2e52b88ff7b0537a93a8af8ae72b3577a4afd911c426"
+      },
+      {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\extension_selection\\reviews\\followup_mean_10hz_ce_control_9550.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\analysis\\extension_selection\\reviews\\followup_mean_10hz_ce_control_9550.json",
+        "bytes": 8066,
+        "sha256": "5f3c1ff6eedbbbecf87e8b8d0664e6ad3400419aed60ee51ea68cb746caa6de6"
+      },
+      {
+        "path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\continuation_data.json",
+        "source_path": "C:\\Projects\\Voice-Full-Duplex-Light\\results_preview\\followup10hz_20261007\\runs\\followup_mean_10hz_ce_control_9550\\continuation_data.json",
+        "bytes": 8526,
+        "sha256": "18f155fcb4c59d895cda8dc02d215ff0c6f56e10c1e7c6764b17e9a63d5410eb"
+      }
+    ]
+  },
+  "reasons": [
+    "systematic_new_material_content_failures"
+  ]
+}
