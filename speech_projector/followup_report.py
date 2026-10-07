@@ -226,7 +226,7 @@ def render_measured_report(report: FollowupMeasuredReport) -> str:
     lines += [
         "",
         "| Checkpoint | Updates | VAL ordinary CE | VAL macro CE | "
-        "Recorded training phase seconds | Peak PyTorch allocated decimal GB |",
+        "Recorded cumulative training seconds | Peak PyTorch allocated decimal GB |",
         "|---|---:|---:|---:|---:|---:|",
     ]
     for row in report.measurements:
@@ -239,9 +239,12 @@ def render_measured_report(report: FollowupMeasuredReport) -> str:
             )
     lines += [
         "",
-        "Recorded resumed training phases do not include the earlier parent or unmeasured "
-        "setup/fidelity time. Reused frozen TEXT/ASR baselines retain their original timing; "
-        "they are not additional GPU work. Cohort clocks are unmeasured.",
+        "Training elapsed counters include inherited parent checkpoint time and interval "
+        "evaluation. Shared parents must be deduplicated for resource totals; incremental "
+        "branch time requires subtracting the source checkpoint elapsed counter. Setup, "
+        "final held-out evaluation and fidelity are separate from this training counter. "
+        "Reused frozen TEXT/ASR baselines retain original timing and add no new GPU work. "
+        "Cohort clocks are unmeasured.",
         "",
         "| Checkpoint | TEST Neu pairs/families | Raw matching margin [95% CI] | "
         "Resized matching margin [95% CI] |",
@@ -331,7 +334,11 @@ def plot_comparison(report: FollowupMeasuredReport, destination: Path) -> None:
         axis.legend(fontsize=8)
     axes[0].set_ylabel("Held-out target CE (token weighted within cohort)")
     axes[1].set_ylabel("Reference semantic similarity (secondary proxy)")
-    figure.suptitle("Same fixed TEST panel; descriptive comparison, no test-led selection")
+    figure.suptitle(
+        "Fixed TEST panel; one-seed point estimates\n"
+        "No test-led selection; semantic similarity is a secondary proxy",
+        fontsize=12,
+    )
     for extension in ("png", "pdf"):
         figure.savefig(destination.with_suffix("." + extension), dpi=180)
     plotting.close(figure)
