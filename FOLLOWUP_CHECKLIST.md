@@ -30,6 +30,12 @@ Only root may launch GPU work. Proposed objective branches share the full 10 Hz 
 
 Runtime choices and any failed operations will be recorded here. Test responses do not select a checkpoint; validation precedes final test comparison. Additional training beyond these controlled branches requires scientific justification and available time within the requested window.
 
+### Optional second-pass policy, fixed before branch outcomes
+
+Root may extend only the validation-selected 6,775-update branch to 9,550 updates, keeping its objective, learning rate, seed and optimizer trajectory unchanged. Execute only if its macro and ordinary validation CE improve over the 4,775 parent, and measured incremental training time (with 15% allowance) predicts completion by 13:36 UTC, retaining at least 75 minutes before the six-hour report limit. Otherwise finish the planned evaluations and report without this extension.
+
+The extended checkpoint becomes the final choice only if macro validation CE decreases, ordinary CE is no more than 0.01 above its 6,775 parent, and robust Neu matching margin is at least parent minus 0.02. All fixed 24 validation responses receive the same material-regression review; three new failures exceeding corrected failures veto the extension. Test responses never decide this choice. These thresholds are pragmatic safeguards, not calibrated meaningful-effect cutoffs. Extended versus 6,775 results have different update budgets and cannot establish a controlled objective effect.
+
 ## Outputs and completion
 
 - Node operations/logs: `/workspace/followup10hz_20261007`.
