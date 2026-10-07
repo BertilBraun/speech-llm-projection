@@ -9,6 +9,7 @@ from speech_projector.followup_evaluation import (
     FollowupEvaluationConfig,
     bind_provenance,
     file_artifact,
+    selected_sources,
 )
 from speech_projector.followup_tone_baselines import (
     OracleToneInput,
@@ -19,6 +20,9 @@ from speech_projector.followup_tone_baselines import (
     verify_prediction_file,
 )
 from speech_projector.models import AsrTranscript, SystemPromptConfig
+from speech_projector.overnight_data import OrdinaryExampleSource
+from speech_projector.overnight_judge import FinalJudgingQuota
+from speech_projector.overnight_launcher import FinalEvaluationSelection
 from speech_projector.tone_classifier import (
     ToneClassifierConfig,
     ToneClassifierPrediction,
@@ -27,6 +31,27 @@ from speech_projector.tone_classifier import (
 )
 from speech_projector.tts_pilot import PilotEmotion
 from tests.test_overnight_evaluation import candidate, example
+
+
+def test_full_corpus_sources_are_restricted_to_the_scored_heldout_panel() -> None:
+    selection = FinalEvaluationSelection(
+        quota=FinalJudgingQuota(),
+        examples=(example("selected", "Hello."),),
+        generation_example_ids=("selected",),
+    )
+    sources = tuple(
+        OrdinaryExampleSource(
+            example_id=identifier,
+            source_manifest=Path("full.jsonl"),
+            source_example_id=identifier,
+        )
+        for identifier in ("unscored_training_example", "selected")
+    )
+    assert selected_sources(selection, sources) == (sources[1],)
+    with pytest.raises(ValueError, match="selection prefix"):
+        selected_sources(
+            selection.model_copy(update={"generation_example_ids": ("wrong",)}), sources
+        )
 
 
 def test_provenance_rejects_a_different_checkpoint_or_manifest(tmp_path: Path) -> None:

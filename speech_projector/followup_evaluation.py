@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal
 
@@ -20,8 +21,9 @@ from speech_projector.models import (
     FileArtifact,
     Record,
     RunResult,
+    Split,
 )
-from speech_projector.overnight_data import Cohort
+from speech_projector.overnight_data import Cohort, SourceSidecar
 from speech_projector.overnight_evaluation import (
     ValidationCohorts,
     build_emotion_pairs,
@@ -87,14 +89,30 @@ def bind_provenance(path: Path, provenance: Record) -> None:
         write_record(path, provenance)
 
 
+def selected_sources(
+    selection: FinalEvaluationSelection, sources: Sequence[SourceSidecar]
+) -> tuple[SourceSidecar, ...]:
+    identifiers = tuple(example.example_id for example in selection.examples)
+    if not identifiers or len(set(identifiers)) != len(identifiers):
+        raise ValueError("Fixed evaluation selection must contain unique examples")
+    source_identifiers = tuple(source.example_id for source in sources)
+    if len(set(source_identifiers)) != len(source_identifiers):
+        raise ValueError("Cohort source records contain duplicate examples")
+    if set(identifiers) - set(source_identifiers):
+        raise ValueError("Fixed evaluation examples lack cohort source records")
+    splits = {example.split for example in selection.examples}
+    if len(splits) != 1 or Split.TRAIN in splits:
+        raise ValueError("Fixed evaluation must contain one held-out split")
+    if selection.generation_example_ids != identifiers[: len(selection.generation_example_ids)]:
+        raise ValueError("Generation examples must be the fixed selection prefix")
+    selected_identifiers = set(identifiers)
+    return tuple(source for source in sources if source.example_id in selected_identifiers)
+
+
 def evaluate_followup(configuration: FollowupEvaluationConfig) -> FollowupEvaluationSummary:
     result = RunResult.model_validate_json(configuration.run_result.read_bytes())
     selection = FinalEvaluationSelection.model_validate_json(configuration.selection.read_bytes())
-    sources = load_sources(configuration.sources)
-    if len({row.example_id for row in selection.examples}) != len(selection.examples):
-        raise ValueError("Fixed evaluation selection contains duplicate examples")
-    if set(row.example_id for row in selection.examples) - set(row.example_id for row in sources):
-        raise ValueError("Fixed evaluation examples lack cohort source records")
+    sources = selected_sources(selection, load_sources(configuration.sources))
     provenance = FollowupEvaluationProvenance(
         configuration=configuration,
         inputs=tuple(
