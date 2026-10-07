@@ -40,6 +40,12 @@ class ObjectiveLoss:
     target_tokens: int
 
 
+@dataclass(frozen=True)
+class ObjectiveSmokeExample:
+    example: Example
+    source: SourceSidecar
+
+
 class ObjectiveExampleLog(Record):
     example_id: str
     task: SupervisionTask
@@ -96,6 +102,33 @@ def uses_transcription(configuration: RunConfig, epoch: int, example: Example) -
             return int.from_bytes(digest[:8], "little") / 2**64 < probability
         case ResponseCrossEntropyObjective() | OrdinaryResponseKLObjective():
             return False
+
+
+def select_objective_smoke(
+    configuration: RunConfig,
+    examples: Sequence[Example],
+    sources: Sequence[SourceSidecar],
+    epoch: int,
+) -> ObjectiveSmokeExample:
+    aligned = align_sources(configuration, examples, sources)
+    match configuration.objective:
+        case TranscriptMixtureObjective():
+            for example, source in zip(examples, aligned, strict=True):
+                if uses_transcription(configuration, epoch, example):
+                    return ObjectiveSmokeExample(example, source)
+            raise ValueError(
+                "Transcript mixture has no auxiliary-task example for its gradient gate"
+            )
+        case OrdinaryResponseKLObjective():
+            for example, source in zip(examples, aligned, strict=True):
+                match source:
+                    case OrdinaryExampleSource():
+                        return ObjectiveSmokeExample(example, source)
+                    case QwenEmotionalExampleSource() | NeuEmotionalExampleSource():
+                        pass
+            raise ValueError("Response KL has no ordinary example for its gradient gate")
+        case ResponseCrossEntropyObjective():
+            raise ValueError("Response CE uses the original gradient gate")
 
 
 def objective_loss(

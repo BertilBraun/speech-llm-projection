@@ -33,12 +33,15 @@ from speech_projector.models import (
     Example,
     ExperimentFailure,
     GradientCheck,
+    OrdinaryResponseKLObjective,
     Record,
+    ResponseCrossEntropyObjective,
     RunConfig,
     RunResult,
     SampleGeneration,
     Split,
     SuiteState,
+    TranscriptMixtureObjective,
 )
 from speech_projector.overnight_configuration import sweep_runs
 from speech_projector.overnight_continuation import prepare_continuation
@@ -63,9 +66,11 @@ from speech_projector.training import (
     TrainingState,
     batched_gradient_sanity,
     gradient_sanity,
+    objective_gradient_sanity,
     train_run,
     validate_batched_parity,
 )
+from speech_projector.training_objectives import align_sources, select_objective_smoke
 
 
 class OvernightSuiteConfig(Record):
@@ -253,7 +258,10 @@ def run_candidate(
     wrapper: FrozenQwen,
     semantic: SemanticEvaluator,
     output_root: Path,
+    *,
+    training_sources: Sequence[SourceSidecar] = (),
 ) -> SweepCandidate:
+    align_sources(config, training, training_sources)
     directory = output_root / config.name
     candidate_path = directory / "candidate.json"
     if candidate_path.exists():
@@ -279,10 +287,33 @@ def run_candidate(
             and not checked.llm_has_gradients
         )
     else:
-        checked = gradient_sanity(wrapper, projector, training[0])
+        if (directory / "objective_branch.json").exists():
+            projector.load_state_dict(load_file(directory / "checkpoint" / "projector.safetensors"))
+        match config.objective:
+            case ResponseCrossEntropyObjective():
+                checked = gradient_sanity(wrapper, projector, training[0])
+            case TranscriptMixtureObjective() | OrdinaryResponseKLObjective():
+                state_path = directory / "checkpoint" / "state.json"
+                epoch = (
+                    TrainingState.model_validate_json(state_path.read_bytes()).epoch
+                    if state_path.exists()
+                    else 0
+                )
+                selected = select_objective_smoke(config, training, training_sources, epoch)
+                checked = objective_gradient_sanity(
+                    wrapper, projector, selected.example, selected.source, epoch
+                )
         write_record(smoke_path, checked)
         projector = initialize_projector(config, wrapper.device)
-    outcome = train_run(config, training, list(validation), directory, wrapper, projector)
+    outcome = train_run(
+        config,
+        training,
+        list(validation),
+        directory,
+        wrapper,
+        projector,
+        sources=training_sources,
+    )
     evaluated = cached_evaluation(
         wrapper, projector, validation, directory / "validation", semantic
     )

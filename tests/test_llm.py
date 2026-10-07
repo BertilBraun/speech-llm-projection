@@ -43,6 +43,13 @@ from speech_projector.models import (
     TranscriptMixtureObjective,
     Turn,
 )
+from speech_projector.objective_branch import (
+    ObjectiveBranchData,
+    ObjectiveBranchJob,
+    ObjectiveGradientReport,
+    check_branch_gradients,
+    gradient_examples,
+)
 from speech_projector.overnight_continuation import prepare_continuation, prepare_objective_branch
 from speech_projector.overnight_data import (
     NeuEmotionalExampleSource,
@@ -69,6 +76,7 @@ from speech_projector.training_objectives import (
     align_sources,
     objective_loss,
     recover_objective_journal,
+    select_objective_smoke,
     uses_transcription,
 )
 from speech_projector.tts_pilot import PilotEmotion
@@ -986,6 +994,95 @@ def test_kl_training_journal_finished_resume_and_frozen_projector_gate(
     )
     assert second.steps == first.steps == 1
     assert (directory / "objective.jsonl").read_bytes() == journal
+
+
+def test_branch_gradient_gate_checks_auxiliary_long_target_and_emotional_paths(
+    wrapper: FrozenQwen, example: Example, tmp_path: Path
+) -> None:
+    examples = [
+        example,
+        example.model_copy(update={"example_id": "long", "target_text": "yes yes yes yes"}),
+        example.model_copy(update={"example_id": "emotion"}),
+    ]
+    sources = (
+        OrdinaryExampleSource(
+            example_id="one", source_manifest=Path("ordinary"), source_example_id="one"
+        ),
+        OrdinaryExampleSource(
+            example_id="long", source_manifest=Path("ordinary"), source_example_id="long"
+        ),
+        NeuEmotionalExampleSource(
+            example_id="emotion",
+            source_manifest=Path("neu"),
+            source_example_id="emotion",
+            base_id="base",
+            family_id="family",
+            emotion=PilotEmotion.ANGRY,
+        ),
+    )
+    parent = wrapper.config.model_copy(
+        update={"train_examples": 3, "epochs": 3, "max_optimizer_updates": 2}
+    )
+    wrapper.config = parent
+    projector = Projector(parent.projector)
+    source = tmp_path / "parent"
+    train_run(parent, examples, [example], source, wrapper, projector)
+    configuration = parent.model_copy(
+        update={
+            "name": "kl",
+            "max_optimizer_updates": 3,
+            "objective": OrdinaryResponseKLObjective(),
+        }
+    )
+    wrapper.config = configuration
+    job = ObjectiveBranchJob(
+        source_run=source,
+        data_root=tmp_path / "data",
+        output_root=tmp_path / "outputs",
+        configuration=configuration,
+    )
+    data = ObjectiveBranchData(examples, sources, (example,), (sources[0],))
+    assert tuple(item.example.example_id for item in gradient_examples(wrapper, data, 1)) == (
+        "one",
+        "long",
+        "emotion",
+    )
+    checkpoint_bytes = (source / "checkpoint" / "projector.safetensors").read_bytes()
+    report = check_branch_gradients(job, data, wrapper)
+    assert len(report.evidence) == 3
+    assert all(
+        item.check.projector_gradient_norm > 0 and item.check.llm_weights_unchanged
+        for item in report.evidence
+    )
+    assert all(not item.check.llm_has_gradients for item in report.evidence)
+    assert (source / "checkpoint" / "projector.safetensors").read_bytes() == checkpoint_bytes
+    report_path = job.output_root / "smoke" / configuration.name / "objective_gradient_report.json"
+    report_path.write_text(
+        report.model_copy(update={"evidence": report.evidence[:1]}).model_dump_json(),
+        encoding="utf-8",
+    )
+    recovered = check_branch_gradients(job, data, wrapper)
+    assert recovered.evidence[0] == report.evidence[0]
+    assert len(recovered.evidence) == 3
+    assert check_branch_gradients(job, data, wrapper) == recovered
+    assert ObjectiveGradientReport.model_validate_json(report_path.read_bytes()) == recovered
+
+
+def test_transcript_gradient_gate_selects_an_actual_transcript_task(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    configuration = wrapper.config.model_copy(update={"objective": TranscriptMixtureObjective()})
+    examples = tuple(example.model_copy(update={"example_id": str(index)}) for index in range(100))
+    sources = tuple(
+        OrdinaryExampleSource(
+            example_id=item.example_id,
+            source_manifest=Path("ordinary"),
+            source_example_id=item.example_id,
+        )
+        for item in examples
+    )
+    selected = select_objective_smoke(configuration, examples, sources, 1)
+    assert uses_transcription(configuration, 1, selected.example)
 
 
 def test_transcript_sampling_is_reproducible_and_approximately_thirty_percent(
