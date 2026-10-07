@@ -10,6 +10,7 @@ from speech_projector.models import (
     RunConfig,
     TranscriptMixtureObjective,
 )
+from speech_projector.objective_branch import ObjectiveBranchJob
 from speech_projector.overnight_configuration import sweep_runs
 from speech_projector.overnight_continuation import prepare_continuation, prepare_objective_branch
 from speech_projector.training import (
@@ -127,3 +128,16 @@ def test_branch_rejects_architecture_changes_and_unfinished_parent(tmp_path: Pat
     )
     with pytest.raises(ValueError, match="completed full-pass"):
         prepare_objective_branch(source, tmp_path / "unfinished", configuration)
+
+
+def test_job_paths_have_portable_posix_serialization() -> None:
+    job = ObjectiveBranchJob(
+        source_run=Path("/workspace/speech-projector/parent"),
+        data_root=Path("/workspace/speech-projector/data"),
+        output_root=Path("/workspace/speech-projector/results"),
+        configuration=sweep_runs(38193, 1)[0],
+    )
+    serialized = job.model_dump_json()
+    assert "/workspace/speech-projector/parent" in serialized
+    assert "\\\\workspace" not in serialized
+    assert ObjectiveBranchJob.model_validate_json(serialized) == job

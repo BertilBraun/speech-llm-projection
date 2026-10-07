@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import torch
+from pydantic import field_serializer
 from safetensors.torch import load_file
 
 from scripts.inventory_results import write_record
@@ -39,6 +40,10 @@ class ObjectiveBranchJob(Record):
     data_root: Path
     output_root: Path
     configuration: RunConfig
+
+    @field_serializer("source_run", "data_root", "output_root")
+    def serialize_path(self, path: Path) -> str:
+        return path.as_posix()
 
 
 @dataclass(frozen=True)
