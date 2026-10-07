@@ -2,7 +2,12 @@
 
 import pytest
 
-from speech_projector.followup_selection import AlignmentSelectionPolicy, select_alignment_branch
+from speech_projector.followup_selection import (
+    AlignmentSelectionPolicy,
+    ContentChangeKind,
+    ValidationContentChange,
+    select_alignment_branch,
+)
 from tests.test_overnight_evaluation import candidate
 from tests.test_overnight_report import result
 
@@ -28,3 +33,33 @@ def test_alignment_selects_content_within_macro_band_and_rejects_tone_regression
             "control",
             AlignmentSelectionPolicy(),
         )
+    changes = tuple(
+        ValidationContentChange(
+            kind=ContentChangeKind.REGRESSION,
+            run_name="content",
+            example_id=f"bad_{index}",
+            reason="New material reversal versus control",
+        )
+        for index in range(3)
+    )
+    assert (
+        select_alignment_branch(
+            results, candidates, "control", AlignmentSelectionPolicy(), changes
+        ).selected_run
+        == "control"
+    )
+    corrections = tuple(
+        ValidationContentChange(
+            kind=ContentChangeKind.CORRECTION,
+            run_name="content",
+            example_id=f"fixed_{index}",
+            reason="Corrected control's material failure",
+        )
+        for index in range(3)
+    )
+    assert (
+        select_alignment_branch(
+            results, candidates, "control", AlignmentSelectionPolicy(), changes + corrections
+        ).selected_run
+        == "content"
+    )
