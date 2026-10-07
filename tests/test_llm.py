@@ -33,15 +33,21 @@ from speech_projector.models import (
     ExperimentStage,
     GenerationKind,
     LinearProjectorConfig,
+    OrdinaryResponseKLObjective,
     Role,
     RunConfig,
     RunPromptConfig,
     SamplingDecodingConfig,
     Split,
     SystemPromptConfig,
+    TranscriptMixtureObjective,
     Turn,
 )
 from speech_projector.overnight_continuation import prepare_continuation
+from speech_projector.overnight_data import (
+    NeuEmotionalExampleSource,
+    OrdinaryExampleSource,
+)
 from speech_projector.projectors import Projector
 from speech_projector.training import (
     BatchedParityPolicy,
@@ -50,11 +56,22 @@ from speech_projector.training import (
     ValidationCheckpointRecord,
     batched_gradient_sanity,
     gradient_sanity,
+    objective_gradient_sanity,
     train_run,
     validate_batched_parity,
     validation_loss,
     weights_digest,
 )
+from speech_projector.training_objectives import (
+    ObjectiveExampleLog,
+    ObjectiveStepLog,
+    SupervisionTask,
+    align_sources,
+    objective_loss,
+    recover_objective_journal,
+    uses_transcription,
+)
+from speech_projector.tts_pilot import PilotEmotion
 
 
 class CountingTokenizer(PreTrainedTokenizerFast):
@@ -771,3 +788,188 @@ def test_batched_gradient_gate_compares_same_weights_and_rejects_misalignment(
         validate_batched_parity(
             check.model_copy(update={"gradient_cosine": 0.5}), BatchedParityPolicy()
         )
+
+
+def test_response_kl_matches_teacher_to_student_distribution_and_frozen_gradient(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    before = weights_digest(wrapper.model)
+    speech = torch.randn(5, 32, requires_grad=True)
+    teacher = wrapper.score_target(example, TranscriptInput(example.user_text))
+    student = wrapper.score_target(example, SpeechInput(speech))
+    expected = functional.kl_div(
+        functional.log_softmax(student.logits.float(), dim=-1),
+        functional.softmax(teacher.logits.float(), dim=-1),
+        reduction="batchmean",
+    )
+    loss = wrapper.response_kl(example, SpeechInput(speech))
+    assert torch.allclose(loss, expected, atol=1e-6)
+    loss.backward()
+    assert speech.grad is not None and speech.grad.norm() > 0
+    assert all(parameter.grad is None for parameter in wrapper.model.parameters())
+    assert weights_digest(wrapper.model) == before
+
+
+def test_ordinary_kl_keeps_emotional_response_supervision(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    wrapper.config = wrapper.config.model_copy(update={"objective": OrdinaryResponseKLObjective()})
+    speech = SpeechInput(torch.randn(4, 32, requires_grad=True))
+    ordinary = OrdinaryExampleSource(
+        example_id=example.example_id,
+        source_manifest=Path("ordinary.jsonl"),
+        source_example_id=example.example_id,
+    )
+    emotional = NeuEmotionalExampleSource(
+        example_id=example.example_id,
+        source_manifest=Path("neu.jsonl"),
+        source_example_id=example.example_id,
+        base_id="pair",
+        family_id="family",
+        emotion=PilotEmotion.ANGRY,
+    )
+    distilled = objective_loss(wrapper, example, speech, ordinary, 0)
+    original = objective_loss(wrapper, example, speech, emotional, 0)
+    assert distilled.task == SupervisionTask.RESPONSE_KL
+    assert original.task == SupervisionTask.RESPONSE_CE
+    assert torch.equal(original.loss, wrapper.loss(example, speech))
+    assert torch.equal(distilled.loss, wrapper.response_kl(example, speech))
+
+
+def test_transcript_mixture_changes_only_supervision_and_task_prompt(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    objective = TranscriptMixtureObjective()
+    wrapper.config = wrapper.config.model_copy(update={"objective": objective})
+    selected = next(
+        copied
+        for index in range(100)
+        if uses_transcription(
+            wrapper.config,
+            1,
+            copied := example.model_copy(update={"example_id": f"selection-{index}"}),
+        )
+    )
+    selected = selected.model_copy(update={"history": (Turn(role=Role.USER, text="yes yes"),)})
+    source = OrdinaryExampleSource(
+        example_id=selected.example_id,
+        source_manifest=Path("ordinary.jsonl"),
+        source_example_id=selected.example_id,
+    )
+    speech = SpeechInput(torch.randn(4, 32, requires_grad=True))
+    original_bytes = selected.model_dump_json()
+    measured = objective_loss(wrapper, selected, speech, source, 1)
+    transcription = selected.model_copy(
+        update={
+            "history": (),
+            "target_text": selected.user_text,
+            "prompt": objective.transcription_prompt,
+        }
+    )
+    assert measured.task == SupervisionTask.TRANSCRIPT_CE
+    assert torch.equal(measured.loss, wrapper.loss(transcription, speech))
+    assert measured.target_tokens == wrapper.target_token_count(transcription)
+    assert selected.model_dump_json() == original_bytes
+    assert uses_transcription(wrapper.config, 1, selected)
+    wrapper.config = wrapper.config.model_copy(update={"max_target_tokens": 1})
+    with pytest.raises(ValueError, match="budget"):
+        objective_loss(wrapper, selected, speech, source, 1)
+
+
+def test_lexical_objectives_require_exact_sidecars_and_verified_microbatch(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    configuration = wrapper.config.model_copy(update={"objective": OrdinaryResponseKLObjective()})
+    with pytest.raises(ValueError, match="coverage"):
+        align_sources(configuration, (example,), ())
+    with pytest.raises(ValueError, match="microbatches"):
+        align_sources(configuration.model_copy(update={"microbatch_size": 2}), (example,), ())
+
+
+def test_objective_journal_recovery_archives_uncheckpointed_work(tmp_path: Path) -> None:
+    path = tmp_path / "objective.jsonl"
+    examples = (
+        ObjectiveExampleLog(
+            example_id="one",
+            task=SupervisionTask.RESPONSE_KL,
+            target_tokens=2,
+            loss=0.1,
+        ),
+    )
+    first = ObjectiveStepLog(step=1, epoch=0, examples=examples)
+    second = ObjectiveStepLog(step=2, epoch=0, examples=examples)
+    original = (first.model_dump_json() + "\n" + second.model_dump_json() + "\n").encode()
+    path.write_bytes(original)
+    recover_objective_journal(path, 1)
+    assert path.read_bytes() == (first.model_dump_json() + "\n").encode()
+    assert next(tmp_path.glob("*.beyond-checkpoint-*.jsonl")).read_bytes() == original
+    recover_objective_journal(path, 1)
+    assert path.read_bytes() == (first.model_dump_json() + "\n").encode()
+
+
+def test_kl_training_journal_finished_resume_and_frozen_projector_gate(
+    wrapper: FrozenQwen, example: Example, tmp_path: Path
+) -> None:
+    wrapper.config = wrapper.config.model_copy(update={"objective": OrdinaryResponseKLObjective()})
+    other = example.model_copy(update={"example_id": "two"})
+    sources = (
+        OrdinaryExampleSource(
+            example_id=example.example_id,
+            source_manifest=Path("ordinary.jsonl"),
+            source_example_id=example.example_id,
+        ),
+        NeuEmotionalExampleSource(
+            example_id=other.example_id,
+            source_manifest=Path("neu.jsonl"),
+            source_example_id=other.example_id,
+            base_id="pair",
+            family_id="family",
+            emotion=PilotEmotion.ANGRY,
+        ),
+    )
+    projector = Projector(wrapper.config.projector)
+    check = objective_gradient_sanity(wrapper, projector, example, sources[0], 0)
+    assert check.projector_changed and check.llm_weights_unchanged and not check.llm_has_gradients
+    directory = tmp_path / "kl"
+    first = train_run(
+        wrapper.config,
+        [example, other],
+        [example],
+        directory,
+        wrapper,
+        projector,
+        sources=sources,
+    )
+    journal = (directory / "objective.jsonl").read_bytes()
+    record = ObjectiveStepLog.model_validate_json(journal.strip())
+    assert {entry.task for entry in record.examples} == {
+        SupervisionTask.RESPONSE_CE,
+        SupervisionTask.RESPONSE_KL,
+    }
+    state = TrainingState.model_validate_json((directory / "checkpoint/state.json").read_bytes())
+    assert state.target_tokens_seen == sum(entry.target_tokens for entry in record.examples)
+    second = train_run(
+        wrapper.config,
+        [example, other],
+        [example],
+        directory,
+        wrapper,
+        projector,
+        sources=sources,
+    )
+    assert second.steps == first.steps == 1
+    assert (directory / "objective.jsonl").read_bytes() == journal
+
+
+def test_transcript_sampling_is_reproducible_and_approximately_thirty_percent(
+    wrapper: FrozenQwen, example: Example
+) -> None:
+    configuration = wrapper.config.model_copy(update={"objective": TranscriptMixtureObjective()})
+    pool = tuple(example.model_copy(update={"example_id": str(index)}) for index in range(10000))
+    first = tuple(uses_transcription(configuration, 1, selected) for selected in pool)
+    torch.manual_seed(1234)
+    reversed_second = tuple(
+        uses_transcription(configuration, 1, selected) for selected in reversed(pool)
+    )
+    assert first == tuple(reversed(reversed_second))
+    assert 0.28 < sum(first) / len(first) < 0.32

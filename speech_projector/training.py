@@ -4,6 +4,7 @@ import hashlib
 import math
 import random
 import time
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,9 +14,27 @@ from safetensors.torch import load_file, save_file
 from torch import Tensor
 
 from speech_projector.inputs import SpeechInput
+from speech_projector.journal import append_record
 from speech_projector.llm import FrozenQwen
-from speech_projector.models import Example, GradientCheck, Record, RunConfig, TrainLog
+from speech_projector.models import (
+    Example,
+    GradientCheck,
+    OrdinaryResponseKLObjective,
+    Record,
+    ResponseCrossEntropyObjective,
+    RunConfig,
+    TrainLog,
+    TranscriptMixtureObjective,
+)
+from speech_projector.overnight_data import SourceSidecar
 from speech_projector.projectors import Projector
+from speech_projector.training_objectives import (
+    ObjectiveExampleLog,
+    ObjectiveStepLog,
+    align_sources,
+    objective_loss,
+    recover_objective_journal,
+)
 
 
 class TrainingState(Record):
@@ -196,6 +215,34 @@ def validation_loss(wrapper: FrozenQwen, projector: Projector, examples: list[Ex
 
 
 def gradient_sanity(wrapper: FrozenQwen, projector: Projector, example: Example) -> GradientCheck:
+    return _gradient_sanity(
+        wrapper, projector, example, lambda speech: wrapper.loss(example, speech)
+    )
+
+
+def objective_gradient_sanity(
+    wrapper: FrozenQwen,
+    projector: Projector,
+    example: Example,
+    source: SourceSidecar,
+    epoch: int,
+) -> GradientCheck:
+    if source.example_id != example.example_id:
+        raise ValueError("Gradient check source does not match its example")
+    return _gradient_sanity(
+        wrapper,
+        projector,
+        example,
+        lambda speech: objective_loss(wrapper, example, speech, source, epoch).loss,
+    )
+
+
+def _gradient_sanity(
+    wrapper: FrozenQwen,
+    projector: Projector,
+    example: Example,
+    compute_loss: Callable[[SpeechInput], Tensor],
+) -> GradientCheck:
     wrapper.model.train(wrapper.config.gradient_checkpointing)
     projector.train()
     assert not any(parameter.requires_grad for parameter in wrapper.model.parameters())
@@ -206,7 +253,7 @@ def gradient_sanity(wrapper: FrozenQwen, projector: Projector, example: Example)
         torch.cuda.reset_peak_memory_stats(wrapper.device)
         torch.cuda.synchronize(wrapper.device)
     start = time.monotonic()
-    loss = wrapper.loss(example, SpeechInput(projector(load_features(example, wrapper.device))))
+    loss = compute_loss(SpeechInput(projector(load_features(example, wrapper.device))))
     loss.backward()
     gradient_norm = math.sqrt(
         sum(
@@ -299,9 +346,14 @@ def train_run(
     output_dir: Path,
     wrapper: FrozenQwen,
     projector: Projector,
+    *,
+    sources: Sequence[SourceSidecar] = (),
 ) -> TrainingOutcome:
     if len(examples) != config.train_examples:
         raise ValueError("Training subset length differs from run configuration")
+    if wrapper.config != config:
+        raise ValueError("Wrapper and training configurations must agree")
+    aligned_sources = align_sources(config, examples, sources)
     output_dir.mkdir(parents=True, exist_ok=True)
     config_path = output_dir / "config.json"
     if config_path.exists():
@@ -348,6 +400,8 @@ def train_run(
                 checkpoint_dir / "optimizer.pt", weights_only=True, map_location=wrapper.device
             )
         )
+        for group in optimizer.param_groups:
+            group["lr"] = config.learning_rate
     else:
         initial = validation_loss(wrapper, projector, checkpoint_validation)
         initial_training = validation_loss(wrapper, projector, fixed_training_examples)
@@ -364,6 +418,7 @@ def train_run(
         )
         _save_checkpoint(checkpoint_dir, projector, optimizer, state)
         resources = _save_training_resources(output_dir, wrapper.device, resources)
+    recover_objective_journal(output_dir / "objective.jsonl", state.step)
     start = time.monotonic()
     prior_elapsed = state.elapsed_seconds
     recent_losses: list[float] = []
@@ -381,6 +436,7 @@ def train_run(
             optimizer.zero_grad(set_to_none=True)
             group_loss = 0.0
             group_tokens = 0
+            objective_examples: list[ObjectiveExampleLog] = []
             for start_index in range(0, len(selected), config.microbatch_size):
                 microbatch = [
                     examples[index]
@@ -390,18 +446,40 @@ def train_run(
                     SpeechInput(projector(load_features(example, wrapper.device)))
                     for example in microbatch
                 )
-                loss = (
-                    wrapper.loss(microbatch[0], speech[0])
-                    if config.microbatch_size == 1
-                    else wrapper.loss_batch(microbatch, speech)
-                )
+                match config.objective:
+                    case ResponseCrossEntropyObjective():
+                        loss = (
+                            wrapper.loss(microbatch[0], speech[0])
+                            if config.microbatch_size == 1
+                            else wrapper.loss_batch(microbatch, speech)
+                        )
+                        group_tokens += sum(
+                            wrapper.target_token_count(example) for example in microbatch
+                        )
+                    case TranscriptMixtureObjective() | OrdinaryResponseKLObjective():
+                        supervision = objective_loss(
+                            wrapper,
+                            microbatch[0],
+                            speech[0],
+                            aligned_sources[selected[start_index]],
+                            epoch,
+                        )
+                        loss = supervision.loss
+                        group_tokens += supervision.target_tokens
+                        objective_examples.append(
+                            ObjectiveExampleLog(
+                                example_id=microbatch[0].example_id,
+                                task=supervision.task,
+                                target_tokens=supervision.target_tokens,
+                                loss=loss.item(),
+                            )
+                        )
                 if not torch.isfinite(loss):
                     raise FloatingPointError(
                         f"Non-finite loss at example {microbatch[0].example_id}"
                     )
                 (loss * (len(microbatch) / len(selected))).backward()
                 group_loss += loss.item() * len(microbatch)
-                group_tokens += sum(wrapper.target_token_count(example) for example in microbatch)
             torch.nn.utils.clip_grad_norm_(projector.parameters(), 1.0)
             optimizer.step()
             step = state.step + 1
@@ -434,6 +512,11 @@ def train_run(
                 examples_seen=state.examples_seen,
                 target_tokens_seen=state.target_tokens_seen,
             )
+            if objective_examples:
+                append_record(
+                    output_dir / "objective.jsonl",
+                    ObjectiveStepLog(step=step, epoch=epoch, examples=tuple(objective_examples)),
+                )
             with (output_dir / "train.jsonl").open("a", encoding="utf-8") as stream:
                 stream.write(log.model_dump_json() + "\n")
             print(log.model_dump_json(), flush=True)

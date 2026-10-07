@@ -88,6 +88,17 @@ def example_prompt(example: Example, config: RunConfig) -> PromptConfig:
             return example.prompt
 
 
+def response_kl_sum(student_logits: Tensor, teacher_logits: Tensor) -> Tensor:
+    student_log_probabilities = functional.log_softmax(student_logits.float(), dim=-1)
+    teacher_log_probabilities = functional.log_softmax(teacher_logits.float(), dim=-1)
+    return functional.kl_div(
+        student_log_probabilities,
+        teacher_log_probabilities,
+        reduction="sum",
+        log_target=True,
+    )
+
+
 class FrozenQwen:
     def __init__(self, config: RunConfig, device: torch.device) -> None:
         self.config = config
@@ -237,6 +248,23 @@ class FrozenQwen:
     def loss(self, example: Example, utterance: UtteranceInput) -> Tensor:
         scores = self.score_target(example, utterance)
         return functional.cross_entropy(scores.logits.float(), scores.target_token_ids)
+
+    def response_kl(self, example: Example, utterance: SpeechInput) -> Tensor:
+        """Teacher-to-student response KL at temperature one, without teacher gradients."""
+        with torch.no_grad():
+            teacher = self.score_target(example, TranscriptInput(example.user_text))
+        student = self.score_target(example, utterance)
+        assert torch.equal(teacher.target_token_ids, student.target_token_ids)
+        chunks = tuple(
+            checkpoint(
+                response_kl_sum,
+                student.logits[start : start + 128],
+                teacher.logits[start : start + 128],
+                use_reentrant=False,
+            )
+            for start in range(0, student.target_token_ids.numel(), 128)
+        )
+        return torch.stack(chunks).sum() / student.target_token_ids.numel()
 
     def prepare_training_batch(
         self, examples: Sequence[Example], utterances: Sequence[UtteranceInput]

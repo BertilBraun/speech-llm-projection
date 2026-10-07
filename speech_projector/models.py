@@ -162,6 +162,28 @@ DecodingConfig: TypeAlias = Annotated[
 ]
 
 
+class ResponseCrossEntropyObjective(Record):
+    kind: Literal["response_ce"] = "response_ce"
+
+
+class TranscriptMixtureObjective(Record):
+    kind: Literal["transcript_mixture"] = "transcript_mixture"
+    transcript_probability: float = Field(default=0.3, gt=0, lt=1)
+    transcription_prompt: SystemPromptConfig = SystemPromptConfig(
+        system_text="Transcribe the user's speech verbatim. Return only the transcript."
+    )
+
+
+class OrdinaryResponseKLObjective(Record):
+    kind: Literal["ordinary_response_kl"] = "ordinary_response_kl"
+
+
+TrainingObjective: TypeAlias = Annotated[
+    ResponseCrossEntropyObjective | TranscriptMixtureObjective | OrdinaryResponseKLObjective,
+    Field(discriminator="kind"),
+]
+
+
 class RunConfig(Record):
     name: str
     stage: ExperimentStage
@@ -191,6 +213,7 @@ class RunConfig(Record):
     speech_model_name: str = "openai/whisper-small"
     prompt: PromptConfig = SystemPromptConfig()
     decoding: DecodingConfig = GreedyDecodingConfig()
+    objective: TrainingObjective = ResponseCrossEntropyObjective()
     projector: ProjectorConfig
 
 
