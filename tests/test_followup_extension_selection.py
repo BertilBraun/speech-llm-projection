@@ -8,6 +8,7 @@ from scripts.inventory_results import write_record
 from speech_projector.followup_evaluation import file_artifact
 from speech_projector.followup_extension_selection import (
     AcceptedFullPassExtension,
+    BranchCheckpointSelection,
     ExtensionCheckpointSelection,
     ExtensionRejectionReason,
     FullPassExtensionConfig,
@@ -23,7 +24,13 @@ from speech_projector.followup_selection import (
     ValidationContentChange,
     select_alignment_branch,
 )
-from speech_projector.followup_validation_review import AlignmentBranchReview, ValidationCaseReview
+from speech_projector.followup_validation_review import (
+    AlignmentBranchReview,
+    ReviewedAlignmentBranch,
+    ValidationCaseReview,
+    ValidationSelectionConfig,
+    ValidationSelectionReceipt,
+)
 from speech_projector.models import FileArtifact, TranscriptMixtureObjective
 from speech_projector.objective_branch import ObjectiveBranchJob
 from speech_projector.objective_continuation import ObjectiveContinuationProvenance
@@ -219,6 +226,33 @@ def test_rejected_extension_cannot_become_final_checkpoint(tmp_path: Path) -> No
     )
     with pytest.raises(ValueError, match="rejected extension"):
         validated_final_checkpoint(selection, tmp_path / "extension_result.json")
+
+
+def test_selected_branch_requires_its_actual_selection_receipt(tmp_path: Path) -> None:
+    evidence = prepared_evidence(tmp_path)
+    receipt = ValidationSelectionReceipt(
+        configuration=ValidationSelectionConfig(
+            policy=tmp_path / "branch_policy.json",
+            control_run_directory=tmp_path / "control",
+            branches=(
+                ReviewedAlignmentBranch(
+                    run_directory=tmp_path / "chosen", review=tmp_path / "chosen_review.json"
+                ),
+            ),
+            output_directory=tmp_path,
+        ),
+        inputs=(evidence.parent_result_file,),
+        validation_example_ids=tuple(case.example_id for case in evidence.review.cases),
+    )
+    write_record(tmp_path / "provenance.json", receipt)
+    selection = BranchCheckpointSelection(branch_decision=evidence.configuration.branch_decision)
+    assert (
+        validated_final_checkpoint(selection, tmp_path / "parent_result.json")
+        == evidence.parent_result
+    )
+    write_record(tmp_path / "parent_result.json", evidence.extension_result)
+    with pytest.raises(ValueError, match="not bound"):
+        validated_final_checkpoint(selection, tmp_path / "parent_result.json")
 
 
 def test_extension_cannot_silently_switch_training_objective(tmp_path: Path) -> None:
