@@ -43,6 +43,7 @@ class QualityComparisonConfig(Record):
     cohorts: tuple[Cohort, ...]
     output_directory: Path
     seed: int = 42
+    slot_salt: str = ""
 
 
 class QualitySlotMapping(Record):
@@ -166,6 +167,13 @@ def choose_root_cards(cases: Sequence[BlindCase], seed: int) -> tuple[BlindCase,
     return tuple(selected)
 
 
+def quality_slot_flipped(configuration: QualityComparisonConfig, example_id: str) -> bool:
+    identity = f"{configuration.seed}:{example_id}"
+    if configuration.slot_salt:
+        identity = f"{configuration.slot_salt}:{identity}"
+    return bool(hashlib.sha256(identity.encode()).digest()[0] % 2)
+
+
 def prepare_quality_comparison(configuration: QualityComparisonConfig) -> BlindCards:
     if Cohort.ORDINARY in configuration.cohorts:
         raise ValueError("Emotional rating cards require genuine emotional source records")
@@ -203,7 +211,7 @@ def prepare_quality_comparison(configuration: QualityComparisonConfig) -> BlindC
                 base, family, delivery = source.base_id, source.family_id, source.emotion.value
             case _:
                 raise ValueError("Selected rating source is not emotional")
-        flipped = bool(hashlib.sha256(f"{configuration.seed}:{identity}".encode()).digest()[0] % 2)
+        flipped = quality_slot_flipped(configuration, identity)
         response_a, response_b = (
             (second[identity], first[identity]) if flipped else (first[identity], second[identity])
         )
