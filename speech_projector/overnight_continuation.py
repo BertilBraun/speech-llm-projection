@@ -5,7 +5,13 @@ from pathlib import Path
 
 from scripts.inventory_results import stable_digest
 from scripts.package_results import FileArtifact
-from speech_projector.models import Record, RunConfig
+from speech_projector.models import (
+    OrdinaryResponseKLObjective,
+    Record,
+    ResponseCrossEntropyObjective,
+    RunConfig,
+    TranscriptMixtureObjective,
+)
 from speech_projector.overnight_preparation import artifact, write_immutable
 from speech_projector.training import TrainingState, ValidationCheckpointRecord
 
@@ -27,6 +33,53 @@ def prepare_continuation(
         != config
     ):
         raise ValueError("Continuation may change only run name and total update ceiling")
+    return _prepare_snapshot(source, destination, original, config, "continuation.json")
+
+
+def prepare_objective_branch(
+    source: Path, destination: Path, config: RunConfig
+) -> ContinuationProvenance:
+    original = RunConfig.model_validate_json((source / "config.json").read_bytes())
+    if original != original.model_copy(update={"objective": ResponseCrossEntropyObjective()}):
+        raise ValueError("Objective branches require the same response-CE parent")
+    if (
+        original.model_copy(
+            update={
+                "name": config.name,
+                "max_optimizer_updates": config.max_optimizer_updates,
+                "learning_rate": config.learning_rate,
+                "objective": config.objective,
+            }
+        )
+        != config
+    ):
+        raise ValueError(
+            "Objective branch may change only name, objective, learning rate and ceiling"
+        )
+    match config.objective:
+        case TranscriptMixtureObjective() | OrdinaryResponseKLObjective():
+            if config.microbatch_size != 1:
+                raise ValueError("Lexical branches require single-example microbatches")
+        case ResponseCrossEntropyObjective():
+            pass
+    state = TrainingState.model_validate_json((source / "checkpoint" / "state.json").read_bytes())
+    if (
+        state.epoch < 1
+        or state.offset != 0
+        or state.final_validation_loss is None
+        or state.final_fixed_training_loss is None
+    ):
+        raise ValueError("Objective branches require a completed full-pass parent checkpoint")
+    return _prepare_snapshot(source, destination, original, config, "objective_branch.json")
+
+
+def _prepare_snapshot(
+    source: Path,
+    destination: Path,
+    original: RunConfig,
+    config: RunConfig,
+    receipt_filename: str,
+) -> ContinuationProvenance:
     state_path = source / "checkpoint" / "state.json"
     state = TrainingState.model_validate_json(state_path.read_bytes())
     if config.max_optimizer_updates is None or config.max_optimizer_updates <= state.step:
@@ -42,7 +95,7 @@ def prepare_continuation(
     provenance = ContinuationProvenance(
         source_configuration=original, continuation_configuration=config, source_artifacts=records
     )
-    provenance_path = destination / "continuation.json"
+    provenance_path = destination / receipt_filename
     if provenance_path.exists():
         if ContinuationProvenance.model_validate_json(provenance_path.read_bytes()) != provenance:
             raise ValueError("Existing continuation differs from its immutable source checkpoint")
@@ -76,6 +129,6 @@ def prepare_continuation(
     for record in records:
         if stable_digest(record.path) != (record.bytes, record.sha256):
             raise ValueError("Source checkpoint changed during continuation snapshot")
-    write_immutable(pending / "continuation.json", provenance.model_dump_json(indent=2).encode())
+    write_immutable(pending / receipt_filename, provenance.model_dump_json(indent=2).encode())
     pending.replace(destination)
     return provenance

@@ -43,7 +43,7 @@ from speech_projector.models import (
     TranscriptMixtureObjective,
     Turn,
 )
-from speech_projector.overnight_continuation import prepare_continuation
+from speech_projector.overnight_continuation import prepare_continuation, prepare_objective_branch
 from speech_projector.overnight_data import (
     NeuEmotionalExampleSource,
     OrdinaryExampleSource,
@@ -770,6 +770,33 @@ def test_continuation_preserves_optimizer_cursor_and_exact_training_trajectory(
     train_run(continuation, examples, [example], destination, wrapper, projector)
     assert weights_digest(projector) == weights_digest(uninterrupted)
     assert (source / "checkpoint" / "state.json").read_bytes() == original_state
+
+
+def test_objective_control_branch_updates_lr_without_resetting_adam_moments(
+    wrapper: FrozenQwen, example: Example, tmp_path: Path
+) -> None:
+    configuration = wrapper.config.model_copy(update={"epochs": 3, "max_optimizer_updates": 1})
+    wrapper.config = configuration
+    examples = [example, example.model_copy(update={"example_id": "two"})]
+    projector = Projector(configuration.projector)
+    source = tmp_path / "parent"
+    train_run(configuration, examples, [example], source, wrapper, projector)
+    original_optimizer = (source / "checkpoint" / "optimizer.pt").read_bytes()
+    branch = configuration.model_copy(
+        update={"name": "control", "max_optimizer_updates": 2, "learning_rate": 2e-4}
+    )
+    destination = tmp_path / "control"
+    prepare_objective_branch(source, destination, branch)
+    wrapper.config = branch
+    outcome = train_run(branch, examples, [example], destination, wrapper, projector)
+    resumed = torch.optim.AdamW(projector.parameters(), lr=1)
+    resumed.load_state_dict(
+        torch.load(destination / "checkpoint" / "optimizer.pt", weights_only=True)
+    )
+    assert all(group["lr"] == 2e-4 for group in resumed.param_groups)
+    assert all(state["step"].item() == 2 for state in resumed.state.values())
+    assert outcome.steps == 2 and outcome.examples_seen == 4
+    assert (source / "checkpoint" / "optimizer.pt").read_bytes() == original_optimizer
 
 
 def test_batched_gradient_gate_compares_same_weights_and_rejects_misalignment(
