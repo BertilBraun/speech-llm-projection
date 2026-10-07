@@ -8,9 +8,11 @@ from speech_projector.emotion_preview import Delivery
 from speech_projector.evaluation import EvaluationOutcome, ExampleLoss, save_evaluation
 from speech_projector.followup_report import (
     BaselineComparisonInput,
+    CheckpointMeasurement,
     FollowupReportConfig,
     checkpoint_label,
     measured_condition,
+    render_measured_report,
     write_comparison,
 )
 from speech_projector.models import (
@@ -27,10 +29,11 @@ from speech_projector.overnight_data import (
     OrdinaryExampleSource,
     QwenEmotionalExampleSource,
 )
+from speech_projector.overnight_evaluation import summarize_preferences
 from speech_projector.overnight_judge import FinalJudgingQuota
 from speech_projector.overnight_launcher import FinalEvaluationSelection
 from speech_projector.tts_pilot import PilotEmotion
-from tests.test_overnight_evaluation import example
+from tests.test_overnight_evaluation import candidate, example, pair_loss
 from tests.test_overnight_report import result
 
 
@@ -161,3 +164,26 @@ def test_plot_label_uses_actual_objective_instead_of_run_name(
         update={"name": "same_arbitrary_name", "objective": objective}
     )
     assert checkpoint_label(recorded.model_copy(update={"config": configuration})) == label
+
+
+def test_assignment_wins_are_strict_and_ties_are_reported_separately(tmp_path: Path) -> None:
+    report = write_comparison(prepared_comparison(tmp_path))
+    baseline = report.measurements[0]
+    preference = summarize_preferences((pair_loss("a", "f1", 0.2), pair_loss("b", "f2", 0)))
+    assert preference.matching_win_rate.estimate == 0.5
+    assert preference.tie_rate == 0.5
+    checkpoint = CheckpointMeasurement(
+        name="speech",
+        condition=EvaluationCondition.SPEECH,
+        pooled=baseline.pooled,
+        cohorts=baseline.cohorts,
+        artifacts=(),
+        run=result(),
+        candidate=candidate("quality", 1, 1, 0.1, 10),
+        fidelity=(),
+        neu_preference=preference,
+    )
+    text = render_measured_report(report.model_copy(update={"measurements": (checkpoint,)}))
+    assert "Strict raw assignment win" in text
+    assert "0.5000 [0.0000, 1.0000] | 0.5000" in text
+    assert "ties receive no win credit" in text.lower()

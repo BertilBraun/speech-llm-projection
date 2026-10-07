@@ -250,18 +250,22 @@ def render_measured_report(report: FollowupMeasuredReport) -> str:
         "Cohort clocks are unmeasured.",
         "",
         "| Checkpoint | TEST Neu pairs/families | Raw matching margin [95% CI] | "
-        "Resized matching margin [95% CI] |",
-        "|---|---:|---:|---:|",
+        "Resized matching margin [95% CI] | Strict raw assignment win [95% CI] | "
+        "Tie fraction | Distinct-target pairs |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ]
     for row in report.measurements:
         if isinstance(row, CheckpointMeasurement):
             preference = row.neu_preference
             raw = preference.matching_margin
             resized = preference.resized_matching_margin
+            wins = preference.matching_win_rate
             lines.append(
                 f"| {row.name} | {preference.pairs}/{preference.family_clusters} | "
                 f"{raw.estimate:.5f} [{raw.lower:.5f}, {raw.upper:.5f}] | "
-                f"{resized.estimate:.5f} [{resized.lower:.5f}, {resized.upper:.5f}] |"
+                f"{resized.estimate:.5f} [{resized.lower:.5f}, {resized.upper:.5f}] | "
+                f"{wins.estimate:.4f} [{wins.lower:.4f}, {wins.upper:.4f}] | "
+                f"{preference.tie_rate:.4f} | {preference.distinct_target_pairs} |"
             )
     lines += [
         "",
@@ -269,7 +273,10 @@ def render_measured_report(report: FollowupMeasuredReport) -> str:
         "targets. The resized control linearly resamples wrong-audio encoder states to hold "
         "pseudo-token count, changing feature statistics. These are supporting conditioning "
         "diagnostics, not emotion classification accuracy or standalone semantic proof. "
-        "Intended synthetic tone labels are not human-verified audible emotions.",
+        "Assignment wins require raw margin above the recorded numerical tie tolerance; "
+        "ties receive no win credit here. Blinded response-rating win fractions separately "
+        "use half-credit ties. Intended synthetic tone labels are not human-verified "
+        "audible emotions.",
         "",
         "| Checkpoint | Fidelity condition | Examples | First-token agreement | "
         "First-8 agreement | Full-prefix agreement |",
@@ -328,7 +335,7 @@ def checkpoint_label(run: RunResult) -> str:
 def measurement_label(measurement: ReportedMeasurement) -> str:
     match measurement:
         case CheckpointMeasurement():
-            return checkpoint_label(measurement.run)
+            return f"{checkpoint_label(measurement.run)}\n{measurement.run.steps} updates"
         case BaselineMeasurement(condition=EvaluationCondition.TEXT):
             return "Text"
         case BaselineMeasurement(condition=EvaluationCondition.ASR):
@@ -389,7 +396,7 @@ def plot_comparison(report: FollowupMeasuredReport, destination: Path) -> None:
     axes[2].set_xticks(
         tuple(range(len(checkpoints))),
         tuple(
-            f"{checkpoint_label(row.run)}\n"
+            f"{checkpoint_label(row.run)}; {row.run.steps} updates\n"
             f"{row.neu_preference.pairs} pairs / {row.neu_preference.family_clusters} families"
             for row in checkpoints
         ),
