@@ -20,7 +20,7 @@ Previous sealed results, older audio and supervision remain unchanged. Existing 
 
 Only root may launch GPU work. Proposed objective branches share the full 10 Hz parent, seed, sample order, learning rate 0.0002, effective batch eight, and 2,000 additional optimizer updates. Original full-pass continuation preserves learning rate 0.001.
 
-1. **RUNNING:** `followup_mean_10hz_epoch1_ce`, continue original 2,000→4,775 updates, exactly 38,193 unique examples/one pass. Supervisor `followup10hz-fullpass`, launched 08:58 UTC; frozen base source `46ed242` plus captured launcher SHA.
+1. **COMPLETE:** `followup_mean_10hz_epoch1_ce`, continued original 2,000→4,775 updates, exactly 38,193 unique examples/one pass. Supervisor `followup10hz-fullpass`, launched 08:58 UTC, exited successfully 09:53:39 UTC; frozen base source `46ed242` plus captured launcher SHA. Independent immutable capture of all 22 run files succeeded; off-node transfer underway.
 2. **PLANNED:** full 10 Hz checkpoint held-out evaluation; fixed panels identical to prior study.
 3. **IMPLEMENTED:** response-only CE continuation control, 2,000 additional updates; immutable branch preparation validated on CPU.
 4. **IMPLEMENTED:** 30% transcript reconstruction / 70% original assistant-response CE, matched updates; deterministic task choice and objective journal.
@@ -47,3 +47,4 @@ Runtime choices and any failed operations will be recorded here. Test responses 
 - 09:12 UTC: local `uv run pytest -m 'not integration'` passed 536 tests; two infrastructure tests deselected. New objective and branch feature Ruff checks pass. Node source remains the original `46ed242` while the full-pass job is active; new core source will deploy only after completion.
 - 09:29 UTC: isolated node candidate source `54b52ef` passed 542 tests, two infrastructure tests deselected, in 9.40 seconds with CUDA hidden. Exact source archive and Git bundle are prepared; the live training checkout is still `46ed242`.
 - 09:33 UTC: prepared node evaluation configs and registered stopped single-GPU jobs for first full-pass evaluation, tone-assisted ASR, matched conversation evaluation and the three controlled training branches. Frozen selection safeguards require at least three new material validation failures exceeding corrected failures before a qualitative veto. Test responses do not choose the branch.
+- 09:55 UTC: full pass completed with daemon exit status zero. Deployed frozen GPU source `04eb486` by fast-forward after preserving the two untracked classifier source copies. This source passed 544 isolated node CPU tests and exact held-out selection checks; ordinary-KL gradient/memory smoke is running before long branches. Unrelated scheduler services are preserved.
