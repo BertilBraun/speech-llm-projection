@@ -1,0 +1,10 @@
+{
+  "verified_at": "2026-10-07T17:02:02.863370Z",
+  "repository": "BertilBraun/qwen-paired-emotional-speech",
+  "revision": "40c0538dec46602a8f751998c69988ae9a3f5642",
+  "files": 59,
+  "bytes_verified": 5916249086,
+  "parquet_shards": 41,
+  "lfs_files": 42,
+  "git_files": 17
+}

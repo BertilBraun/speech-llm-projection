@@ -1,0 +1,1 @@
+{"splits":[{"dataset":"BertilBraun/neu-paired-emotional-speech","config":"default","split":"train"},{"dataset":"BertilBraun/neu-paired-emotional-speech","config":"default","split":"validation"},{"dataset":"BertilBraun/neu-paired-emotional-speech","config":"default","split":"test"}],"pending":[],"failed":[]}

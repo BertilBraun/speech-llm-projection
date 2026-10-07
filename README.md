@@ -125,7 +125,7 @@ control labels, not human-verified perceptual annotations.
 See [dataset generation and release](docs/dataset_release.md) for the scripts,
 export format, limitations and source terms.
 The emotional collections should be released separately from the
-DeepDialogue-derived data. Public Hugging Face uploads are in progress for
+DeepDialogue-derived data. Both complete collections are public on Hugging Face:
 [Neu paired emotional speech](https://huggingface.co/datasets/BertilBraun/neu-paired-emotional-speech)
 and [Qwen paired emotional speech](https://huggingface.co/datasets/BertilBraun/qwen-paired-emotional-speech).
 
@@ -161,7 +161,11 @@ supervision and remain historical; the teacher-supervised results above are the
 current findings. No LoRA or speech-encoder fine-tuning was performed.
 
 Both complete emotional collections preserve their original audio and teacher
-targets. The README plots can be regenerated from the locked reports:
+targets. All public release file hashes were verified at pinned Hub revisions;
+each dataset contains 10,000 examples. Dataset-viewer indexing is asynchronous;
+see the [publication receipt](docs/publication.md) for its checked status.
+Validation passed: **618 tests**, Ruff formatting/lint, local links and dataset
+cards. The README plots can be regenerated from the locked reports:
 
 ```powershell
 uv run python -m scripts.plot_readme_results --analysis .\results\followup_20261007\analysis --output .\docs\figures

@@ -1,0 +1,10 @@
+{
+  "verified_at": "2026-10-07T16:56:20.036274Z",
+  "repository": "BertilBraun/neu-paired-emotional-speech",
+  "revision": "c973637893abe730314df06e0514be2bcc0cf802",
+  "files": 62,
+  "bytes_verified": 4811049621,
+  "parquet_shards": 41,
+  "lfs_files": 41,
+  "git_files": 21
+}

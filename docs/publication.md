@@ -3,7 +3,7 @@
 The source repository is
 [BertilBraun/speech-llm-projection](https://github.com/BertilBraun/speech-llm-projection).
 The user prepared and pushed the GitHub repository; the Hugging Face datasets
-are being published from this checkout at the user's request. Publication uses
+are published from this checkout at the user's request. Publication uses
 the saved Hub login and requires no new GPU work.
 
 ## GitHub
@@ -82,3 +82,43 @@ uv run python -m scripts.verify_hub_dataset --directory .\results_preview\public
 Also check the viewer's split counts and first rows after its asynchronous
 indexing completes. Audio bytes and split coverage were independently verified
 before upload; viewer availability is a separate service check.
+
+## Completed publication, 7 October 2026
+
+| Public collection | Examples | Shards | Matching public files | Size |
+|---|---:|---:|---:|---:|
+| [Neu](https://huggingface.co/datasets/BertilBraun/neu-paired-emotional-speech) | 10,000 | 41 | 62 | 4.81 GB |
+| [Qwen](https://huggingface.co/datasets/BertilBraun/qwen-paired-emotional-speech) | 10,000 | 41 | 59 | 5.92 GB |
+
+Both anonymous API checks confirmed public access. Every local file matched the
+remote file's exact size and Git blob or LFS SHA256 content hash. Each collection
+retains its original 9,100/460/440 examples across train/validation/test. The
+independent pre-upload checks read back all 20,000 embedded WAVs; final public
+verification compares the containing shards and all supporting files.
+
+Pinned verification receipts:
+
+- [Neu](../results/publication/neu_hub_verification.json), revision
+  `c973637893abe730314df06e0514be2bcc0cf802`.
+- [Qwen](../results/publication/qwen_hub_verification.json), revision
+  `40c0538dec46602a8f751998c69988ae9a3f5642`.
+
+Neu's viewer recognizes all three splits and serves paired test preview rows
+with WAV audio. Qwen's viewer and the dataset-size aggregation jobs were still
+indexing at the final check; the service returned busy/not-ready responses.
+This does not prevent access to the verified public Parquet files. Viewer
+readiness is separate from the completed upload and file-integrity checks.
+
+The initial local staging copy exhausted available disk space. The user removed
+only that newly created duplicate directory; replacement staging links the
+unchanged Parquet shards and copies the small metadata. Original sealed releases
+were preserved. Two Qwen CLI metadata retries encountered TLS EOF errors while
+calling the redundant repository-creation endpoint. Uploading to the existing
+repository through the same official SDK succeeded with normal TLS verification.
+No audio was retranscribed, regenerated, filtered or recompressed.
+
+The source changes passed `uv run pytest -m "not integration"` (**618 passed,
+two infrastructure tests deselected**), `uv run ruff format`,
+`uv run ruff check --fix`, link checks, dataset-card parsing and figure inspection.
+Generated SVG whitespace initially failed the diff check; vector export now
+normalizes it, both SVGs parse successfully, and the final diff check passes.
