@@ -12,9 +12,9 @@ Previous sealed results, older audio and supervision remain unchanged. Existing 
 - [x] Typed optional transcript-reconstruction mixture, objective journal and exact resume tests (commits `ca7f8f4`, `9207a45`).
 - [x] Ordinary-only response-distribution KL implemented; emotional examples retain original response CE. Frozen-gradient GPU verification is pending GPU release.
 - [x] Train-only CPU tone classifier and predictions, disjoint fixed validation/test families (commit `bd90c52`). CPU job completed in 22.72 seconds; validation balanced accuracy 99.57%, test 100%. These are synthetic intended-delivery labels, not natural emotion accuracy.
-- [ ] ASR plus predicted tone and reference-tone ceiling under otherwise identical prompting.
-- [ ] Fully matched speech/TEXT/ASR multi-turn evaluation.
-- [ ] Understandable factual diagnostics and direct blinded emotional comparison.
+- [x] ASR plus predicted tone and reference-tone ceiling implemented under otherwise identical prompting; inference pending GPU release. Classifier prediction/report hashes are bound and oracle reuse proves identical inputs before avoiding duplicate inference.
+- [x] Fully matched speech/TEXT/ASR multi-turn evaluation implemented; generation pending GPU release.
+- [x] Understandable factual diagnostics, blinded emotional cards/locked ratings and pre-results validation selection safeguards implemented; scoring pending outputs.
 
 ## GPU queue and controlled runs
 
@@ -45,3 +45,5 @@ Runtime choices and any failed operations will be recorded here. Test responses 
 
 - 09:07 UTC: full-pass GPU job at 2,418/4,775 updates, healthy; only one GPU process. CPU classifier runs with CUDA hidden and two CPU threads.
 - 09:12 UTC: local `uv run pytest -m 'not integration'` passed 536 tests; two infrastructure tests deselected. New objective and branch feature Ruff checks pass. Node source remains the original `46ed242` while the full-pass job is active; new core source will deploy only after completion.
+- 09:29 UTC: isolated node candidate source `54b52ef` passed 542 tests, two infrastructure tests deselected, in 9.40 seconds with CUDA hidden. Exact source archive and Git bundle are prepared; the live training checkout is still `46ed242`.
+- 09:33 UTC: prepared node evaluation configs and registered stopped single-GPU jobs for first full-pass evaluation, tone-assisted ASR, matched conversation evaluation and the three controlled training branches. Frozen selection safeguards require at least three new material validation failures exceeding corrected failures before a qualitative veto. Test responses do not choose the branch.
