@@ -133,8 +133,11 @@ Keep the two emotional collections separate from DeepDialogue-derived examples:
   [Qwen text model](https://huggingface.co/Qwen/Qwen3.5-2B),
   [Qwen TTS](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice)
 
-The prepared cards describe source/output terms and leave the publisher's
-additional collection license to be selected before public upload. No model
+The collection contributions use **CC BY 4.0**. Neu-generated audio is excluded
+from that grant and remains governed by the included NeuTTS output terms; the
+Neu card uses `license: other` to make that distinction visible. The Qwen card
+uses `license: cc-by-4.0`. See the [collection grant](dataset_cards/LICENSE.md).
+No model
 weights, cloned reference recordings, frozen feature caches or checkpoints are
 included. Neu's existing watermark is preserved.
 
@@ -145,8 +148,16 @@ WAVs** were independently read back from their Parquet shards and hash-checked.
 Each collection has 41 shards and exact 9,100/460/440 example split coverage.
 The local `export_receipt.json`, `export_verification.json` and reproducibility
 inventory preserve exact counts and byte evidence. Original source archives
-remain unchanged. No upload has occurred; repository names, publisher licenses
-and final source URLs remain manual publication steps.
+remain unchanged. Public release staging is separate, under
+`results_preview/publication/public_20261007/`; unchanged Parquet files are linked
+to the existing verified exports to avoid duplicating their storage. New cards,
+license files and inventories belong to the public release, leaving the older
+sealed preparation snapshots intact.
+
+Public destinations are
+[Neu paired emotional speech](https://huggingface.co/datasets/BertilBraun/neu-paired-emotional-speech)
+and [Qwen paired emotional speech](https://huggingface.co/datasets/BertilBraun/qwen-paired-emotional-speech).
+Publication receipts and status are recorded in the [publication guide](publication.md).
 
 Useful applications are paired conditioning experiments and evaluation on
 synthetic speech. These collections are not a benchmark of natural emotional

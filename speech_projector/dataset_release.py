@@ -394,6 +394,7 @@ def export_dataset(config: DatasetExportConfig) -> DatasetExportReceipt:
             )
     shutil.copyfile(card, output / "README.md")
     shutil.copyfile(documentation / "dataset_cards" / "LICENSE.md", output / "LICENSE.md")
+    shutil.copyfile(documentation / "licenses" / "CC-BY-4.0.txt", output / "CC-BY-4.0.txt")
     counts = Counter(row.example.split for row in rows)
     receipt = DatasetExportReceipt(
         configuration=config,

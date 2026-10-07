@@ -4,12 +4,13 @@ Can a small trainable projector turn frozen speech-encoder features into inputs
 that a frozen text LLM understands? This project tests that with **Whisper Small
 and Qwen3.5-2B**, including paired emotional speech and multi-turn conversations.
 
-**Conclusion: the projector works, but our implementation does not justify
-replacing ASR → text → LLM.** It learns acoustic distinctions and generates fluent
-responses, but loses factual grounding and follows multi-turn instructions less
-reliably. ASR with optional acoustic tone information is the more promising
-practical path. These small synthetic experiments do not establish which
-architecture is best in general.
+**In these synthetic tests, speech projection makes replies more emotionally
+sensitive than plain ASR, but loses factual grounding. We did not demonstrate an
+advantage over ASR plus predicted tone.** Acoustic information survives the
+projector; preserving reliable conversational content remains the bottleneck.
+ASR with optional acoustic tone information is the more promising practical path
+from this experiment. These small experiments do not establish which architecture
+is best in general.
 
 ## How it works
 
@@ -54,6 +55,13 @@ ASR baselines did not. Lower emotional loss therefore cannot establish overall
 superiority. The two 4,775-update checkpoints give the equal-budget compression
 comparison; the selected checkpoint also received more training.
 
+![Teacher imitation and reference similarity for the selected projector and baselines](docs/figures/teacher_alignment.png)
+
+The emotional plot uses the same 64 reply IDs for every system. The projector
+has slightly lower teacher loss than ASR plus tone (**0.656 versus 0.687**), but
+lower reference similarity (**0.706 versus 0.908**). These measures disagree;
+neither is a direct measure of correctness or emotional appropriateness.
+
 - **Ordinary grounding:** review of 48 speech/ASR response pairs preferred ASR in
   12, speech in two, tied 32, and left two ambiguous.
 - **Acoustic conditioning:** the selected projector preferred matching over
@@ -84,6 +92,13 @@ differ, so these rows do not rank the two systems directly. The tone classifier
 was tested on one synthetic voice and four intended deliveries; its perfect
 synthetic test score does not make it a general emotion detector.
 
+![Emotional helpfulness and grounding differences from plain ASR, with uncertainty](docs/figures/emotional_tradeoff.png)
+
+On the Neu-only panel, the projector's estimated tone gain is **+0.312** versus
+**+0.219** for ASR plus tone. Both comparisons contain 64 replies, but were judged
+separately against plain ASR. That nominal gap is **not a demonstrated
+head-to-head improvement**. The smaller second-reviewer audit was also uncertain.
+
 ### Multi-turn behavior
 
 Six diagnostic conversations test concrete actions, explicit endings and later
@@ -108,9 +123,11 @@ generation with hash and completion checks. Intended emotions are synthetic
 control labels, not human-verified perceptual annotations.
 
 See [dataset generation and release](docs/dataset_release.md) for the scripts,
-export format, limitations, source terms and manual Hugging Face publication.
+export format, limitations and source terms.
 The emotional collections should be released separately from the
-DeepDialogue-derived data. **No dataset has been uploaded by this project.**
+DeepDialogue-derived data. Public Hugging Face uploads are in progress for
+[Neu paired emotional speech](https://huggingface.co/datasets/BertilBraun/neu-paired-emotional-speech)
+and [Qwen paired emotional speech](https://huggingface.co/datasets/BertilBraun/qwen-paired-emotional-speech).
 
 ## Reproduction and documentation
 
@@ -143,7 +160,9 @@ are retained for reproduction. Earlier V0–V3 experiments used different
 supervision and remain historical; the teacher-supervised results above are the
 current findings. No LoRA or speech-encoder fine-tuning was performed.
 
-Publication preparation validation: **612 tests passed**, two infrastructure
-tests deselected; Ruff formatting and lint checks passed. Both complete emotional
-collections have been exported locally with their original audio and teacher
-targets; uploads remain manual.
+Both complete emotional collections preserve their original audio and teacher
+targets. The README plots can be regenerated from the locked reports:
+
+```powershell
+uv run python -m scripts.plot_readme_results --analysis .\results\followup_20261007\analysis --output .\docs\figures
+```

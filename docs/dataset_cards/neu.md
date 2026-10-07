@@ -54,8 +54,11 @@ dataset_info:
 
 # Neu paired emotional speech
 
-**Local release preparation; not yet uploaded.** Add the final source-repository
-URL and select the publisher's collection license before public publication.
+Published by Bertil Braun as part of the `speech-llm-projection` study.
+Generation scripts are in the
+[source repository](https://github.com/BertilBraun/speech-llm-projection).
+Exact generation configurations and canonical text/teacher manifests are included
+in `generation/`.
 See [collection and output terms](LICENSE.md) and the accompanying
 [NeuTTS Open License](NeuTTS-Open-License-1.0.txt).
 
@@ -112,7 +115,8 @@ NeuTTS-2E uses a custom license whose commercial-use condition explicitly covers
 generated outputs. Its annual-revenue threshold is US$5 million. The full pinned
 license is included; do not relabel the audio as unrestricted Apache-licensed
 data. NeuCodec and Qwen model cards list Apache 2 for their models. The
-publisher's additional collection license has not yet been selected. This
+collection contributions use CC BY 4.0; Neu audio is excluded from that grant
+and remains subject to the included NeuTTS output terms. This
 collection does not contain DeepDialogue-derived examples or model weights.
 
 Sources: [NeuTTS-2E](https://huggingface.co/neuphonic/neutts-2e),

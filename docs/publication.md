@@ -1,8 +1,10 @@
-# Manual publication
+# Publication
 
-The user will create the repositories and upload manually. No GitHub remote or
-Hugging Face publication destination has been configured, and nothing has been
-uploaded. The local code and dataset preparation do not require a new GPU run.
+The source repository is
+[BertilBraun/speech-llm-projection](https://github.com/BertilBraun/speech-llm-projection).
+The user prepared and pushed the GitHub repository; the Hugging Face datasets
+are being published from this checkout at the user's request. Publication uses
+the saved Hub login and requires no new GPU work.
 
 ## GitHub
 
@@ -15,10 +17,9 @@ Choose a code license before describing the repository as open source. The
 checkout currently has no project-wide license grant. Third-party terms in
 `docs/licenses/` are attribution evidence, not a license for our code.
 
-After creating the desired GitHub repository:
+The configured GitHub remote receives committed source and documentation:
 
 ```powershell
-git remote add origin https://github.com/YOUR_ACCOUNT/YOUR_REPOSITORY.git
 git push -u origin master
 ```
 
@@ -29,7 +30,7 @@ available locally; the release does not rewrite it.
 
 ## Hugging Face
 
-Publish the Neu and older Qwen collections as separate dataset repositories.
+The Neu and older Qwen collections have separate public dataset destinations.
 The [generation/release guide](dataset_release.md) explains the source terms and
 limitations. Complete local packages are prepared under:
 
@@ -39,11 +40,11 @@ results_preview/publication/qwen-paired-emotional-speech/
 ```
 
 Each package includes a card, source/output terms, original-audio Parquet shards,
-example index, generation configurations and verification receipts. The card's
-`license: other` describes those supplied terms; select and document the
-publisher's additional collection license before public upload. The Neu output
-conditions must remain visible. Add the final GitHub source URL to each card so
-readers can find the generation scripts.
+example index, generation configurations and verification receipts. The original
+prepared exports above remain sealed. Public staging with final cards, source
+links and new inventories is under `results_preview/publication/public_20261007/`.
+Collection contributions use CC BY 4.0; Neu audio is expressly excluded and
+retains the NeuTTS output terms. Its card therefore uses `license: other`.
 
 | Verified local package | Examples | Parquet shards | Package size |
 |---|---:|---:|---:|
@@ -54,14 +55,13 @@ All embedded WAV hashes were checked against the original source receipts, and
 each complete package inventory was independently verified. These sizes describe
 the compressed release packages, rather than the larger raw WAV payloads.
 
-Install the Hub CLI in a separate publication environment if it is not already
-available, then authenticate interactively. Do not paste a token into chat or
-save it in this repository. After creating each dataset repository on the Hub:
+The existing project environment includes the Hub CLI. The current saved login
+was used without printing or copying credentials into the repository. To upload
+or resume the same prepared public release:
 
 ```powershell
-hf auth login
-hf upload YOUR_ACCOUNT/neu-paired-emotional-speech .\results_preview\publication\neu-paired-emotional-speech --repo-type dataset
-hf upload YOUR_ACCOUNT/qwen-paired-emotional-speech .\results_preview\publication\qwen-paired-emotional-speech --repo-type dataset
+uv run hf upload BertilBraun/neu-paired-emotional-speech .\results_preview\publication\public_20261007\neu-paired-emotional-speech . --repo-type dataset --no-private
+uv run hf upload BertilBraun/qwen-paired-emotional-speech .\results_preview\publication\public_20261007\qwen-paired-emotional-speech . --repo-type dataset --no-private
 ```
 
 The first upload is several GB. Upload the prepared folders, not the much larger
@@ -71,6 +71,14 @@ counts stay in receipts even though prose measurements are rounded.
 
 The CLI's supported upload mechanism and authentication are documented in the
 [official Hub upload guide](https://huggingface.co/docs/huggingface_hub/en/guides/upload).
-After upload, inspect the dataset viewer, play both deliveries of a few pairs,
-and confirm the split counts against the local receipt. Remote upload and viewer
-verification remain the publisher's next step.
+After upload, verify anonymous public access, file coverage and every Git/LFS
+content hash at an immutable Hub revision:
+
+```powershell
+uv run python -m scripts.verify_hub_dataset --directory .\results_preview\publication\public_20261007\neu-paired-emotional-speech --repository BertilBraun/neu-paired-emotional-speech --output .\results\publication\neu_hub_verification.json
+uv run python -m scripts.verify_hub_dataset --directory .\results_preview\publication\public_20261007\qwen-paired-emotional-speech --repository BertilBraun/qwen-paired-emotional-speech --output .\results\publication\qwen_hub_verification.json
+```
+
+Also check the viewer's split counts and first rows after its asynchronous
+indexing completes. Audio bytes and split coverage were independently verified
+before upload; viewer availability is a separate service check.

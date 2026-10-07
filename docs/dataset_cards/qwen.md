@@ -1,9 +1,7 @@
 ---
 language:
 - en
-license: other
-license_name: collection-and-source-output-terms
-license_link: LICENSE.md
+license: cc-by-4.0
 task_categories:
 - audio-classification
 - text-generation
@@ -54,8 +52,11 @@ dataset_info:
 
 # Qwen paired emotional speech
 
-**Local release preparation; not yet uploaded.** Add the final source-repository
-URL and select the publisher's collection license before public publication.
+Published by Bertil Braun as part of the `speech-llm-projection` study.
+Generation scripts are in the
+[source repository](https://github.com/BertilBraun/speech-llm-projection).
+Exact generation configurations and canonical text/teacher manifests are included
+in `generation/`.
 See [collection and source terms](LICENSE.md).
 
 This older collection contains **5,000 distinct English utterances**, each
@@ -102,9 +103,10 @@ distributed: their prompts, delivery labels and synthesis backends differ.
 
 ## Source terms
 
-The Qwen text and CustomVoice model cards list Apache 2 for those models. This
-does not automatically select a license for the authored collection; that grant
-remains for the publisher to document. This package contains no Neu-generated
+The authored collection and Qwen-generated audio use CC BY 4.0, to the extent
+the publisher holds applicable rights; see [collection terms](LICENSE.md).
+The Qwen text and CustomVoice model cards list Apache 2 for their models.
+This package contains no Neu-generated
 audio, DeepDialogue-derived ordinary examples or model weights.
 
 Sources: [Qwen teacher](https://huggingface.co/Qwen/Qwen3.5-2B),
