@@ -11,6 +11,7 @@ from speech_projector.followup_report import FollowupMeasuredReport
 from speech_projector.overnight_data import Cohort
 
 matplotlib.use("Agg")
+matplotlib.rcParams["svg.fonttype"] = "none"
 from matplotlib import pyplot as plotting  # noqa: E402
 from matplotlib.figure import Figure  # noqa: E402
 
@@ -18,7 +19,14 @@ from matplotlib.figure import Figure  # noqa: E402
 def save_figure(figure: Figure, directory: Path, name: str) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     for extension in ("png", "svg"):
-        figure.savefig(directory / f"{name}.{extension}", dpi=180)
+        destination = directory / f"{name}.{extension}"
+        figure.savefig(destination, dpi=180)
+        if extension == "svg":
+            destination.write_text(
+                "\n".join(line.rstrip() for line in destination.read_text().splitlines()) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
     plotting.close(figure)
 
 
