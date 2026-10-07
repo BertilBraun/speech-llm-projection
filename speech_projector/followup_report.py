@@ -18,8 +18,11 @@ from speech_projector.models import (
     EvaluationCondition,
     EvaluationMetrics,
     FileArtifact,
+    OrdinaryResponseKLObjective,
     Record,
+    ResponseCrossEntropyObjective,
     RunResult,
+    TranscriptMixtureObjective,
 )
 from speech_projector.overnight_data import Cohort
 from speech_projector.overnight_evaluation import (
@@ -312,31 +315,99 @@ def render_measured_report(report: FollowupMeasuredReport) -> str:
     return "\n".join(lines) + "\n"
 
 
+def checkpoint_label(run: RunResult) -> str:
+    match run.config.objective:
+        case ResponseCrossEntropyObjective():
+            return f"Speech {run.pseudo_tokens_per_second:g}Hz CE"
+        case TranscriptMixtureObjective():
+            return "Transcript mix"
+        case OrdinaryResponseKLObjective():
+            return "Teacher KL"
+
+
+def measurement_label(measurement: ReportedMeasurement) -> str:
+    match measurement:
+        case CheckpointMeasurement():
+            return checkpoint_label(measurement.run)
+        case BaselineMeasurement(condition=EvaluationCondition.TEXT):
+            return "Text"
+        case BaselineMeasurement(condition=EvaluationCondition.ASR):
+            return "ASR"
+        case BaselineMeasurement():
+            raise ValueError("Comparison baseline must be TEXT or ASR")
+
+
 def plot_comparison(report: FollowupMeasuredReport, destination: Path) -> None:
-    figure, axes = plotting.subplots(1, 2, figsize=(12, 4.5), constrained_layout=True)
-    names = tuple(row.name for row in report.measurements)
+    figure, axes = plotting.subplots(1, 3, figsize=(16, 5), constrained_layout=True)
+    names = tuple(measurement_label(row) for row in report.measurements)
     positions = tuple(range(len(names)))
-    for index, cohort in enumerate(Cohort):
+    cohort_names = ("Ordinary", "Old emotional", "Neu emotional")
+    for index, cohort_name in enumerate(cohort_names):
         metrics = tuple(cohort_rows(row.cohorts)[index][1] for row in report.measurements)
-        axes[0].plot(positions, [row.cross_entropy for row in metrics], "o-", label=cohort.value)
-        axes[1].plot(
-            positions,
+        offsets = tuple(position + (index - 1) * 0.24 for position in positions)
+        ce_counts = "/".join(str(count) for count in sorted({row.examples for row in metrics}))
+        generated_counts = "/".join(
+            str(count) for count in sorted({row.generated_examples for row in metrics})
+        )
+        axes[0].bar(
+            offsets,
+            [row.cross_entropy for row in metrics],
+            width=0.22,
+            label=f"{cohort_name} (n={ce_counts})",
+        )
+        axes[1].bar(
+            offsets,
             [
                 float("nan") if row.semantic_similarity is None else row.semantic_similarity
                 for row in metrics
             ],
-            "o-",
-            label=cohort.value,
+            width=0.22,
+            label=f"{cohort_name} (n={generated_counts})",
         )
-    for axis in axes:
-        axis.set_xticks(positions, names, rotation=30, ha="right")
-        axis.grid(alpha=0.25)
+    for axis in axes[:2]:
+        axis.set_xticks(positions, names, rotation=20, ha="right", fontsize=9)
+        axis.grid(axis="y", alpha=0.25)
+        axis.set_axisbelow(True)
         axis.legend(fontsize=8)
-    axes[0].set_ylabel("Held-out target CE (token weighted within cohort)")
-    axes[1].set_ylabel("Reference semantic similarity (secondary proxy)")
+    checkpoints = tuple(
+        row for row in report.measurements if isinstance(row, CheckpointMeasurement)
+    )
+    for index, row in enumerate(checkpoints):
+        for offset, margin, label in (
+            (-0.12, row.neu_preference.matching_margin, "Raw audio"),
+            (0.12, row.neu_preference.resized_matching_margin, "Resized wrong audio"),
+        ):
+            axes[2].errorbar(
+                index + offset,
+                margin.estimate,
+                yerr=[[margin.estimate - margin.lower], [margin.upper - margin.estimate]],
+                fmt="o",
+                capsize=3,
+                color="C0" if offset < 0 else "C1",
+                label=label if index == 0 else None,
+            )
+    axes[2].set_xticks(
+        tuple(range(len(checkpoints))),
+        tuple(
+            f"{checkpoint_label(row.run)}\n"
+            f"{row.neu_preference.pairs} pairs / {row.neu_preference.family_clusters} families"
+            for row in checkpoints
+        ),
+        rotation=20,
+        ha="right",
+        fontsize=9,
+    )
+    axes[2].axhline(0, color="gray", linewidth=0.8)
+    axes[2].grid(axis="y", alpha=0.25)
+    if checkpoints:
+        axes[2].legend(fontsize=8)
+    axes[0].set_ylabel("Target CE ↓ (token weighted within cohort)")
+    axes[1].set_ylabel("Reference semantic similarity ↑ (secondary proxy)")
+    axes[2].set_ylabel("Neu paired matching CE benefit ↑")
     figure.suptitle(
         "Fixed TEST panel; one-seed point estimates\n"
-        "No test-led selection; semantic similarity is a secondary proxy",
+        "No test-led selection; CE/semantic uncertainty unmeasured; "
+        "margin bars: 95% family-bootstrap CI",
         fontsize=12,
     )
     for extension in ("png", "pdf"):

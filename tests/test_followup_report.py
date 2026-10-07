@@ -9,10 +9,19 @@ from speech_projector.evaluation import EvaluationOutcome, ExampleLoss, save_eva
 from speech_projector.followup_report import (
     BaselineComparisonInput,
     FollowupReportConfig,
+    checkpoint_label,
     measured_condition,
     write_comparison,
 )
-from speech_projector.models import EvaluationCondition, EvaluationMetrics, SampleGeneration
+from speech_projector.models import (
+    EvaluationCondition,
+    EvaluationMetrics,
+    OrdinaryResponseKLObjective,
+    ResponseCrossEntropyObjective,
+    SampleGeneration,
+    TrainingObjective,
+    TranscriptMixtureObjective,
+)
 from speech_projector.overnight_data import (
     NeuEmotionalExampleSource,
     OrdinaryExampleSource,
@@ -22,6 +31,7 @@ from speech_projector.overnight_judge import FinalJudgingQuota
 from speech_projector.overnight_launcher import FinalEvaluationSelection
 from speech_projector.tts_pilot import PilotEmotion
 from tests.test_overnight_evaluation import example
+from tests.test_overnight_report import result
 
 
 def prepared_comparison(directory: Path) -> FollowupReportConfig:
@@ -133,3 +143,21 @@ def test_report_rejects_pooled_metrics_unbound_to_actual_losses(tmp_path: Path) 
     )
     with pytest.raises(ValueError, match="primary loss records"):
         measured_condition(configuration.inputs[0], configuration)
+
+
+@pytest.mark.parametrize(
+    ("objective", "label"),
+    (
+        (ResponseCrossEntropyObjective(), "Speech 10Hz CE"),
+        (TranscriptMixtureObjective(), "Transcript mix"),
+        (OrdinaryResponseKLObjective(), "Teacher KL"),
+    ),
+)
+def test_plot_label_uses_actual_objective_instead_of_run_name(
+    objective: TrainingObjective, label: str
+) -> None:
+    recorded = result()
+    configuration = recorded.config.model_copy(
+        update={"name": "same_arbitrary_name", "objective": objective}
+    )
+    assert checkpoint_label(recorded.model_copy(update={"config": configuration})) == label
