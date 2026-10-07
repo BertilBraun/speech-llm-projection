@@ -99,15 +99,94 @@ On the Neu-only panel, the projector's estimated tone gain is **+0.312** versus
 separately against plain ASR. That nominal gap is **not a demonstrated
 head-to-head improvement**. The smaller second-reviewer audit was also uncertain.
 
+### Separate acoustic tone classifier
+
+We also trained a **small CPU logistic-regression classifier on frozen Whisper
+features**, independently of the speech projector. It predicts happy, sad, angry
+or fearful delivery from audio features alone: encoder-state means, standard
+deviations and four temporal-bin means. It receives no transcript or intended
+tone label as input. Scaling and fitting use only the training split, with fixed
+hyperparameters and no held-out tuning.
+
+| Split | Correct clips | Balanced accuracy | Macro F1 | Pairs with both deliveries correct |
+|---|---:|---:|---:|---:|
+| Train | 9,100 / 9,100 | 100% | 1 | 4,550 / 4,550 |
+| Validation | 459 / 460 | 99.6% | 0.997 | 229 / 230 |
+| Test | **440 / 440** | **100%** | **1** | **220 / 220** |
+
+The only validation error classified an intended fearful clip as sad. Test
+examples come from 22 held-out design families; literal texts and source paths
+were checked for overlap across splits. Fitting took **3.72 seconds on CPU**;
+feature loading, hashing and fitting together took **22.7 seconds**, excluding
+interpreter startup and separate preparation.
+
+```mermaid
+flowchart LR
+    A[User audio] --> W[Frozen Whisper Small]
+    W --> T[ASR transcript]
+    W --> C[Small acoustic tone classifier]
+    T --> Q[Frozen Qwen3.5-2B]
+    C --> M[Predicted tone as text metadata]
+    M --> Q
+    Q --> R[Assistant text]
+```
+
+This establishes that **the frozen speech features contain easily separable
+synthetic delivery information**. It also supplies the tone cues used in the
+ASR-plus-tone comparison above: predictions were correct on all 64 emotional
+response examples, so predicted and reference-tone prompts coincide there.
+Classification accuracy and response quality answer different questions; perfect
+labels did not yield perfect grounding or multi-turn behavior.
+
+These clips use one synthetic voice and four intended labels. A classifier may
+recognize synthesis signatures as well as expressive prosody. There is no neutral
+or unknown class, human perceptual validation, or natural-speaker evaluation.
+The result supports further testing of ASR plus acoustic cues, rather than a claim
+of 100% real-world emotion recognition. See the
+[classifier evidence](results/followup_20261007/provenance/tone_classifier/summary.md).
+
 ### Multi-turn behavior
 
-Six diagnostic conversations test concrete actions, explicit endings and later
-use of an initial emotional cue. The selected speech model produced **no useful
-next step in any of the six cases** across the tested history formats. ASR
-produced useful next steps in two fixed-history cases and four own-history
-rollouts. Using previous text history recovered explicit closure in four speech
-cases, but useful delayed emotional memory was not demonstrated. This small
-panel establishes a failure worth fixing, not a broad dialogue success rate.
+**The projection supports multi-turn inference mechanically:** the model
+generated replies throughout four-turn conversations, and every saved evaluated
+reply reached its end marker. Each turn rebuilds the prompt with the current
+audio and prior history. Qwen's normal text weights remain frozen, so training
+has not altered its text-only parameters. These tests do not validate streaming
+prefill or a persistent cross-request KV cache.
+
+**Conversational quality is a separate result.** Three situations, each with two
+initial emotional deliveries, produce six diagnostic branches. Later neutral
+turns ask for brevity, a concrete situation-specific next step, then an explicit
+end. We test fixed assistant history, retained prior audio, previous text history,
+and four-turn rollouts using each pipeline's own replies. Retained-audio history
+was not trained; the current-audio/text-history control is closer to training.
+
+| Pipeline / history format | Useful next step | Explicit closure |
+|---|---:|---:|
+| Selected projector, fixed retained-audio history | 0 / 6 | 0 / 6 |
+| Selected projector, fixed previous text history | 0 / 6 | **4 / 6** |
+| Selected projector, own-history rollout | 0 / 6 | 0 / 6 clear; one borderline |
+| Plain ASR, fixed history | 2 / 6 | 6 / 6 |
+| Plain ASR, own-history rollout | 4 / 6 | 4 / 6 |
+| ASR + initial predicted tone, fixed history | 4 / 6 | 6 / 6 |
+| ASR + initial predicted tone, own-history rollout | 4 / 6 | 3 / 6 |
+
+For example, after discussing an already-shared draft, the speech rollout says
+“I'm here to help you find the next step” without naming an action. Plain ASR
+instead suggests waiting for colleagues' feedback. Previous text history helps
+the projector accept closure for the draft and cafe scenarios, but it still
+misses their concrete next-step requests. Thus the weakness extends beyond
+remembering emotion: it includes ordinary content and instruction following.
+
+Useful later reuse of the initial acoustic emotion was not demonstrated.
+However, **we did not measure how much quality declines per additional turn**,
+so this panel cannot establish that multi-turn quality stays close to single-turn
+quality, or that it degrades by a particular amount. It demonstrates working
+conversation assembly with limited conversational reliability. The counts are
+model-assisted qualitative diagnostics from only three independent situations,
+not a broad dialogue accuracy benchmark. Read the
+[multi-turn audit](results/followup_20261007/analysis/final_selected_conversation_review.md)
+for all history controls and the [saved replies](results/followup_20261007/analysis/final_conversation_all168_compact.md).
 
 ## Data and reusable generation pipeline
 
