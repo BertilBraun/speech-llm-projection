@@ -4,7 +4,6 @@ import hashlib
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from enum import Enum
 from importlib.metadata import version
 from pathlib import Path
 from time import perf_counter
@@ -39,6 +38,8 @@ from speech_projector.emotion_preview import (
 )
 from speech_projector.emotional_audio import (
     AudioGenerationSummary,
+    CodecFinish,
+    CodecTermination,
     EmotionalAudioConfig,
     archive_uncommitted_audio,
     completed_audio,
@@ -61,26 +62,6 @@ class OmniProvenance(Record):
     transformers_version: str
     vllm_version: str
     omni_version: str
-
-
-class CodecFinish(str, Enum):
-    STOP = "stop"
-    LENGTH = "length"
-
-
-class CodecTermination(Record):
-    case_id: str
-    finish_reason: CodecFinish
-    codec_tokens: int = Field(gt=0)
-    max_new_tokens: int = Field(ge=4)
-    actual_seed: int = Field(ge=0)
-    runtime_seconds: float = Field(ge=0)
-
-    @property
-    def accepted(self) -> bool:
-        return (
-            self.finish_reason == CodecFinish.STOP and 0 < self.codec_tokens < self.max_new_tokens
-        )
 
 
 class OmniAttempt(Record):

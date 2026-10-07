@@ -168,9 +168,14 @@ def compare_matched_metrics(configuration: MatchedMetricsConfig) -> MatchedMetri
     ]
     for row in measurements:
         metrics = row.metrics
+        semantic = (
+            f"{metrics.semantic_similarity:.3g}"
+            if metrics.semantic_similarity is not None
+            else "unmeasured"
+        )
         lines.append(
             f"| {row.name} | {metrics.examples} | {metrics.target_tokens} | "
-            f"{metrics.cross_entropy:.6f} | {metrics.semantic_similarity} | "
+            f"{metrics.cross_entropy:.3g} | {semantic} | "
             f"{metrics.completed_generations} | {metrics.token_limited_generations} |"
         )
     lines += [

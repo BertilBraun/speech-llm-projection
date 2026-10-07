@@ -1,5 +1,6 @@
 """Resumable emotional audio generation records and clip verification."""
 
+from enum import Enum
 from pathlib import Path
 
 from pydantic import Field, model_validator
@@ -7,6 +8,26 @@ from pydantic import Field, model_validator
 from scripts.inventory_results import stable_digest, write_record
 from speech_projector.emotion_preview import PreviewClip, PreviewPlan
 from speech_projector.models import Record
+
+
+class CodecFinish(str, Enum):
+    STOP = "stop"
+    LENGTH = "length"
+
+
+class CodecTermination(Record):
+    case_id: str
+    finish_reason: CodecFinish
+    codec_tokens: int = Field(gt=0)
+    max_new_tokens: int = Field(ge=4)
+    actual_seed: int = Field(ge=0)
+    runtime_seconds: float = Field(ge=0)
+
+    @property
+    def accepted(self) -> bool:
+        return (
+            self.finish_reason == CodecFinish.STOP and 0 < self.codec_tokens < self.max_new_tokens
+        )
 
 
 class EmotionalAudioConfig(Record):

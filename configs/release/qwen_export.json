@@ -1,0 +1,9 @@
+{
+  "source": {
+    "kind": "qwen",
+    "directory": "results_preview/emotional_dataset/complete_20261006_2038"
+  },
+  "output_directory": "results_preview/publication/qwen-paired-emotional-speech",
+  "expected_utterances": 5000,
+  "rows_per_shard": 250
+}

@@ -211,34 +211,34 @@ def render_measured_report(report: FollowupMeasuredReport) -> str:
     for row in report.measurements:
         for cohort, metrics in cohort_rows(row.cohorts):
             semantic = (
-                f"{metrics.semantic_similarity:.4f}"
+                f"{metrics.semantic_similarity:.3g}"
                 if metrics.semantic_similarity is not None
                 else "unmeasured"
             )
             lines.append(
                 f"| {row.name} | {cohort.value} | {metrics.examples} | {metrics.target_tokens} | "
-                f"{metrics.cross_entropy:.5f} | {semantic} | {metrics.generated_examples} | "
+                f"{metrics.cross_entropy:.3g} | {semantic} | {metrics.generated_examples} | "
                 f"{metrics.completed_generations} | {metrics.token_limited_generations} |"
             )
     lines += ["", "| System | Pooled CE | Macro CE |", "|---|---:|---:|"]
     for row in report.measurements:
         lines.append(
-            f"| {row.name} | {row.pooled.cross_entropy:.5f} | "
-            f"{row.cohorts.macro_cross_entropy:.5f} |"
+            f"| {row.name} | {row.pooled.cross_entropy:.3g} | "
+            f"{row.cohorts.macro_cross_entropy:.3g} |"
         )
     lines += [
         "",
         "| Checkpoint | Updates | VAL ordinary CE | VAL macro CE | "
-        "Recorded cumulative training seconds | Peak PyTorch allocated decimal GB |",
+        "Recorded cumulative training hours | Peak PyTorch allocated decimal GB |",
         "|---|---:|---:|---:|---:|---:|",
     ]
     for row in report.measurements:
         if isinstance(row, CheckpointMeasurement):
             lines.append(
                 f"| {row.name} | {row.run.steps} | "
-                f"{row.candidate.validation.old_ordinary.cross_entropy:.5f} | "
-                f"{row.candidate.validation.macro_cross_entropy:.5f} | "
-                f"{row.run.runtime_seconds:.1f} | {row.run.peak_vram_gb:.3f} |"
+                f"{row.candidate.validation.old_ordinary.cross_entropy:.3g} | "
+                f"{row.candidate.validation.macro_cross_entropy:.3g} | "
+                f"{row.run.runtime_seconds / 3600:.3g} | {row.run.peak_vram_gb:.3g} |"
             )
     lines += [
         "",
@@ -262,10 +262,10 @@ def render_measured_report(report: FollowupMeasuredReport) -> str:
             wins = preference.matching_win_rate
             lines.append(
                 f"| {row.name} | {preference.pairs}/{preference.family_clusters} | "
-                f"{raw.estimate:.5f} [{raw.lower:.5f}, {raw.upper:.5f}] | "
-                f"{resized.estimate:.5f} [{resized.lower:.5f}, {resized.upper:.5f}] | "
-                f"{wins.estimate:.4f} [{wins.lower:.4f}, {wins.upper:.4f}] | "
-                f"{preference.tie_rate:.4f} | {preference.distinct_target_pairs} |"
+                f"{raw.estimate:.3g} [{raw.lower:.3g}, {raw.upper:.3g}] | "
+                f"{resized.estimate:.3g} [{resized.lower:.3g}, {resized.upper:.3g}] | "
+                f"{wins.estimate:.3g} [{wins.lower:.3g}, {wins.upper:.3g}] | "
+                f"{preference.tie_rate:.3g} | {preference.distinct_target_pairs} |"
             )
     lines += [
         "",
@@ -287,8 +287,8 @@ def render_measured_report(report: FollowupMeasuredReport) -> str:
             for fidelity in row.fidelity:
                 lines.append(
                     f"| {row.name} | {fidelity.condition.value} | {fidelity.examples} | "
-                    f"{fidelity.first_token_agreement:.4f} | "
-                    f"{fidelity.first_8_token_agreement:.4f} | {fidelity.top1_agreement:.4f} |"
+                    f"{fidelity.first_token_agreement:.3g} | "
+                    f"{fidelity.first_8_token_agreement:.3g} | {fidelity.top1_agreement:.3g} |"
                 )
     lines += [
         "",
@@ -304,9 +304,14 @@ def render_measured_report(report: FollowupMeasuredReport) -> str:
         ]
         for baseline in report.tone_baselines:
             metrics = baseline.metrics
+            semantic = (
+                f"{metrics.semantic_similarity:.3g}"
+                if metrics.semantic_similarity is not None
+                else "unmeasured"
+            )
             lines.append(
                 f"| {baseline.provenance.configuration.kind} | {metrics.examples} | "
-                f"{metrics.cross_entropy:.5f} | {metrics.semantic_similarity} | "
+                f"{metrics.cross_entropy:.3g} | {semantic} | "
                 f"{metrics.generated_examples} | {metrics.completed_generations} | "
                 f"{metrics.token_limited_generations} |"
             )

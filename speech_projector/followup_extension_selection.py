@@ -325,8 +325,8 @@ def select_full_pass_extension(configuration: FullPassExtensionConfig) -> FullPa
     ):
         lines.append(
             f"| {result.config.name} | {result.steps} | "
-            f"{candidate.validation.old_ordinary.cross_entropy:.6f} | "
-            f"{candidate.validation.macro_cross_entropy:.6f} | {candidate.robust_neu_margin:.6f} |"
+            f"{candidate.validation.old_ordinary.cross_entropy:.3g} | "
+            f"{candidate.validation.macro_cross_entropy:.3g} | {candidate.robust_neu_margin:.3g} |"
         )
     lines += ["", "Rejection reasons: " + (", ".join(row.value for row in reasons) or "none"), ""]
     for case in review.cases:

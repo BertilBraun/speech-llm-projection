@@ -1,0 +1,9 @@
+{
+  "source": {
+    "kind": "neu",
+    "directory": "results_preview/emotional_dataset/neu_20261006/v2"
+  },
+  "output_directory": "results_preview/publication/neu-paired-emotional-speech",
+  "expected_utterances": 5000,
+  "rows_per_shard": 250
+}

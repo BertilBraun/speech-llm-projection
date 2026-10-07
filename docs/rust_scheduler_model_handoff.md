@@ -49,7 +49,7 @@ The original serving prototype used this completed Qwen-teacher distillation che
 | Speech encoder | `openai/whisper-small`, frozen, final encoder hidden states |
 | Encoder output | `[ceil(audio_seconds × 50), 768]`, cropped from the padded 30-second encoder output |
 | Projector | LayerNorm(768), mean pooling in blocks of 5, Linear(768,1024), GELU, Linear(1024,2048) |
-| Projector size | 2,888,192 parameters; saved FP32 checkpoint about 11.55 MB |
+| Projector size | 2,888,192 parameters; saved FP32 checkpoint about 11.6 MB |
 | Speech pseudo-tokens | Approximately 10 per audio second; 5 seconds produces 50 embeddings |
 | Qwen input width | 2,048, cast to the language model dtype |
 | Language model | Frozen text backbone of `Qwen/Qwen3.5-2B`, BF16 on CUDA |
@@ -224,11 +224,11 @@ Actual saved measurements on the node:
 
 | Measurement | Result | Interpretation |
 | --- | --- | --- |
-| Transformers text profile, serial batch 1 | 31.25 generated tokens/s over 16 replies | Useful initial decoding reference; not speech TTFT |
-| Warm Transformers text batch 64 | 1,119.49 aggregate tokens/s | Throughput across many requests, not one user's token rate |
-| Warm vLLM text batch 64 | 11,891 tokens in 5.424 s, 2,192.23 aggregate tokens/s | Different output workload; not a controlled speech speedup or TTFT comparison |
-| Trained speech checkpoint, validation batch 32 | 84,011 tokens in 220.34 s, about 381.29 aggregate tokens/s | Cached features were used; Whisper encoding, projection before queuing, and network transport excluded |
-| Whisper feature-cache extraction | 10,000 examples in 67.19 encoder-timed seconds, batch 8 | Offline batch throughput; not a 6.7 ms single-request claim |
+| Transformers text profile, serial batch 1 | 31.2 generated tokens/s over 16 replies | Useful initial decoding reference; not speech TTFT |
+| Warm Transformers text batch 64 | 1,120 aggregate tokens/s | Throughput across many requests, not one user's token rate |
+| Warm vLLM text batch 64 | 11,891 tokens in 5.42 s, 2,190 aggregate tokens/s | Different output workload; not a controlled speech speedup or TTFT comparison |
+| Trained speech checkpoint, validation batch 32 | 84,011 tokens in 220 s, about 381 aggregate tokens/s | Cached features were used; Whisper encoding, projection before queuing, and network transport excluded |
+| Whisper feature-cache extraction | 10,000 examples in 67.2 encoder-timed seconds, batch 8 | Offline batch throughput; not a 6.7 ms single-request claim |
 
 At a provisional 20–60 tokens/s single-session budget, a 30–60-token reply takes about **0.5–3 seconds after the first token**. Treat optimized-runtime latency as unknown until the complete speech route is measured. Text streams can begin immediately after the first token; waiting for a full reply is unnecessary.
 

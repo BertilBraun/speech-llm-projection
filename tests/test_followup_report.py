@@ -185,5 +185,5 @@ def test_assignment_wins_are_strict_and_ties_are_reported_separately(tmp_path: P
     )
     text = render_measured_report(report.model_copy(update={"measurements": (checkpoint,)}))
     assert "Strict raw assignment win" in text
-    assert "0.5000 [0.0000, 1.0000] | 0.5000" in text
+    assert "0.5 [0, 1] | 0.5" in text
     assert "ties receive no win credit" in text.lower()

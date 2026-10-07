@@ -1,2 +1,4 @@
 # Preserve byte-exact scientific artifacts and their recorded SHA256 inventories.
 results/followup_20261007/** -text
+# Upstream licenses retain their original bytes, including whitespace.
+docs/licenses/** -text -whitespace
