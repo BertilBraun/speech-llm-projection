@@ -29,11 +29,34 @@ def write_quality_plot(
         f"{name.replace('_', ' ')}\nn={summary.examples}; {summary.families} families"
         for name, summary in groups
     )
-    figure, axes = plotting.subplots(1, 2, figsize=(11, 4.5), constrained_layout=True)
+    figure, axes = plotting.subplots(2, 2, figsize=(11, 8), constrained_layout=True)
+    positions = tuple(range(len(groups)))
+    for index in range(2):
+        measurements = tuple(
+            summary.tone if index == 0 else summary.grounding for _, summary in groups
+        )
+        axes[0, index].bar(
+            tuple(position - 0.18 for position in positions),
+            tuple(row.first_mean for row in measurements),
+            width=0.34,
+            label=first_label,
+        )
+        axes[0, index].bar(
+            tuple(position + 0.18 for position in positions),
+            tuple(row.second_mean for row in measurements),
+            width=0.34,
+            label=second_label,
+        )
+        axes[0, index].set_ylim(0, 2)
+        axes[0, index].set_xticks(positions, labels, fontsize=9)
+        axes[0, index].set_ylabel("Mean ordinal score (0–2) ↑")
+        axes[0, index].legend(fontsize=8)
+        axes[0, index].grid(axis="y", alpha=0.25)
+        axes[0, index].set_axisbelow(True)
     for position, (_name, summary) in enumerate(groups):
         for index, axis in enumerate((summary.tone, summary.grounding)):
             interval = axis.first_minus_second
-            axes[index].errorbar(
+            axes[1, index].errorbar(
                 interval.estimate,
                 position,
                 xerr=[[interval.estimate - interval.lower], [interval.upper - interval.estimate]],
@@ -41,7 +64,7 @@ def write_quality_plot(
                 capsize=4,
                 color=f"C{position}",
             )
-            axes[index].annotate(
+            axes[1, index].annotate(
                 f"W/T/L {axis.wins}/{axis.ties}/{axis.losses}",
                 (interval.estimate, position),
                 xytext=(0, 13),
@@ -49,18 +72,18 @@ def write_quality_plot(
                 ha="center",
                 fontsize=9,
             )
-    for axis, title in zip(
-        axes, ("Tone-appropriate helpfulness", "Literal grounding"), strict=True
-    ):
+    for index, title in enumerate(("Tone-appropriate helpfulness", "Literal grounding")):
+        axes[0, index].set_title(title)
+        axis = axes[1, index]
         axis.set_yticks(tuple(range(len(labels))), labels)
         axis.set_ylim(-0.5, len(labels) - 0.4)
         axis.axvline(0, color="gray", linewidth=0.8)
         axis.grid(axis="x", alpha=0.25)
-        axis.set_title(title)
         axis.set_xlabel("Paired mean difference on 0–2 rubric ↑\n95% family-bootstrap CI")
     figure.suptitle(
         f"{first_label} − {second_label}\n"
-        "Blinded model-assisted judgments; intended synthetic tones, not emotion accuracy",
+        "Blinded model-assisted judgments; intended synthetic tones, not emotion accuracy\n"
+        "Means: heuristic ordinal point estimates; difference bars: paired family-bootstrap CI",
         fontsize=12,
     )
     output_directory.mkdir(parents=True, exist_ok=True)
